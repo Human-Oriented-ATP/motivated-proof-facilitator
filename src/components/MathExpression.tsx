@@ -265,7 +265,7 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
     }
 
     return (
-        <div style={{ position: "relative", display: "inline-block" }}>
+        <div style={{ position: "relative", display: "inline-block", padding: "4px" }}>
             <div
                 ref={setSvgContainerRef}
                 onMouseMove={handleMouseMove}
@@ -275,7 +275,7 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
             ></div>
             <svg
                 ref={overlayRef}
-                style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
+                style={{ position: "absolute", top: "4px", left: "4px", pointerEvents: "none" }}
             />
         </div>
     )
