@@ -109,6 +109,10 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
                     })
                     
                     element.appendChild(svg)
+                    // Set vertical-align to prevent baseline alignment issues
+                    svg.style.verticalAlign = 'top'
+                    svg.style.display = 'block'
+                    
                     // configure overlay viewBox/size to match rendered svg
                     const overlay = overlayRef.current
                     if (overlay) {
