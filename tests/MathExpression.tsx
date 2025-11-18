@@ -1,8 +1,10 @@
 import { JSX, useContext } from "react";
 import "./ProofStateContext";
 import { expressions } from "./samples/MathExpression";
+import { atomicStatements } from "./samples/AtomicStatement";
 import ProofStateContextProvider from "./ProofStateContext";
 import { MathExpression } from "../src/components/MathExpression";
+import { AtomicStatement } from "../src/components/AtomicStatement";
 import { ProofStateSelectionContext } from "../src/core/ProofStateSelectionContext";
 
 function MathExpressionsContent(): JSX.Element {
@@ -10,7 +12,23 @@ function MathExpressionsContent(): JSX.Element {
     
     return (
         <div style={{ padding: '20px' }}>
-            <h2>Math Expressions</h2>
+            <h1>Component Tests</h1>
+            
+            <h2>Atomic Statements</h2>
+            <div style={{ marginBottom: '30px' }}>
+                {atomicStatements.map((stmt, idx) => (
+                    <div key={idx} style={{ marginBottom: '15px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}>
+                        <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px', fontFamily: 'monospace' }}>
+                            Input: "{stmt.input}"
+                        </div>
+                        <div style={{ padding: '10px', backgroundColor: '#f9f9f9', borderRadius: '3px' }}>
+                            <AtomicStatement {...stmt} />
+                        </div>
+                    </div>
+                ))}
+            </div>
+            
+            <h2>Individual Math Expressions</h2>
             <div style={{ marginBottom: '30px' }}>
                 {expressions.map((expr, idx) => (
                     <div key={idx} style={{ marginBottom: '15px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}>
