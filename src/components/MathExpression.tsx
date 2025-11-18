@@ -138,12 +138,19 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
         // Helper to create an SVG rect
         const createRect = (sub: SubExpression, fill: string, stroke?: string, strokeWidth?: number) => {
             const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+            const padding = 1
             
-            rect.setAttribute("x", String(sub.x))
-            rect.setAttribute("y", String(sub.y))
-            rect.setAttribute("width", String(sub.width))
-            rect.setAttribute("height", String(sub.height))
+            rect.setAttribute("x", String(sub.x - padding))
+            rect.setAttribute("y", String(sub.y - padding))
+            rect.setAttribute("width", String(sub.width + 2 * padding))
+            rect.setAttribute("height", String(sub.height + 2 * padding))
+            rect.setAttribute("rx", "2")
+            rect.setAttribute("ry", "2")
             rect.setAttribute("fill", fill)
+            if (stroke) {
+                rect.setAttribute("stroke", stroke)
+                rect.setAttribute("stroke-width", String(strokeWidth || 1.25))
+            }
             rect.setAttribute("pointer-events", "none")
             
             return rect
@@ -169,7 +176,9 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
                     if (matchingSubexpr) {
                         overlay.appendChild(createRect(
                             matchingSubexpr, 
-                            "rgba(59, 130, 246, 0.25)"
+                            "rgba(59, 130, 246, 0.25)",
+                            "rgba(59, 130, 246, 0.4)",
+                            1.5
                         ))
                     }
                 }
@@ -180,7 +189,9 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
         if (hoverIndex !== null && subexprs[hoverIndex]) {
             overlay.appendChild(createRect(
                 subexprs[hoverIndex], 
-                "rgba(250, 204, 21, 0.2)"
+                "rgba(250, 204, 21, 0.2)",
+                "rgba(250, 204, 21, 0.3)",
+                1.25
             ))
         }
     }, [hoverIndex, selections, proofStateId, proofStateLocation])
@@ -259,7 +270,7 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
     }
 
     return (
-        <div style={{ position: "relative", display: "inline-block" }}>
+        <div style={{ position: "relative", display: "inline-block", padding: "4px" }}>
             <div
                 ref={setSvgContainerRef}
                 onMouseMove={handleMouseMove}
@@ -269,7 +280,7 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
             ></div>
             <svg
                 ref={overlayRef}
-                style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
+                style={{ position: "absolute", top: "4px", left: "4px", pointerEvents: "none" }}
             />
         </div>
     )
