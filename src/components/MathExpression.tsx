@@ -152,8 +152,8 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
                 if (selection.proofStateId === proofStateId &&
                     selection.location.kind === proofStateLocation.kind &&
                     selection.location.label === proofStateLocation.label &&
-                    areStatementAddressesEqual(selection.address, address)
-                ) {
+                    areStatementAddressesEqual(selection.address, address) &&
+                    (selection.selection as SubExpressionCoreWithIndex).index === index) {
                     
                     // Find the matching subexpression
                     const matchingSubexpr = subexprs.find(s => 
