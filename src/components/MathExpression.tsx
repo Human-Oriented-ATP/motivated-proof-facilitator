@@ -1,4 +1,4 @@
-import React, { JSX, useEffect, useRef, useState } from "react"
+import React, { JSX, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { SubExpression, SubExpressionCore, SubExpressionCoreWithIndex } from "../core/SubExpression"
 import { ProofStateSelectionContext, StatementAddress, ProofStateLocationContext, areStatementAddressesEqual } from "../core/ProofStateSelectionContext"
 import { ProofStateIdContext } from "../core/ProofStateIdContext"
@@ -70,63 +70,78 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
         return <>Loading...</>
     }
 
-    let data: MathCompilationResponse
-    try {
-        const result = wasm.current.compile(input)
-        data = JSON.parse(result)
-    } catch (e) {
-        console.error("Failed to compile math expression:", e)
-        data = { error: String(e) }
-    }
-    
-    if ("error" in data) {
-        console.warn("Math compilation error:", data.error)
+    const compiler = wasm.current
+
+    const compileResult = useMemo<MathCompilationResponse | null>(() => {
+        if (!compiler) {
+            return { error: "Compiler unavailable" }
+        }
+
+        try {
+            const result = compiler.compile(input)
+            return JSON.parse(result) as MathCompilationResponse
+        } catch (e) {
+            console.error("Failed to compile math expression:", e)
+            return { error: String(e) }
+        }
+    }, [compiler, input])
+
+    if (!compileResult || "error" in compileResult) {
+        const message = compileResult?.error ?? "Unknown compilation error"
+        console.warn("Math compilation error:", message)
         return <div style={{ color: 'red', fontWeight: 'bold', padding: '8px' }}>
-            ERROR: {data.error}
+            ERROR: {message}
         </div>
     }
-    
-    const subexprs = data.subexpressions
-    const [hoverIndex, setHoverIndex] = useState<number | null>(null)
 
-    const overlayRef = useRef<SVGSVGElement | null>(null)
+    const svgString = compileResult.svg
+    const subexprs = compileResult.subexpressions
+    
+    const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+    const [overlayVersion, setOverlayVersion] = useState(0)
+
+    const overlayRef = useRef<SVGGElement | null>(null)
+    const svgRef = useRef<SVGSVGElement | null>(null)
 
     // Ref callback to inject SVG and configure overlay when the container mounts
-    const svgContainerRef = useRef<HTMLDivElement | null>(null)
-    const setSvgContainerRef = (element: HTMLDivElement | null) => {
-        svgContainerRef.current = element
-        if (element) {
-            // Safely parse SVG string and append to the container
-            element.innerHTML = ""
-            try {
-                const parser = new DOMParser()
-                const doc = parser.parseFromString(data.svg, "image/svg+xml")
-                const svg = doc.querySelector("svg")
-                if (svg) {
-                    // Change white fill to black for visibility
-                    svg.querySelectorAll('[fill="#ffffff"]').forEach(el => {
-                        el.setAttribute('fill', '#000000')
-                    })
-                    
-                    element.appendChild(svg)
-                    // Set vertical-align to prevent baseline alignment issues
-                    svg.style.verticalAlign = 'top'
-                    svg.style.display = 'block'
-                    
-                    // configure overlay viewBox/size to match rendered svg
-                    const overlay = overlayRef.current
-                    if (overlay) {
-                        for (const attr of ["viewBox", "width", "height"]) {
-                            const value = svg.getAttribute(attr)
-                            if (value) overlay.setAttribute(attr, value)
-                        }
-                    }
-                }
-            } catch (e) {
-                console.warn("Failed to parse SVG:", e)
-            }
+    const attachSvg = useCallback((element: HTMLDivElement | null) => {
+        overlayRef.current = null
+        svgRef.current = null
+
+        if (!element || !svgString) {
+            return
         }
-    }
+
+        // Safely parse SVG string and append to the container
+        element.innerHTML = ""
+        try {
+            const parser = new DOMParser()
+            const doc = parser.parseFromString(svgString, "image/svg+xml")
+            const svg = doc.querySelector("svg")
+            if (svg) {
+                // Change white fill to black for visibility
+                svg.querySelectorAll('[fill="#ffffff"]').forEach(el => {
+                    el.setAttribute('fill', '#000000')
+                })
+                
+                element.appendChild(svg)
+                // Set vertical-align to prevent baseline alignment issues
+                svg.style.verticalAlign = 'top'
+                svg.style.display = 'block'
+
+                svgRef.current = svg
+
+                // Create overlay layer within the same SVG so coordinates match perfectly
+                const overlay = document.createElementNS("http://www.w3.org/2000/svg", "g")
+                overlay.style.pointerEvents = 'none'
+                overlayRef.current = overlay
+                svg.appendChild(overlay)
+                setOverlayVersion(v => v + 1)
+            }
+        } catch (e) {
+            console.warn("Failed to parse SVG:", e)
+        }
+    }, [svgString])
 
     // Update overlay whenever hover or selections change
     useEffect(() => {
@@ -194,7 +209,7 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
                 1.25
             ))
         }
-    }, [hoverIndex, selections, proofStateId, proofStateLocation])
+    }, [hoverIndex, selections, proofStateId, proofStateLocation, overlayVersion])
 
     // Find smallest subexpression at a point
     function findSmallestAtPoint(x: number, y: number): number {
@@ -214,7 +229,7 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
 
     // Handle mouse movement for hover
     function handleMouseMove(e: React.MouseEvent) {
-        const svgEl = svgContainerRef.current?.querySelector("svg")
+         const svgEl = svgRef.current
         if (!svgEl) return
 
         const rect = svgEl.getBoundingClientRect()
@@ -237,7 +252,7 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
             return
         }
         
-        const svgEl = svgContainerRef.current?.querySelector("svg")
+        const svgEl = svgRef.current
         if (!svgEl) return
         
         const rect = svgEl.getBoundingClientRect()
@@ -270,18 +285,14 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
     }
 
     return (
-        <div style={{ position: "relative", display: "inline-block", padding: "4px" }}>
+        <div style={{ position: "relative", display: "inline-block", padding: '4px' }}>
             <div
-                ref={setSvgContainerRef}
+                ref={attachSvg}
                 onMouseMove={handleMouseMove}
                 onMouseLeave={() => setHoverIndex(null)}
                 onClick={handleClick}
                 style={{ display: "inline-block", position: "relative", cursor: "pointer" }}
             ></div>
-            <svg
-                ref={overlayRef}
-                style={{ position: "absolute", top: "4px", left: "4px", pointerEvents: "none" }}
-            />
         </div>
     )
 }
