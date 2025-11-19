@@ -60,6 +60,9 @@ export type MathExpressionProps = {
  * 
  */
 export function MathExpression({ address, index, input }: MathExpressionProps): JSX.Element {
+    // Internal padding for the SVG (in pixels)
+    const INTERNAL_PADDING = 1
+    
     const wasm = React.useContext(WasmContext)
     const { selections, dispatch } = React.useContext(ProofStateSelectionContext)
     const proofStateLocation = React.useContext(ProofStateLocationContext)
@@ -123,6 +126,19 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
                 svg.querySelectorAll('[fill="#ffffff"]').forEach(el => {
                     el.setAttribute('fill', '#000000')
                 })
+                
+                // Add internal padding by expanding viewBox and dimensions
+                const vb = svg.viewBox.baseVal
+                if (vb) {
+                    svg.setAttribute('viewBox', 
+                        `${vb.x - INTERNAL_PADDING} ${vb.y - INTERNAL_PADDING} ${vb.width + 2 * INTERNAL_PADDING} ${vb.height + 2 * INTERNAL_PADDING}`)
+                    
+                    // Also update width and height to maintain scale
+                    const currentWidth = parseFloat(svg.getAttribute('width') || String(vb.width))
+                    const currentHeight = parseFloat(svg.getAttribute('height') || String(vb.height))
+                    svg.setAttribute('width', String(currentWidth + 2 * INTERNAL_PADDING))
+                    svg.setAttribute('height', String(currentHeight + 2 * INTERNAL_PADDING))
+                }
                 
                 element.appendChild(svg)
                 // Set vertical-align to prevent baseline alignment issues
@@ -285,14 +301,12 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
     }
 
     return (
-        <div style={{ position: "relative", display: "inline-block", padding: '4px' }}>
-            <div
-                ref={attachSvg}
-                onMouseMove={handleMouseMove}
-                onMouseLeave={() => setHoverIndex(null)}
-                onClick={handleClick}
-                style={{ display: "inline-block", position: "relative", cursor: "pointer" }}
-            ></div>
-        </div>
+        <div
+            ref={attachSvg}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={() => setHoverIndex(null)}
+            onClick={handleClick}
+            style={{ display: "inline-block", position: "relative", cursor: "pointer" }}
+        ></div>
     )
 }
