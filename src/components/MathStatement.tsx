@@ -4,6 +4,114 @@ import { AtomicStatement } from "./AtomicStatement"
 import { StatementAddress, ProofStateSelectionContext, ProofStateLocationContext, areStatementAddressesEqual, StatementCoordinate } from "../core/ProofStateSelectionContext"
 import { ProofStateIdContext } from "../core/ProofStateIdContext"
 
+// Import generated logical symbol SVGs
+import conjunctionSvg from "../assets/logical-symbols/conjunction.svg?url"
+import disjunctionSvg from "../assets/logical-symbols/disjunction.svg?url"
+import negationSvg from "../assets/logical-symbols/negation.svg?url"
+import implicationSvg from "../assets/logical-symbols/implication.svg?url"
+import equivalenceSvg from "../assets/logical-symbols/equivalence.svg?url"
+import universalSvg from "../assets/logical-symbols/universal.svg?url"
+import existentialSvg from "../assets/logical-symbols/existential.svg?url"
+
+// SVG logical connectives - inline the imported SVGs
+const ConjunctionSymbol = () => (
+    <img 
+        src={conjunctionSvg} 
+        alt="∧" 
+        style={{ 
+            display: 'inline-block', 
+            verticalAlign: 'middle', 
+            margin: '0 6px',
+            height: '1em',
+            width: 'auto'
+        }} 
+    />
+)
+
+const DisjunctionSymbol = () => (
+    <img 
+        src={disjunctionSvg} 
+        alt="∨" 
+        style={{ 
+            display: 'inline-block', 
+            verticalAlign: 'middle', 
+            margin: '0 6px',
+            height: '1em',
+            width: 'auto'
+        }} 
+    />
+)
+
+const NegationSymbol = () => (
+    <img 
+        src={negationSvg} 
+        alt="¬" 
+        style={{ 
+            display: 'inline-block', 
+            verticalAlign: 'middle', 
+            marginRight: '4px',
+            height: '1em',
+            width: 'auto'
+        }} 
+    />
+)
+
+const ImplicationSymbol = () => (
+    <img 
+        src={implicationSvg} 
+        alt="⇒" 
+        style={{ 
+            display: 'inline-block', 
+            verticalAlign: 'middle', 
+            margin: '0 6px',
+            height: '1em',
+            width: 'auto'
+        }} 
+    />
+)
+
+const EquivalenceSymbol = () => (
+    <img 
+        src={equivalenceSvg} 
+        alt="⇔" 
+        style={{ 
+            display: 'inline-block', 
+            verticalAlign: 'middle', 
+            margin: '0 6px',
+            height: '1em',
+            width: 'auto'
+        }} 
+    />
+)
+
+const UniversalSymbol = () => (
+    <img 
+        src={universalSvg} 
+        alt="∀" 
+        style={{ 
+            display: 'inline-block', 
+            verticalAlign: 'middle', 
+            marginRight: '4px',
+            height: '1em',
+            width: 'auto'
+        }} 
+    />
+)
+
+const ExistentialSymbol = () => (
+    <img 
+        src={existentialSvg} 
+        alt="∃" 
+        style={{ 
+            display: 'inline-block', 
+            verticalAlign: 'middle', 
+            marginRight: '4px',
+            height: '1em',
+            width: 'auto'
+        }} 
+    />
+)
+
 /** Props for the `MathStatement` component. */
 export type MathStatementProps = {
     /** The location within the logical structure of a bigger statement where this statement is situated. */
@@ -114,7 +222,7 @@ export function MathStatement({ address, statement }: MathStatementProps): JSX.E
                 >
                     {statement.statements.map((stmt, idx) => (
                         <React.Fragment key={idx}>
-                            {idx > 0 && <span style={{ margin: '0 6px', fontWeight: 'bold' }}>∧</span>}
+                            {idx > 0 && <ConjunctionSymbol />}
                             {renderChild(stmt, { kind: "conjunction", idx })}
                         </React.Fragment>
                     ))}
@@ -132,7 +240,7 @@ export function MathStatement({ address, statement }: MathStatementProps): JSX.E
                 >
                     {statement.statements.map((stmt, idx) => (
                         <React.Fragment key={idx}>
-                            {idx > 0 && <span style={{ margin: '0 6px', fontWeight: 'bold' }}>∨</span>}
+                            {idx > 0 && <DisjunctionSymbol />}
                             {renderChild(stmt, { kind: "disjunction", idx })}
                         </React.Fragment>
                     ))}
@@ -148,7 +256,7 @@ export function MathStatement({ address, statement }: MathStatementProps): JSX.E
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                 >
-                    <span style={{ fontWeight: 'bold', marginRight: '4px' }}>¬</span>
+                    <NegationSymbol />
                     {renderChild(statement.statement, "negation")}
                 </span>
             )
@@ -163,7 +271,7 @@ export function MathStatement({ address, statement }: MathStatementProps): JSX.E
                     onMouseLeave={handleMouseLeave}
                 >
                     {renderChild(statement.antecedent, "implication_antecedent")}
-                    <span style={{ margin: '0 6px', fontWeight: 'bold' }}>⇒</span>
+                    <ImplicationSymbol />
                     {renderChild(statement.consequent, "implication_consequent")}
                 </span>
             )
@@ -178,7 +286,7 @@ export function MathStatement({ address, statement }: MathStatementProps): JSX.E
                     onMouseLeave={handleMouseLeave}
                 >
                     {renderChild(statement.left, "equivalence_left")}
-                    <span style={{ margin: '0 6px', fontWeight: 'bold' }}>⇔</span>
+                    <EquivalenceSymbol />
                     {renderChild(statement.right, "equivalence_right")}
                 </span>
             )
@@ -192,7 +300,7 @@ export function MathStatement({ address, statement }: MathStatementProps): JSX.E
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                 >
-                    <span style={{ fontWeight: 'bold', marginRight: '4px' }}>∀</span>
+                    <UniversalSymbol />
                     <MathStatement address={[...address, "universal_var"]} statement={statement.variable.name} />
                     <span style={{ margin: '0 4px' }}>:</span>
                     <MathStatement address={[...address, "universal_var_type"]} statement={statement.variable.description} />
@@ -210,7 +318,7 @@ export function MathStatement({ address, statement }: MathStatementProps): JSX.E
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                 >
-                    <span style={{ fontWeight: 'bold', marginRight: '4px' }}>∃</span>
+                    <ExistentialSymbol />
                     <MathStatement address={[...address, "existential_var"]} statement={statement.variable.name} />
                     <span style={{ margin: '0 4px' }}>:</span>
                     <MathStatement address={[...address, "existential_var_type"]} statement={statement.variable.description} />
