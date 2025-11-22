@@ -20,9 +20,9 @@ const ConjunctionSymbol = () => (
         alt="∧" 
         style={{ 
             display: 'inline-block', 
-            verticalAlign: 'middle', 
+            verticalAlign: '-0.2em', 
             margin: '0 6px',
-            height: '1em',
+            height: '1.2em',
             width: 'auto'
         }} 
     />
@@ -34,9 +34,9 @@ const DisjunctionSymbol = () => (
         alt="∨" 
         style={{ 
             display: 'inline-block', 
-            verticalAlign: 'middle', 
+            verticalAlign: '-0.2em', 
             margin: '0 6px',
-            height: '1em',
+            height: '1.2em',
             width: 'auto'
         }} 
     />
@@ -50,7 +50,7 @@ const NegationSymbol = () => (
             display: 'inline-block', 
             verticalAlign: 'middle', 
             marginRight: '4px',
-            height: '1em',
+            height: '0.6em',
             width: 'auto'
         }} 
     />
@@ -62,9 +62,9 @@ const ImplicationSymbol = () => (
         alt="⇒" 
         style={{ 
             display: 'inline-block', 
-            verticalAlign: 'middle', 
+            verticalAlign: '-0.2em', 
             margin: '0 6px',
-            height: '1em',
+            height: '1.2em',
             width: 'auto'
         }} 
     />
@@ -76,9 +76,9 @@ const EquivalenceSymbol = () => (
         alt="⇔" 
         style={{ 
             display: 'inline-block', 
-            verticalAlign: 'middle', 
+            verticalAlign: '-0.2em', 
             margin: '0 6px',
-            height: '1em',
+            height: '1.2em',
             width: 'auto'
         }} 
     />
@@ -90,9 +90,9 @@ const UniversalSymbol = () => (
         alt="∀" 
         style={{ 
             display: 'inline-block', 
-            verticalAlign: 'middle', 
-            marginRight: '4px',
-            height: '1em',
+            verticalAlign: '-0.2em', 
+            marginRight: '1px',
+            height: '1.2em',
             width: 'auto'
         }} 
     />
@@ -104,9 +104,9 @@ const ExistentialSymbol = () => (
         alt="∃" 
         style={{ 
             display: 'inline-block', 
-            verticalAlign: 'middle', 
-            marginRight: '4px',
-            height: '1em',
+            verticalAlign: '-0.2em', 
+            marginRight: '1px',
+            height: '1.2em',
             width: 'auto'
         }} 
     />
@@ -185,15 +185,18 @@ export function MathStatement({ address, statement }: MathStatementProps): JSX.E
         cursor: 'pointer',
         padding: '2px 4px',
         borderRadius: '3px',
-        transition: 'background-color 0.15s ease',
         backgroundColor: isSelected 
-            ? 'rgba(59, 130, 246, 0.15)' 
-            : isHovered 
-                ? 'rgba(250, 204, 21, 0.1)' 
-                : 'transparent',
+            ? 'rgba(33, 150, 243, 0.2)' 
+            : (isHovered ? 'rgba(33, 150, 243, 0.08)' : 'transparent'),
         border: isSelected 
-            ? '1px solid rgba(59, 130, 246, 0.3)'
-            : '1px solid transparent'
+            ? '1px solid rgba(33, 150, 243, 0.6)' 
+            : (isHovered ? '1px solid rgba(33, 150, 243, 0.3)' : '1px solid transparent'),
+        boxShadow: isSelected 
+            ? '0 1px 2px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.3)' 
+            : (isHovered ? '0 1px 1px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : 'none'),
+        display: 'inline-block',
+        width: 'fit-content',
+        transition: 'all 0.15s ease'
     }
 
     // Render based on statement type
