@@ -148,7 +148,14 @@ export function MathStatement({ address, statement }: MathStatementProps): JSX.E
 
     // Handle click to toggle selection
     const handleClick = (e: React.MouseEvent) => {
-        e.stopPropagation()
+        // Don't stop propagation - allow child expressions to handle clicks first
+        // Only handle if the click wasn't already handled by a child
+        if (e.defaultPrevented) {
+            return
+        }
+        
+        e.preventDefault() // Mark as handled
+        
         if (!proofStateLocation) {
             console.warn("Cannot select: missing proofStateLocation context")
             return

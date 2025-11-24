@@ -40,17 +40,6 @@ function MathStatementContent(): JSX.Element {
         <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
             <h1>MathStatement Component Tests</h1>
             
-            <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#e3f2fd', borderRadius: '5px' }}>
-                <h3 style={{ marginTop: 0 }}>Instructions</h3>
-                <ul style={{ marginBottom: 0 }}>
-                    <li>Hover over any statement segment to see it highlighted in yellow</li>
-                    <li>Click on any statement segment to select it (blue highlight)</li>
-                    <li>Click again to deselect</li>
-                    <li>Multiple segments can be selected simultaneously</li>
-                    <li>Check the "Current Selections" section below to see what's selected</li>
-                </ul>
-            </div>
-            
             <h2>Test Cases</h2>
             <div style={{ marginBottom: '30px' }}>
                 {statements.map((stmt, idx) => (

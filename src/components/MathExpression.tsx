@@ -61,7 +61,7 @@ export type MathExpressionProps = {
  */
 export function MathExpression({ address, index, input }: MathExpressionProps): JSX.Element {
     // Internal padding for the SVG (in pixels)
-    const INTERNAL_PADDING = 1
+    const INTERNAL_PADDING = 2
     
     const wasm = React.useContext(WasmContext)
     const { selections, dispatch } = React.useContext(ProofStateSelectionContext)
@@ -130,20 +130,29 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
                 // Add internal padding by expanding viewBox and dimensions
                 const vb = svg.viewBox.baseVal
                 if (vb) {
+                    // Normalize to a standard height for consistent sizing
+                    const STANDARD_HEIGHT = 100
+                    const scaleFactor = STANDARD_HEIGHT / (vb.height + 2 * INTERNAL_PADDING)
+                    
+                    // Calculate scaled dimensions
+                    const scaledWidth = (vb.width + 2 * INTERNAL_PADDING) * scaleFactor
+                    const scaledHeight = STANDARD_HEIGHT
+                    
                     svg.setAttribute('viewBox', 
                         `${vb.x - INTERNAL_PADDING} ${vb.y - INTERNAL_PADDING} ${vb.width + 2 * INTERNAL_PADDING} ${vb.height + 2 * INTERNAL_PADDING}`)
                     
-                    // Also update width and height to maintain scale
-                    const currentWidth = parseFloat(svg.getAttribute('width') || String(vb.width))
-                    const currentHeight = parseFloat(svg.getAttribute('height') || String(vb.height))
-                    svg.setAttribute('width', String(currentWidth + 2 * INTERNAL_PADDING))
-                    svg.setAttribute('height', String(currentHeight + 2 * INTERNAL_PADDING))
+                    // Set normalized dimensions
+                    svg.setAttribute('width', String(scaledWidth))
+                    svg.setAttribute('height', String(scaledHeight))
                 }
                 
                 element.appendChild(svg)
-                // Set vertical-align to prevent baseline alignment issues
-                svg.style.verticalAlign = 'top'
-                svg.style.display = 'block'
+                
+                svg.style.display = 'inline-block'
+                svg.style.width = 'auto' // Let width scale naturally with content
+                svg.style.height = '1.2em' // Fixed height for consistent baseline
+                svg.style.maxWidth = '100%' // Prevent overflow
+                svg.style.verticalAlign = '-0.2em' // Adjust baseline alignment
 
                 svgRef.current = svg
 
@@ -269,11 +278,11 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
         }
         
         const svgEl = svgRef.current
-        if (!svgEl) return
+        if (!svgEl) { console.warn("SVG element not found"); return }
         
         const rect = svgEl.getBoundingClientRect()
         const vb = svgEl.viewBox?.baseVal
-        if (!vb) return
+        if (!vb) { console.warn("SVG viewBox not found"); return }
         
         const scaleX = vb.width / rect.width
         const scaleY = vb.height / rect.height
@@ -283,6 +292,11 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
         const idx = findSmallestAtPoint(mouseX, mouseY)
         if (idx >= 0 && subexprs[idx]) {
             const sub = subexprs[idx]
+            
+            // Prevent parent statement from handling this click
+            e.preventDefault()
+            e.stopPropagation()
+            
             dispatch({
                 type: 'TOGGLE_SELECTION',
                 selection: {
