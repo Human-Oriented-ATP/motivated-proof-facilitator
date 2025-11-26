@@ -2,16 +2,16 @@ import React, { JSX, useContext, useState } from "react"
 import { Statement } from "../core/ProofState"
 import { AtomicStatement } from "./AtomicStatement"
 import { StatementAddress, ProofStateSelectionContext, ProofStateLocationContext, areStatementAddressesEqual, StatementCoordinate } from "../core/ProofStateSelectionContext"
-import { ProofStateIdContext } from "../core/ProofStateIdContext"
+import { ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
 
 // Import generated logical symbol SVGs
-import conjunctionSvg from "../assets/logical-symbols/conjunction.svg?url"
-import disjunctionSvg from "../assets/logical-symbols/disjunction.svg?url"
-import negationSvg from "../assets/logical-symbols/negation.svg?url"
-import implicationSvg from "../assets/logical-symbols/implication.svg?url"
-import equivalenceSvg from "../assets/logical-symbols/equivalence.svg?url"
-import universalSvg from "../assets/logical-symbols/universal.svg?url"
-import existentialSvg from "../assets/logical-symbols/existential.svg?url"
+import conjunctionSvg from "../assets/logical-symbols/conjunction.svg"
+import disjunctionSvg from "../assets/logical-symbols/disjunction.svg"
+import negationSvg from "../assets/logical-symbols/negation.svg"
+import implicationSvg from "../assets/logical-symbols/implication.svg"
+import equivalenceSvg from "../assets/logical-symbols/equivalence.svg"
+import universalSvg from "../assets/logical-symbols/universal.svg"
+import existentialSvg from "../assets/logical-symbols/existential.svg"
 
 // SVG logical connectives - inline the imported SVGs
 const ConjunctionSymbol = () => (

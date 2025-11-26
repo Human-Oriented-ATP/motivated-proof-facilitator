@@ -1,7 +1,7 @@
 import React, { JSX, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { SubExpression, SubExpressionCore, SubExpressionCoreWithIndex } from "../core/SubExpression"
 import { ProofStateSelectionContext, StatementAddress, ProofStateLocationContext, areStatementAddressesEqual } from "../core/ProofStateSelectionContext"
-import { ProofStateIdContext } from "../core/ProofStateIdContext"
+import { ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
 
 type MathCompilationResponse = 
   { svg: string, subexpressions: SubExpression[] } |

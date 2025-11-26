@@ -1,7 +1,7 @@
 import React from "react"
 import { Statement } from "./ProofState"
 import { areSubExpressionSelectionsEqual, SubExpressionCoreWithIndex } from "./SubExpression"
-import { ProofStateId } from "./ProofStateIdContext"
+import { ProofStateId } from "./ProofDiscoveryStateContext"
 
 export type StatementCoordinate = 
  | { kind: "conjunction", idx: number }

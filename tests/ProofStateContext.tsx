@@ -1,7 +1,7 @@
-import React, { JSX } from "react";
-import { loadWasm, WasmContext } from "../src/components/MathExpression";
-import { ProofStateLocationContext, ProofStateSelectionContext, proofStateSelectionReducer } from "../src/core/ProofStateSelectionContext";
-import { ProofStateIdContext } from "../src/core/ProofStateIdContext";
+import React, { JSX } from "react"
+import { loadWasm, WasmContext } from "../src/components/MathExpression"
+import { ProofStateLocationContext, ProofStateSelectionContext, proofStateSelectionReducer } from "../src/core/ProofStateSelectionContext"
+import { ProofStateIdContext } from "../src/core/ProofDiscoveryStateContext"
 
 export default function ProofStateContextProvider({children}: {children: React.ReactNode}): JSX.Element {
     const wasmRef = React.useRef<{ compile: (input: string) => string } | null>(null)
@@ -22,7 +22,7 @@ export default function ProofStateContextProvider({children}: {children: React.R
         <WasmContext.Provider value={wasmRef}>
         <ProofStateSelectionContext.Provider value={{ selections, dispatch: selectionsDispatch }}>
         <ProofStateLocationContext.Provider value={{kind: "goal", label: ""}}>
-        <ProofStateIdContext.Provider value={-1}>
+        <ProofStateIdContext.Provider value={{ proofNodeId: -1, proofContextId: -1 }}>
             {children}
         </ProofStateIdContext.Provider>
         </ProofStateLocationContext.Provider>
