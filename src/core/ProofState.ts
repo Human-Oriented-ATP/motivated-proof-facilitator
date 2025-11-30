@@ -29,7 +29,7 @@ export type Variable = {
  * - *let variable*: a variable that is defined to be equal to a specific value
  */
 export type ContextVariable = 
-  ({ kind: "free" } | { kind: "meta" } | { kind: "let"; value: AtomicStatement }) & Variable
+  ({ kind: "free" } | { kind: "meta" } | { kind: "let", value: AtomicStatement }) & Variable
 
 /** A full statement involving multiple atomic statements joined by logical connectives. */
 export type Statement =
@@ -49,14 +49,23 @@ export type LabelledStatement = {
 }
 
 /**
+ * A proof state context consists of a list of variables 
+ * involved in the proof, hypotheses concerning them
+ * and goals to be proved.
+ * 
+ * There may be multiple proof contexts in one proof state.
+ */
+export type ProofStateContext = {
+  variables: ContextVariable[]
+  hypotheses: LabelledStatement[]
+  goals: LabelledStatement[]
+}
+
+/**
  * A proof state is the main datastructure that the user interacts with when building a proof.
  * It is made up of one or more proof contexts, each consisting of 
  * a list of variables involved in the proof, hypotheses concerning them
  * and goals to be proved.
  */
-export type ProofState = {
-  variables: ContextVariable[]
-  hypotheses: LabelledStatement[]
-  goals: LabelledStatement[]
-}[]
+export type ProofState = ProofStateContext[]
 

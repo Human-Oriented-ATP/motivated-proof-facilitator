@@ -101,14 +101,24 @@ export const LabelledStatementSchema = z.object({
 export type LabelledStatement = z.infer<typeof LabelledStatementSchema>
 
 /**
+ * A proof state context consists of a list of variables 
+ * involved in the proof, hypotheses concerning them
+ * and goals to be proved.
+ * 
+ * There may be multiple proof contexts in one proof state.
+ */
+export const ProofStateContextSchema = z.object({
+  variables: z.array(ContextVariableSchema),
+  hypotheses: z.array(LabelledStatementSchema),
+  goals: z.array(LabelledStatementSchema)
+})
+export type ProofStateContext = z.infer<typeof ProofStateContextSchema>
+
+/**
  * A proof state is the main datastructure that the user interacts with when building a proof.
  * It is made up of one or more proof contexts, each consisting of 
  * a list of variables involved in the proof, hypotheses concerning them
  * and goals to be proved.
  */
-export const ProofStateSchema = z.array(z.object({
-  variables: z.array(ContextVariableSchema),
-  hypotheses: z.array(LabelledStatementSchema),
-  goals: z.array(LabelledStatementSchema)
-}))
+export const ProofStateSchema = z.array(ProofStateContextSchema)
 export type ProofState = z.infer<typeof ProofStateSchema>
