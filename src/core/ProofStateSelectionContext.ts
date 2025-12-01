@@ -1,7 +1,7 @@
 import React from "react"
 import { Statement } from "./ProofState"
 import { areSubExpressionSelectionsEqual, SubExpressionCoreWithIndex } from "./SubExpression"
-import { ProofStateId } from "./ProofDiscoveryStateContext"
+import { areProofStateIdsEqual, ProofStateId } from "./ProofDiscoveryStateContext"
 
 export type StatementCoordinate = 
  | { kind: "conjunction", idx: number }
@@ -52,7 +52,7 @@ export type ProofStateSelection = {
 }
 
 function areProofStateSelectionsEqual(a: ProofStateSelection, b: ProofStateSelection): boolean {
-    return a.proofStateId === b.proofStateId &&
+    return areProofStateIdsEqual(a.proofStateId, b.proofStateId) &&
       a.location.kind === b.location.kind &&
       a.location.label === b.location.label &&
       areStatementAddressesEqual(a.address, b.address) &&

@@ -13,6 +13,10 @@ export type ProofStateId = {
     proofContextId: number
 }
 
+export function areProofStateIdsEqual(a: ProofStateId, b: ProofStateId): boolean {
+    return a.proofNodeId === b.proofNodeId && a.proofContextId === b.proofContextId
+}
+
 export const ProofStateIdContext = React.createContext<ProofStateId>({ proofNodeId: -1, proofContextId: -1 })
 
 export const ProofDiscoveryStateContext = React.createContext<{

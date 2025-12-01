@@ -1,7 +1,7 @@
 import React, { JSX, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { SubExpression, SubExpressionCore, SubExpressionCoreWithIndex } from "../core/SubExpression"
 import { ProofStateSelectionContext, StatementAddress, ProofStateLocationContext, areStatementAddressesEqual } from "../core/ProofStateSelectionContext"
-import { ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
+import { areProofStateIdsEqual, ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
 
 type MathCompilationResponse = 
   { svg: string, subexpressions: SubExpression[] } |
@@ -200,7 +200,7 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
         if (proofStateLocation) {
             selections.forEach(selection => {
                 // Check if this selection matches the current context
-                if (selection.proofStateId === proofStateId &&
+                if (areProofStateIdsEqual(selection.proofStateId, proofStateId) &&
                     selection.location.kind === proofStateLocation.kind &&
                     selection.location.label === proofStateLocation.label &&
                     areStatementAddressesEqual(selection.address, address) &&
