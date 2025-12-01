@@ -5,13 +5,19 @@ import { AtomicStatement } from "./AtomicStatement"
 import { ProofStateLocationContext } from "../core/ProofStateSelectionContext"
 import { ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
 
+/** Props for rendering a single proof context. */
+export type ProofStateContextProps = {
+    /** The proof context to render */
+    proofContext: ProofStateContextType
+}
+
 /**
  * Render a single proof state context with its variables, hypotheses, and goals.
  * 
- * @param proofContext - `ProofStateContext`
+ * @param props - `ProofStateContextProps`
  * @returns A JSX element containing the rendered proof context
  */
-export function ProofStateContext(proofContext : ProofStateContextType): JSX.Element {
+export function ProofStateContext({ proofContext }: ProofStateContextProps): JSX.Element {
     /** Render a context variable with its kind indicator */
     const renderVariable = (variable: ContextVariable, idx: number): JSX.Element => {
         let kindIndicator = ""
@@ -230,16 +236,22 @@ export function ProofStateContext(proofContext : ProofStateContextType): JSX.Ele
 }
 
 
+/** Props for the ProofState component. */
+export type ProofStateProps = {
+    /** The complete proof state to render */
+    proofState: ProofStateType
+}
+
 /**
  * Render a complete proof state with all its contexts.
  * 
  * Each context is rendered separately with appropriate context providers
  * for proof state ID and location tracking.
  * 
- * @param proofState - `ProofState`
+ * @param props - `ProofStateProps`
  * @returns A JSX element containing the rendered proof state
  */
-export function ProofState(proofState : ProofStateType): JSX.Element {
+export function ProofState({ proofState }: ProofStateProps): JSX.Element {
     const { proofNodeId } = useContext(ProofStateIdContext)
 
     return (
@@ -247,7 +259,7 @@ export function ProofState(proofState : ProofStateType): JSX.Element {
             {proofState.map((proofContext, idx) => (
                 <ProofStateIdContext.Provider value={{ proofNodeId, proofContextId: idx }} key={idx}>
                     <div style={{ position: 'relative' }}>
-                        <ProofStateContext {...proofContext} />
+                        <ProofStateContext proofContext={proofContext} />
                     </div>
                 </ProofStateIdContext.Provider>
             ))}
