@@ -61,8 +61,7 @@ export type MathExpressionProps = {
  */
 export function MathExpression({ address, index, input }: MathExpressionProps): JSX.Element {
     // Internal padding for the SVG (in pixels)
-    const INTERNAL_PADDING = 0
-    const SCALING = 1.5
+    const INTERNAL_PADDING = 2
     
     const wasm = React.useContext(WasmContext)
     const { selections, dispatch } = React.useContext(ProofStateSelectionContext)
@@ -128,41 +127,32 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
                     el.setAttribute('fill', '#000000')
                 })
                 
-                // Add style element to fix font size for typst-text class
-                const style = document.createElementNS("http://www.w3.org/2000/svg", "style")
-                style.textContent = `
-                    .typst-text {
-                        font-size: 10pt;
-                    }
-                `
-                svg.insertBefore(style, svg.firstChild)
-                
                 // Add internal padding by expanding viewBox and dimensions
                 const vb = svg.viewBox.baseVal
                 if (vb) {
-                    // svg.setAttribute('viewBox', 
-                    //     `${vb.x - INTERNAL_PADDING} ${vb.y - INTERNAL_PADDING} ${vb.width + 2 * INTERNAL_PADDING} ${vb.height + 2 * INTERNAL_PADDING}`)
+                    // Normalize to a standard height for consistent sizing
+                    const STANDARD_HEIGHT = 100
+                    const scaleFactor = STANDARD_HEIGHT / (vb.height + 2 * INTERNAL_PADDING)
                     
-                    // // Keep original dimensions with padding added
-                    // const originalWidth = vb.width + 2 * INTERNAL_PADDING
-                    // const originalHeight = vb.height + 2 * INTERNAL_PADDING
+                    // Calculate scaled dimensions
+                    const scaledWidth = (vb.width + 2 * INTERNAL_PADDING) * scaleFactor
+                    const scaledHeight = STANDARD_HEIGHT
                     
-                    // svg.setAttribute('width', String(originalWidth))
-                    // svg.setAttribute('height', String(originalHeight))
+                    svg.setAttribute('viewBox', 
+                        `${vb.x - INTERNAL_PADDING} ${vb.y - INTERNAL_PADDING} ${vb.width + 2 * INTERNAL_PADDING} ${vb.height + 2 * INTERNAL_PADDING}`)
                     
-                    // Set container size to account for 2x scale
-                    element.style.width = `${vb.width * SCALING}pt`
-                    element.style.height = `${vb.height * SCALING}pt`
+                    // Set normalized dimensions
+                    svg.setAttribute('width', String(scaledWidth))
+                    svg.setAttribute('height', String(scaledHeight))
                 }
                 
                 element.appendChild(svg)
                 
                 svg.style.display = 'inline-block'
-                svg.style.width = '100%'
-                svg.style.height = '100%'
+                svg.style.width = 'auto' // Let width scale naturally with content
+                svg.style.height = '1.2em' // Fixed height for consistent baseline
+                svg.style.maxWidth = '100%' // Prevent overflow
                 svg.style.verticalAlign = '-0.2em' // Adjust baseline alignment
-                // svg.style.transform = 'scale(2)' // Scale by 200%
-                // svg.style.transformOrigin = 'left center' // Scale from left center
 
                 svgRef.current = svg
 
