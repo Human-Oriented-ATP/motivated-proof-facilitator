@@ -45,7 +45,7 @@ function MathExpressionsContent(): JSX.Element {
                     <ul style={{ margin: 0, paddingLeft: '20px' }}>
                         {selections.map((sel, idx) => (
                             <li key={idx} style={{ marginBottom: '10px' }}>
-                                <strong>Proof State ID:</strong> {sel.proofStateId}<br/>
+                                <strong>Proof State ID:</strong> {JSON.stringify(sel.proofStateId)}<br/>
                                 <strong>Location:</strong> {sel.location.kind} - {sel.location.label}<br/>
                                 <strong>Address:</strong> {JSON.stringify(sel.address)}<br/>
                                 <strong>Selection:</strong> {typeof sel.selection === 'object' && 'text' in sel.selection 

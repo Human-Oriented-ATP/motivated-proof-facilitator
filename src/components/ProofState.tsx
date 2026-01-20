@@ -257,11 +257,19 @@ export function ProofState({ proofState }: ProofStateProps): JSX.Element {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {proofState.map((proofContext, idx) => (
-                <ProofStateIdContext.Provider value={{ proofNodeId, proofContextId: idx }} key={idx}>
-                    <div style={{ position: 'relative' }}>
-                        <ProofStateContext proofContext={proofContext} />
-                    </div>
-                </ProofStateIdContext.Provider>
+                <React.Fragment key={idx}>
+                    <ProofStateIdContext.Provider value={{ proofNodeId, proofContextId: idx }}>
+                        <div style={{ position: 'relative' }}>
+                            <ProofStateContext proofContext={proofContext} />
+                        </div>
+                    </ProofStateIdContext.Provider>
+                    {idx < proofState.length - 1 && (
+                        <div style={{
+                            borderTop: '1px dashed #6b7280',
+                            margin: '0 20px'
+                        }} />
+                    )}
+                </React.Fragment>
             ))}
         </div>
     )

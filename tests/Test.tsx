@@ -1,11 +1,15 @@
 import { JSX, useState } from "react"
 import "./MathExpression"
 import "./MathStatement"
+import "./ProofState"
+import "./ProofDiscoveryState"
 import RenderMathExpressions from "./MathExpression"
 import RenderMathStatements from "./MathStatement"
+import RenderProofStates from "./ProofState"
+import RenderProofDiscoveryStates from "./ProofDiscoveryState"
 
 export default function Test(): JSX.Element {
-    const [activeTest, setActiveTest] = useState<'expressions' | 'statements'>('statements')
+    const [activeTest, setActiveTest] = useState<'expressions' | 'statements' | 'proofstates' | 'proofdiscoverystates'>('proofstates')
     
     return (
         <div>
@@ -49,9 +53,42 @@ export default function Test(): JSX.Element {
                 >
                     Statements
                 </button>
+                <button
+                    onClick={() => setActiveTest('proofstates')}
+                    style={{
+                        padding: '10px 20px',
+                        backgroundColor: activeTest === 'proofstates' ? '#2196F3' : '#555',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    Proof States
+                </button>
+                <button
+                    onClick={() => setActiveTest('proofdiscoverystates')}
+                    style={{
+                        padding: '10px 20px',
+                        backgroundColor: activeTest === 'proofdiscoverystates' ? '#2196F3' : '#555',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    Proof Discovery States
+                </button>
             </div>
             
-            {activeTest === 'expressions' ? <RenderMathExpressions /> : <RenderMathStatements />}
+            {activeTest === 'expressions' ? <RenderMathExpressions /> : 
+             activeTest === 'statements' ? <RenderMathStatements /> :
+             activeTest === 'proofstates' ? <RenderProofStates /> :
+             <RenderProofDiscoveryStates />}
         </div>
     )
 }
