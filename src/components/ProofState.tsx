@@ -69,6 +69,88 @@ export function ProofStateContext({ proofContext }: ProofStateContextProps): JSX
         )
     }
 
+    /** Render a hypothesis with its label */
+    const renderHypothesis = (hypothesis: { label: string; statement: any }, idx: number): JSX.Element => {
+        return (
+            <ProofStateLocationContext.Provider value={{ kind: "hypothesis", label: hypothesis.label }} key={idx}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span 
+                        style={{ 
+                            color: '#c2410c', 
+                            fontSize: '16px', 
+                            fontWeight: 'bold',
+                            flexShrink: 0,
+                            userSelect: 'none'
+                        }}
+                    >
+                        •
+                    </span>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1 }}>
+                        <div style={{ flex: '1' }}>
+                            <MathStatement address={[]} statement={hypothesis.statement} />
+                        </div>
+                        <span 
+                            style={{
+                                backgroundColor: '#fff7ed',
+                                border: '1px solid #fb923c',
+                                color: '#ea580c',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                whiteSpace: 'nowrap',
+                                userSelect: 'none'
+                            }}
+                        >
+                            {hypothesis.label}
+                        </span>
+                    </div>
+                </div>
+            </ProofStateLocationContext.Provider>
+        )
+    }
+
+    /** Render a goal with its label */
+    const renderGoal = (goal: { label: string; statement: any }, idx: number): JSX.Element => {
+        return (
+            <ProofStateLocationContext.Provider value={{ kind: "goal", label: goal.label }} key={idx}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span 
+                        style={{ 
+                            color: '#1d4ed8', 
+                            fontSize: '16px', 
+                            fontWeight: 'bold',
+                            flexShrink: 0,
+                            userSelect: 'none'
+                        }}
+                    >
+                        ⊢
+                    </span>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1 }}>
+                        <div style={{ flex: '1' }}>
+                            <MathStatement address={[]} statement={goal.statement} />
+                        </div>
+                        <span 
+                            style={{
+                                backgroundColor: '#eff6ff',
+                                border: '1px solid #60a5fa',
+                                color: '#2563eb',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                whiteSpace: 'nowrap',
+                                userSelect: 'none'
+                            }}
+                        >
+                            {goal.label}
+                        </span>
+                    </div>
+                </div>
+            </ProofStateLocationContext.Provider>
+        )
+    }
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
@@ -125,43 +207,7 @@ export function ProofStateContext({ proofContext }: ProofStateContextProps): JSX
                         HYPOTHESES
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {proofContext.hypotheses.map((hypothesis, hypIdx) => (
-                            <ProofStateLocationContext.Provider value={{ kind: "hypothesis", label: hypothesis.label }} key={hypIdx}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <span 
-                                        style={{ 
-                                            color: '#c2410c', 
-                                            fontSize: '16px', 
-                                            fontWeight: 'bold',
-                                            flexShrink: 0,
-                                            userSelect: 'none'
-                                        }}
-                                    >
-                                        •
-                                    </span>
-                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1 }}>
-                                        <div style={{ flex: '1' }}>
-                                            <MathStatement address={[]} statement={hypothesis.statement} />
-                                        </div>
-                                        <span 
-                                            style={{
-                                                backgroundColor: '#fff7ed',
-                                                border: '1px solid #fb923c',
-                                                color: '#ea580c',
-                                                fontSize: '12px',
-                                                fontWeight: '500',
-                                                padding: '4px 8px',
-                                                borderRadius: '6px',
-                                                whiteSpace: 'nowrap',
-                                                userSelect: 'none'
-                                            }}
-                                        >
-                                            {hypothesis.label}
-                                        </span>
-                                    </div>
-                                </div>
-                            </ProofStateLocationContext.Provider>
-                        ))}
+                        {proofContext.hypotheses.map((hypothesis, hypIdx) => renderHypothesis(hypothesis, hypIdx))}
                     </div>
                 </div>
             )}
@@ -190,43 +236,7 @@ export function ProofStateContext({ proofContext }: ProofStateContextProps): JSX
                         GOALS
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {proofContext.goals.map((goal, goalIdx) => (
-                            <ProofStateLocationContext.Provider value={{ kind: "goal", label: goal.label }} key={goalIdx}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <span 
-                                        style={{ 
-                                            color: '#1d4ed8', 
-                                            fontSize: '16px', 
-                                            fontWeight: 'bold',
-                                            flexShrink: 0,
-                                            userSelect: 'none'
-                                        }}
-                                    >
-                                        ⊢
-                                    </span>
-                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1 }}>
-                                        <div style={{ flex: '1' }}>
-                                            <MathStatement address={[]} statement={goal.statement} />
-                                        </div>
-                                        <span 
-                                            style={{
-                                                backgroundColor: '#eff6ff',
-                                                border: '1px solid #60a5fa',
-                                                color: '#2563eb',
-                                                fontSize: '12px',
-                                                fontWeight: '500',
-                                                padding: '4px 8px',
-                                                borderRadius: '6px',
-                                                whiteSpace: 'nowrap',
-                                                userSelect: 'none'
-                                            }}
-                                        >
-                                            {goal.label}
-                                        </span>
-                                    </div>
-                                </div>
-                            </ProofStateLocationContext.Provider>
-                        ))}
+                        {proofContext.goals.map((goal, goalIdx) => renderGoal(goal, goalIdx))}
                     </div>
                 </div>
             )}
