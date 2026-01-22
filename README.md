@@ -4,6 +4,18 @@ A work-in-progress prototype of a natural-language-based point-and-click interfa
 
 # Docker setup
 
+## Install Docker
+
+If you're on macOS or Windows, install the [Docker Desktop](https://docs.docker.com/desktop/) application. On macOS, you can do this either by downloading a `.dmg` file from the Docker website, or by using [Homebrew](https://brew.sh/):
+
+```bash
+brew install --cask docker
+```
+
+If you're using Linux, you don't need the desktop app, and you're likely fine installing Docker from your package manager.
+
+## Build and run the project
+
 To run the project using Docker for development:
 
 1. **Build the image:**
@@ -12,7 +24,7 @@ To run the project using Docker for development:
    docker compose build
    ```
 
-1. **Start the app:**
+1. **Start the app service:**
 
    ```bash
    docker compose up
