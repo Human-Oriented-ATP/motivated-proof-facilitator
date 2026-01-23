@@ -3,13 +3,15 @@ import "./MathExpression"
 import "./MathStatement"
 import "./ProofState"
 import "./ProofDiscoveryState"
+import "./Formalizer"
 import RenderMathExpressions from "./MathExpression"
 import RenderMathStatements from "./MathStatement"
 import RenderProofStates from "./ProofState"
 import RenderProofDiscoveryStates from "./ProofDiscoveryState"
+import RenderFormalizer from "./Formalizer"
 
 export default function Test(): JSX.Element {
-    const [activeTest, setActiveTest] = useState<'expressions' | 'statements' | 'proofstates' | 'proofdiscoverystates'>('proofstates')
+    const [activeTest, setActiveTest] = useState<'expressions' | 'statements' | 'proofstates' | 'proofdiscoverystates' | 'formalizer'>('proofstates')
     
     return (
         <div>
@@ -83,12 +85,28 @@ export default function Test(): JSX.Element {
                 >
                     Proof Discovery States
                 </button>
+                <button
+                    onClick={() => setActiveTest('formalizer')}
+                    style={{
+                        padding: '10px 20px',
+                        backgroundColor: activeTest === 'formalizer' ? '#2196F3' : '#555',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    Formalizer
+                </button>
             </div>
             
             {activeTest === 'expressions' ? <RenderMathExpressions /> : 
              activeTest === 'statements' ? <RenderMathStatements /> :
              activeTest === 'proofstates' ? <RenderProofStates /> :
-             <RenderProofDiscoveryStates />}
+             activeTest === 'proofdiscoverystates' ? <RenderProofDiscoveryStates /> :
+             <RenderFormalizer />}
         </div>
     )
 }
