@@ -39,3 +39,5 @@ The development setup includes volume mounts for `src`, `tests`, and other confi
 
 - Anand Rao Tadipatri
 - Thomas Thevenon
+- Leo Hentschker
+- Matthew Tucker-Simmons
