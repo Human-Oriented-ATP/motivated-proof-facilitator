@@ -140,8 +140,8 @@ export function MathStatement({ address, statement }: MathStatementProps): JSX.E
     // Check if current statement is selected
     const isSelected = selections.some(sel => 
         sel.proofStateId === proofStateId &&
-        sel.location.kind === proofStateLocation?.kind &&
-        sel.location.label === proofStateLocation?.label &&
+        sel.location.kind === proofStateLocation.kind &&
+        sel.location.label === proofStateLocation.label &&
         areStatementAddressesEqual(sel.address, address) &&
         sel.selection === statement
     )

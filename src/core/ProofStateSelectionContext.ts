@@ -42,7 +42,7 @@ export type ProofStateLocation =
  { kind: "variable" | "variable_body" | "hypothesis" | "goal",
    label: string }
 
-export const ProofStateLocationContext = React.createContext<ProofStateLocation | null>(null);
+export const ProofStateLocationContext = React.createContext<ProofStateLocation>({ kind: "goal", label: "" })
 
 export type ProofStateSelection = {
 	proofStateId: ProofStateId
