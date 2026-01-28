@@ -9,9 +9,10 @@ import RenderMathStatements from "./MathStatement"
 import RenderProofStates from "./ProofState"
 import RenderProofDiscoveryStates from "./ProofDiscoveryState"
 import RenderFormalizer from "./Formalizer"
+import MoveGenerator from "./MoveGenerator"
 
 export default function Test(): JSX.Element {
-    const [activeTest, setActiveTest] = useState<'expressions' | 'statements' | 'proofstates' | 'proofdiscoverystates' | 'formalizer'>('proofstates')
+    const [activeTest, setActiveTest] = useState<'expressions' | 'statements' | 'proofstates' | 'proofdiscoverystates' | 'formalizer' | 'movegenerator'>('proofstates')
     
     return (
         <div>
@@ -100,13 +101,29 @@ export default function Test(): JSX.Element {
                 >
                     Formalizer
                 </button>
+                <button
+                    onClick={() => setActiveTest('movegenerator')}
+                    style={{
+                        padding: '10px 20px',
+                        backgroundColor: activeTest === 'movegenerator' ? '#2196F3' : '#555',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    Move Generator
+                </button>
             </div>
             
             {activeTest === 'expressions' ? <RenderMathExpressions /> : 
              activeTest === 'statements' ? <RenderMathStatements /> :
              activeTest === 'proofstates' ? <RenderProofStates /> :
              activeTest === 'proofdiscoverystates' ? <RenderProofDiscoveryStates /> :
-             <RenderFormalizer />}
+             activeTest === 'formalizer' ? <RenderFormalizer /> :
+             <MoveGenerator />}
         </div>
     )
 }

@@ -1,0 +1,783 @@
+import React, { useState, useReducer, JSX } from "react"
+import { ProofState, ProofStateSchema } from "../src/core/ProofStateZod"
+import { ProofDiscoveryMove, MoveKind } from "../src/core/ProofDiscoveryMove"
+import { proofDiscoveryStateReducer, nullProofDiscoveryState } from "../src/core/ProofDiscoveryState"
+import { ProofState as ProofStateComponent } from "../src/components/ProofState"
+import ProofStateContextProvider from "./ProofStateContext"
+import { ProofStateSelection, ProofStateSelectionContext, proofStateSelectionReducer } from "../src/core/ProofStateSelectionContext"
+import TypstContextProvider from "../src/components/TypstContext"
+
+type WorkflowState = "idle" | "formalizing" | "formalized" | "applying" | "applied"
+
+interface Example {
+  id: string
+  description: string
+  inputState: ProofState
+  outputState: ProofState | null
+  comment?: string
+  kind: "example" | "non-example"
+}
+
+/**
+ * Move Generator UI - Allows users to interactively create ProofDiscoveryMove definitions
+ */
+export default function MoveGenerator(): JSX.Element {
+  // Basic move information
+  const [moveName, setMoveName] = useState("")
+  const [moveKind, setMoveKind] = useState<MoveKind>("strengthening")
+  const [trigger, setTrigger] = useState("")
+  const [action, setAction] = useState("")
+
+  // Examples collection
+  const [examples, setExamples] = useState<Example[]>([])
+
+  // Current example being constructed
+  const [workflowState, setWorkflowState] = useState<WorkflowState>("idle")
+  const [problemDescription, setProblemDescription] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [currentInputState, setCurrentInputState] = useState<ProofState | null>(null)
+  const [currentOutputState, setCurrentOutputState] = useState<ProofState | null>(null)
+  const [exampleComment, setExampleComment] = useState("")
+
+  // Proof discovery state for interactive selection
+  const [proofDiscoveryState, dispatch] = useReducer(
+    proofDiscoveryStateReducer,
+    nullProofDiscoveryState
+  )
+
+  // Selection state - will be managed by ProofStateSelectionContext
+  const [selections, selectionsDispatch] = React.useReducer(proofStateSelectionReducer, [])
+
+  // Copy state
+  const [copySuccess, setCopySuccess] = useState(false)
+
+  const handleFormalize = async (): Promise<void> => {
+    if (!problemDescription.trim()) {
+      setError("Please enter a problem description")
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+    setWorkflowState("formalizing")
+
+    try {
+      const response = await fetch("https://atp-backend-rygt.onrender.com/formalize", {
+        method: "POST",
+        mode: "cors",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ problem: problemDescription }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data: unknown = await response.json()
+      const proofState = ProofStateSchema.parse([data])
+
+      dispatch({
+        action: "initialize",
+        statement: problemDescription,
+        proofState: proofState,
+      })
+
+      setCurrentInputState(proofState)
+      setWorkflowState("formalized")
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(`Failed to formalize: ${err.message}`)
+      } else {
+        setError("An unknown error occurred")
+      }
+      setWorkflowState("idle")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleApplyMove = async (skipWarning: boolean = false): Promise<void> => {
+    if (!currentInputState) {
+      setError("No proof state to apply move to")
+      return
+    }
+
+    if (!action.trim()) {
+      setError("Please enter an action description first")
+      return
+    }
+
+    // Warn if no selections made
+    if (!skipWarning && selections.length === 0) {
+      const proceed = window.confirm(
+        "No selections have been made in the proof state. Would you still like to proceed?"
+      )
+      if (!proceed) return
+    }
+
+    setIsLoading(true)
+    setError(null)
+    setWorkflowState("applying")
+
+    try {
+      const response = await fetch("https://atp-backend-rygt.onrender.com/move", {
+        method: "POST",
+        mode: "cors",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          proofState: currentInputState,
+          move: action,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data: unknown = await response.json()
+      const newProofState = ProofStateSchema.parse([data])
+
+      setCurrentOutputState(newProofState)
+      setWorkflowState("applied")
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(`Failed to apply move: ${err.message}`)
+      } else {
+        setError("An unknown error occurred")
+      }
+      setWorkflowState("formalized")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSaveExample = (kind: "example" | "non-example"): void => {
+    if (!currentInputState) return
+
+    const newExample: Example = {
+      id: Date.now().toString(),
+      description: problemDescription,
+      inputState: currentInputState,
+      outputState: currentOutputState,
+      comment: exampleComment || undefined,
+      kind: kind,
+    }
+
+    setExamples([...examples, newExample])
+    handleReset()
+  }
+
+  const handleReset = (): void => {
+    setProblemDescription("")
+    setCurrentInputState(null)
+    setCurrentOutputState(null)
+    setExampleComment("")
+    setWorkflowState("idle")
+    setError(null)
+    
+    selectionsDispatch({ type: 'CLEAR_ALL_SELECTIONS' })
+    
+    dispatch({ action: "initialize", statement: "", proofState: [] })
+  }
+
+  const handleDeleteExample = (id: string): void => {
+    setExamples(examples.filter(e => e.id !== id))
+  }
+
+  const generateMoveJSON = (): string => {
+    const move: ProofDiscoveryMove = {
+      name: moveName,
+      kind: moveKind,
+      trigger: trigger,
+      action: action,
+      examples: examples,
+    }
+
+    return JSON.stringify(move, null, 2)
+  }
+
+  const handleExport = (): void => {
+    const json = generateMoveJSON()
+    const blob = new Blob([json], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `${moveName || "move"}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleCopyJSON = async (): Promise<void> => {
+    const json = generateMoveJSON()
+    try {
+      await navigator.clipboard.writeText(json)
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
+
+  const currentSelectionsCount = selections.length
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h1 style={styles.title}>Move Generator</h1>
+        <p style={styles.subtitle}>An interface for conveniently generating prompts for motivated proof moves</p>
+      </div>
+
+      {/* Move Configuration */}
+      <div style={styles.card}>
+        <h2 style={styles.cardTitle}>Move Configuration</h2>
+        
+        <div style={styles.row}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Move Name</label>
+            <input
+              type="text"
+              value={moveName}
+              onChange={(e) => setMoveName(e.target.value)}
+              style={styles.input}
+              placeholder="Enter a descriptive name for the move..."
+            />
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Kind</label>
+            <select
+              value={moveKind}
+              onChange={(e) => setMoveKind(e.target.value as MoveKind)}
+              style={styles.select}
+            >
+              <option value="strengthening">Strengthening</option>
+              <option value="weakening">Weakening</option>
+              <option value="equivalence">Equivalence</option>
+            </select>
+          </div>
+        </div>
+
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Trigger</label>
+          <textarea
+            value={trigger}
+            onChange={(e) => setTrigger(e.target.value)}
+            style={styles.textarea}
+            rows={2}
+            placeholder="Describe when this move should be available in the list of move suggestions..."
+          />
+        </div>
+
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Action</label>
+          <textarea
+            value={action}
+            onChange={(e) => setAction(e.target.value)}
+            style={styles.textarea}
+            rows={2}
+            placeholder="Describe how the move transforms the proof state..."
+          />
+        </div>
+      </div>
+
+      {/* Examples List */}
+      {examples.length > 0 && (
+        <div style={styles.card}>
+          <h2 style={styles.cardTitle}>Examples ({examples.length})</h2>
+          
+          {examples.map((ex) => (
+            <div key={ex.id} style={styles.exampleCard}>
+              <div style={styles.exampleHeader}>
+                <div>
+                  <span style={ex.kind === "example" ? styles.exampleBadge : styles.nonexampleBadge}>
+                    {ex.kind === "example" ? "Example" : "Non-example"}
+                  </span>
+                  <span style={styles.exampleDescription}>{ex.description}</span>
+                </div>
+                <button
+                  onClick={() => handleDeleteExample(ex.id)}
+                  style={styles.deleteButton}
+                >
+                  ✕
+                </button>
+              </div>
+              {ex.comment && (
+                <div style={styles.commentText}>{ex.comment}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Workflow Section */}
+      <div style={styles.card}>
+        <h2 style={styles.cardTitle}>Add Example</h2>
+
+        {workflowState === "idle" && (
+          <div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Example Description</label>
+              <textarea
+                value={problemDescription}
+                onChange={(e) => setProblemDescription(e.target.value)}
+                style={styles.textarea}
+                rows={2}
+                placeholder="Describe the proof state you want to use as an example..."
+              />
+            </div>
+            <button
+              onClick={handleFormalize}
+              disabled={isLoading || !problemDescription.trim()}
+              style={styles.primaryButton}
+            >
+              {isLoading ? "Generating..." : "Generate"}
+            </button>
+          </div>
+        )}
+
+        {workflowState === "formalizing" && (
+          <div style={styles.loadingSection}>
+            <div style={styles.inlineSpinner}></div>
+            <p style={styles.inlineLoadingText}>Generating proof state...</p>
+          </div>
+        )}
+
+        {error && (
+          <div style={styles.errorBox}>{error}</div>
+        )}
+
+        {(workflowState === "formalized" || workflowState === "applying" || workflowState === "applied") && currentInputState && (
+          <div>
+            <div style={styles.proofStateSection}>
+              <h3 style={styles.sectionHeading}>Input State</h3>
+              <p style={styles.helpText}>
+                Make selections in the proof state below, then either mark as a non-example or apply the move.
+              </p>
+              <ProofStateSelectionContext.Provider value={{ selections, dispatch: selectionsDispatch }}>
+              <TypstContextProvider>
+                <ProofStateComponent proofState={currentInputState} />
+              </TypstContextProvider>
+              </ProofStateSelectionContext.Provider>
+              <div style={styles.selectionInfo}>
+                {currentSelectionsCount} selection{currentSelectionsCount !== 1 ? 's' : ''} made
+              </div>
+            </div>
+
+            {workflowState === "formalized" && (
+              <div style={styles.actionButtons}>
+                <button
+                  onClick={() => handleSaveExample("non-example")}
+                  style={styles.secondaryButton}
+                >
+                  Mark as Non-example
+                </button>
+                <button
+                  onClick={() => handleApplyMove()}
+                  disabled={isLoading || !action.trim()}
+                  style={styles.primaryButton}
+                >
+                  {isLoading ? "Applying..." : "Apply Move"}
+                </button>
+                <button
+                  onClick={handleReset}
+                  style={styles.tertiaryButton}
+                >
+                  Discard
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {workflowState === "applying" && (
+          <div style={styles.loadingSection}>
+            <div style={styles.inlineSpinner}></div>
+            <p style={styles.inlineLoadingText}>Applying move...</p>
+          </div>
+        )}
+
+        {workflowState === "applied" && currentOutputState && (
+          <div>
+            <div style={styles.proofStateSection}>
+              <h3 style={styles.sectionHeading}>Output State</h3>
+              <ProofStateContextProvider>
+                <ProofStateComponent proofState={currentOutputState} />
+              </ProofStateContextProvider>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Comment (optional)</label>
+              <input
+                type="text"
+                value={exampleComment}
+                onChange={(e) => setExampleComment(e.target.value)}
+                style={styles.input}
+                placeholder="Add a note about this example..."
+              />
+            </div>
+
+            <div style={styles.actionButtons}>
+              <button
+                onClick={() => handleSaveExample("example")}
+                style={styles.primaryButton}
+              >
+                Save as Example
+              </button>
+              <button
+                onClick={() => handleSaveExample("non-example")}
+                style={styles.secondaryButton}
+              >
+                Save as Non-example
+              </button>
+              <button
+                onClick={handleReset}
+                style={styles.tertiaryButton}
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Export Section */}
+      <div style={styles.card}>
+        <h2 style={styles.cardTitle}>Export</h2>
+        <div style={styles.exportSection}>
+          <div style={styles.exportButtons}>
+            <button
+              onClick={handleExport}
+              disabled={!moveName || examples.length === 0}
+              style={{
+                ...styles.exportButton,
+                opacity: (!moveName || examples.length === 0) ? 0.5 : 1,
+                cursor: (!moveName || examples.length === 0) ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Download Move Definition
+            </button>
+            <button
+              onClick={handleCopyJSON}
+              style={{
+                ...styles.copyButton,
+                backgroundColor: copySuccess ? '#38a169' : 'white',
+                color: copySuccess ? 'white' : '#3182ce',
+              }}
+            >
+              {copySuccess ? '✓ Copied!' : 'Copy JSON'}
+            </button>
+          </div>
+          
+          <details style={styles.details}>
+            <summary style={styles.summary}>Preview JSON</summary>
+            <pre style={styles.jsonPreview}>{generateMoveJSON()}</pre>
+          </details>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const styles: Record<string, React.CSSProperties> = {
+  container: {
+    maxWidth: "900px",
+    margin: "0 auto",
+    padding: "40px 20px",
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif",
+    color: "#1a202c",
+  },
+  header: {
+    marginBottom: "32px",
+    borderBottom: "2px solid #e2e8f0",
+    paddingBottom: "16px",
+  },
+  title: {
+    fontSize: "32px",
+    fontWeight: "700",
+    margin: "0 0 8px 0",
+    color: "#2d3748",
+  },
+  subtitle: {
+    fontSize: "16px",
+    color: "#718096",
+    margin: 0,
+  },
+  card: {
+    backgroundColor: "white",
+    border: "1px solid #e2e8f0",
+    borderRadius: "12px",
+    padding: "24px",
+    marginBottom: "24px",
+    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+  },
+  cardTitle: {
+    fontSize: "20px",
+    fontWeight: "600",
+    marginTop: 0,
+    marginBottom: "20px",
+    color: "#2d3748",
+  },
+  row: {
+    display: "flex",
+    gap: "16px",
+    marginBottom: "16px",
+  },
+  formGroup: {
+    marginBottom: "16px",
+    flex: 1,
+  },
+  label: {
+    display: "block",
+    marginBottom: "6px",
+    fontWeight: "500",
+    fontSize: "14px",
+    color: "#4a5568",
+  },
+  input: {
+    width: "100%",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e0",
+    borderRadius: "6px",
+    fontSize: "14px",
+    boxSizing: "border-box" as const,
+    transition: "border-color 0.15s",
+  },
+  textarea: {
+    width: "100%",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e0",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontFamily: "inherit",
+    resize: "vertical" as const,
+    boxSizing: "border-box" as const,
+    transition: "border-color 0.15s",
+    lineHeight: "1.5",
+  },
+  select: {
+    width: "100%",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e0",
+    borderRadius: "6px",
+    fontSize: "14px",
+    backgroundColor: "white",
+    boxSizing: "border-box" as const,
+    cursor: "pointer",
+  },
+  exampleCard: {
+    backgroundColor: "#f7fafc",
+    border: "1px solid #e2e8f0",
+    borderRadius: "8px",
+    padding: "12px 16px",
+    marginBottom: "8px",
+  },
+  exampleHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+  },
+  exampleBadge: {
+    display: "inline-block",
+    padding: "3px 8px",
+    backgroundColor: "#c6f6d5",
+    color: "#22543d",
+    borderRadius: "4px",
+    fontSize: "11px",
+    fontWeight: "600",
+    marginRight: "8px",
+    textTransform: "uppercase" as const,
+  },
+  nonexampleBadge: {
+    display: "inline-block",
+    padding: "3px 8px",
+    backgroundColor: "#fed7d7",
+    color: "#742a2a",
+    borderRadius: "4px",
+    fontSize: "11px",
+    fontWeight: "600",
+    marginRight: "8px",
+    textTransform: "uppercase" as const,
+  },
+  exampleDescription: {
+    fontSize: "14px",
+    color: "#4a5568",
+  },
+  commentText: {
+    fontSize: "13px",
+    color: "#718096",
+    marginTop: "8px",
+    fontStyle: "italic",
+  },
+  deleteButton: {
+    padding: "4px 8px",
+    backgroundColor: "transparent",
+    color: "#e53e3e",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "16px",
+    cursor: "pointer",
+    transition: "background-color 0.15s",
+  },
+  primaryButton: {
+    padding: "10px 20px",
+    backgroundColor: "#3182ce",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "background-color 0.15s",
+    marginRight: "8px",
+  },
+  secondaryButton: {
+    padding: "10px 20px",
+    backgroundColor: "white",
+    color: "#3182ce",
+    border: "1px solid #3182ce",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "all 0.15s",
+    marginRight: "8px",
+  },
+  tertiaryButton: {
+    padding: "10px 20px",
+    backgroundColor: "transparent",
+    color: "#718096",
+    border: "1px solid #cbd5e0",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "all 0.15s",
+  },
+  exportButton: {
+    padding: "12px 24px",
+    backgroundColor: "#38a169",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "15px",
+    fontWeight: "600",
+    cursor: "pointer",
+    transition: "background-color 0.15s",
+  },
+  errorBox: {
+    backgroundColor: "#fff5f5",
+    color: "#c53030",
+    border: "1px solid #feb2b2",
+    borderRadius: "6px",
+    padding: "12px 16px",
+    marginTop: "12px",
+    marginBottom: "12px",
+    fontSize: "14px",
+  },
+  proofStateSection: {
+    marginBottom: "20px",
+    padding: "16px",
+    backgroundColor: "#f7fafc",
+    borderRadius: "8px",
+    border: "1px solid #e2e8f0",
+  },
+  sectionHeading: {
+    fontSize: "16px",
+    fontWeight: "600",
+    marginTop: 0,
+    marginBottom: "8px",
+    color: "#2d3748",
+  },
+  helpText: {
+    fontSize: "14px",
+    color: "#718096",
+    marginBottom: "12px",
+    lineHeight: "1.5",
+  },
+  selectionInfo: {
+    fontSize: "13px",
+    color: "#4a5568",
+    marginTop: "12px",
+    fontWeight: "500",
+  },
+  actionButtons: {
+    display: "flex",
+    gap: "8px",
+    marginTop: "16px",
+    flexWrap: "wrap" as const,
+  },
+  exportSection: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "12px",
+  },
+  exportButtons: {
+    display: "flex",
+    gap: "8px",
+    flexWrap: "wrap" as const,
+  },
+  copyButton: {
+    padding: "12px 24px",
+    backgroundColor: "white",
+    color: "#3182ce",
+    border: "1px solid #3182ce",
+    borderRadius: "6px",
+    fontSize: "15px",
+    fontWeight: "600",
+    cursor: "pointer",
+    transition: "all 0.15s",
+  },
+  details: {
+    marginTop: "12px",
+  },
+  summary: {
+    cursor: "pointer",
+    fontWeight: "500",
+    color: "#3182ce",
+    padding: "8px 0",
+    fontSize: "14px",
+  },
+  jsonPreview: {
+    backgroundColor: "#1a202c",
+    color: "#e2e8f0",
+    padding: "16px",
+    borderRadius: "6px",
+    overflow: "auto",
+    fontSize: "12px",
+    marginTop: "8px",
+    lineHeight: "1.5",
+    fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', monospace",
+  },
+  loadingSection: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    padding: "20px",
+    backgroundColor: "#f7fafc",
+    borderRadius: "8px",
+    border: "1px solid #e2e8f0",
+  },
+  inlineSpinner: {
+    border: "3px solid #e2e8f0",
+    borderTop: "3px solid #3182ce",
+    borderRadius: "50%",
+    width: "24px",
+    height: "24px",
+    animation: "spin 1s linear infinite",
+    flexShrink: 0,
+  },
+  inlineLoadingText: {
+    color: "#4a5568",
+    fontSize: "14px",
+    fontWeight: "500",
+    margin: 0,
+  },
+}
