@@ -7,15 +7,14 @@ export interface ProofDiscoveryMove {
     name: string
     kind: MoveKind
     /** The trigger decides whether the move is relevant for a given set of selections made in a proof state.  */
-    trigger: {
-        description: string
-        examples: { proofState: ProofState, selections: ProofStateSelection[] }[]
-        nonexamples: { proofState: ProofState, selections: ProofStateSelection[] }[]
-    },
+    trigger: string
     /** The action specifies how the move is supposed to transform the proof state. */
-    action: {
-        prompt: string
-        examples: { inputState: ProofState, outputState: ProofState }[]
-        nonexamples: { inputState: ProofState, outputState: ProofState }[]
-    }
+    action: string
+    examples: {
+        description: string 
+        inputState: ProofState
+        outputState: ProofState | null
+        comment?: string
+        kind: "example" | "non-example"
+    }[]
 }
