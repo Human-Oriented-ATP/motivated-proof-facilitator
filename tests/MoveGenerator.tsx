@@ -52,6 +52,67 @@ export default function MoveGenerator(): JSX.Element {
   // Copy state
   const [copySuccess, setCopySuccess] = useState(false)
 
+  // Load move state
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  const handleLoadMove = (jsonString: string): void => {
+    try {
+      setLoadError(null)
+      const parsed = JSON.parse(jsonString) as ProofDiscoveryMove
+      
+      // Validate the structure
+      if (!parsed.name || !parsed.kind || !parsed.trigger || !parsed.action) {
+        throw new Error("Invalid move structure: missing required fields")
+      }
+
+      // Load the move data
+      setMoveName(parsed.name)
+      setMoveKind(parsed.kind)
+      setTrigger(parsed.trigger)
+      setAction(parsed.action)
+      
+      // Load examples if they exist
+      if (Array.isArray(parsed.examples)) {
+        const loadedExamples: Example[] = parsed.examples.map((ex, idx) => ({
+          id: `loaded-${Date.now()}-${idx}`,
+          description: ex.description,
+          inputState: ex.inputState,
+          outputState: ex.outputState,
+          comment: ex.comment,
+          kind: ex.kind,
+        }))
+        setExamples(loadedExamples)
+      }
+      
+      // Reset workflow state
+      handleReset()
+    } catch (err) {
+      if (err instanceof Error) {
+        setLoadError(`Failed to load move: ${err.message}`)
+      } else {
+        setLoadError("Invalid JSON format")
+      }
+    }
+  }
+
+  const handleFileLoad = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const content = e.target?.result as string
+      handleLoadMove(content)
+    }
+    reader.onerror = () => {
+      setLoadError("Failed to read file")
+    }
+    reader.readAsText(file)
+    
+    // Reset the input so the same file can be loaded again
+    event.target.value = ""
+  }
+
   const handleFormalize = async (): Promise<void> => {
     if (!problemDescription.trim()) {
       setError("Please enter a problem description")
@@ -447,6 +508,46 @@ export default function MoveGenerator(): JSX.Element {
         )}
       </div>
 
+      {/* Load Existing Move */}
+      <div style={styles.card}>
+        <h2 style={styles.cardTitle}>Load Move</h2>
+        <p style={styles.helpText}>
+          Load an existing move definition to edit it. You can either upload a JSON file or paste the JSON directly.
+        </p>
+        
+        <div style={styles.loadSection}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Upload JSON File</label>
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleFileLoad}
+              style={styles.fileInput}
+            />
+          </div>
+
+          <details style={styles.details}>
+            <summary style={styles.summary}>Or paste JSON here</summary>
+            <textarea
+              style={styles.textarea}
+              rows={6}
+              placeholder='Paste move JSON here...'
+              onBlur={(e) => {
+                const value = e.target.value.trim()
+                if (value) {
+                  handleLoadMove(value)
+                  e.target.value = ""
+                }
+              }}
+            />
+          </details>
+        </div>
+
+        {loadError && (
+          <div style={styles.errorBox}>{loadError}</div>
+        )}
+      </div>
+
       {/* Export Section */}
       <div style={styles.card}>
         <h2 style={styles.cardTitle}>Export</h2>
@@ -715,6 +816,21 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: "wrap" as const,
   },
   exportSection: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "12px",
+  },
+  fileInput: {
+    width: "100%",
+    padding: "10px 12px",
+    border: "1px solid #cbd5e0",
+    borderRadius: "6px",
+    fontSize: "14px",
+    boxSizing: "border-box" as const,
+    cursor: "pointer",
+    backgroundColor: "white",
+  },
+  loadSection: {
     display: "flex",
     flexDirection: "column" as const,
     gap: "12px",
