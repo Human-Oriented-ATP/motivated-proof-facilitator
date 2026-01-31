@@ -54,8 +54,6 @@ export default function Test() {
                 </p>
                 <ProofDiscoveryState 
                     proofDiscoveryState={proofDiscoveryStates.complex} 
-                    width="100%"
-                    height="700px"
                 />
             </div>
             
@@ -68,8 +66,6 @@ export default function Test() {
                 </p>
                 <ProofDiscoveryState 
                     proofDiscoveryState={proofDiscoveryStates.solved}
-                    width="600px"
-                    height="400px"
                 />
             </div>
             
