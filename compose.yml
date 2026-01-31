@@ -1,0 +1,25 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./index.html:/app/index.html
+      - ./package.json:/app/package.json
+      - ./package-lock.json:/app/package-lock.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.node.json:/app/tsconfig.node.json
+      # Use named volume for node_modules to avoid conflicts
+      - app-node-modules:/app/node_modules
+    command: npm run dev -- --host
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped
+
+volumes:
+  app-node-modules:
