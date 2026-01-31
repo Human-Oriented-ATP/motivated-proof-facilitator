@@ -1,335 +1,143 @@
-import React, { JSX, useMemo } from 'react'
-import {
-  ReactFlow,
-  Node,
-  Edge,
-  Background,
-  Controls,
-  MiniMap,
-  NodeTypes,
-  MarkerType,
-  Position,
-} from '@xyflow/react'
-// @ts-ignore
-import '@xyflow/react/dist/style.css'
-import { ProofDiscoveryState, MoveKind } from '../core/ProofDiscoveryState'
-import { ProofState as ProofStateComponent } from './ProofState'
-import { ProofStateIdContext } from '../core/ProofDiscoveryStateContext'
+import React, { useEffect, JSX, FC } from "react"
+import { SigmaContainer, useLoadGraph, useRegisterEvents } from "@react-sigma/core"
+// import "@react-sigma/core/lib/style.css"
+import Graph from "graphology"
+import forceLayout from "graphology-layout-force"
+import { ProofDiscoveryState as ProofDiscoveryStateType, ProofNode, MoveDescription } from "../core/ProofDiscoveryState"
 
-/** Props for custom node component */
-type ProofNodeData = {
-  proofNodeId: number
-  proofState: any
-  isCurrentNode: boolean
-  isSolved: boolean
+/** Props for the ProofDiscoveryGraphLoader component */
+export type ProofDiscoveryGraphLoaderProps = {
+    /** The proof discovery state to visualize */
+    proofDiscoveryState: ProofDiscoveryStateType
 }
 
-/** Custom node component that displays a miniaturized proof state */
-function ProofNode({ data }: { data: ProofNodeData }): JSX.Element {
-  const { proofNodeId, proofState, isCurrentNode, isSolved } = data
-  
-  return (
-    <div
-      style={{
-        backgroundColor: isCurrentNode ? '#dbeafe' : '#ffffff',
-        border: `3px solid ${isCurrentNode ? '#3b82f6' : isSolved ? '#22c55e' : '#d1d5db'}`,
-        borderRadius: '12px',
-        padding: '12px',
-        minWidth: '300px',
-        maxWidth: '400px',
-        boxShadow: isCurrentNode 
-          ? '0 10px 15px -3px rgba(59, 130, 246, 0.3)' 
-          : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-        fontSize: '11px',
-        position: 'relative',
-      }}
-    >
-      {/* Node ID Badge */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-12px',
-          left: '12px',
-          backgroundColor: isCurrentNode ? '#3b82f6' : isSolved ? '#22c55e' : '#9ca3af',
-          color: 'white',
-          padding: '2px 8px',
-          borderRadius: '10px',
-          fontSize: '10px',
-          fontWeight: 'bold',
-          zIndex: 1,
-        }}
-      >
-        {isCurrentNode ? '● Current' : isSolved ? '✓ Solved' : `Node ${proofNodeId}`}
-      </div>
-      
-      {/* Miniaturized Proof State */}
-      <div
-        style={{
-          transform: 'scale(0.75)',
-          transformOrigin: 'top left',
-          width: '133%',
-          overflow: 'hidden',
-        }}
-      >
-        <ProofStateIdContext.Provider value={{ proofNodeId, proofContextId: 0 }}>
-          <ProofStateComponent proofState={proofState} />
-        </ProofStateIdContext.Provider>
-      </div>
-    </div>
-  )
+/**
+ * Internal component that loads the graph into Sigma.
+ * Must be rendered inside a SigmaContainer.
+ */
+const ProofDiscoveryGraphLoader: FC<ProofDiscoveryGraphLoaderProps> = ({ proofDiscoveryState }) => {
+    const loadGraph = useLoadGraph()
+    const registerEvents = useRegisterEvents()
+
+    useEffect(() => {
+        // Create a new graph for visualization with less strict typing
+        const visualGraph = new Graph()
+
+        // Copy nodes from the original graph
+        proofDiscoveryState.graph.forEachNode((node, attributes) => {
+            visualGraph.addNode(node, {
+                ...attributes,
+                x: Math.random() * 100,
+                y: Math.random() * 100
+            })
+        })
+
+        // Copy edges from the original graph
+        proofDiscoveryState.graph.forEachEdge((edge, attributes, source, target, sourceAttributes, targetAttributes, undirected) => {
+            if (undirected) {
+                visualGraph.addUndirectedEdge(source, target, attributes)
+            } else {
+                visualGraph.addDirectedEdge(source, target, attributes)
+            }
+        })
+
+        // Apply force layout
+        forceLayout.assign(visualGraph, {
+            maxIterations: 100,
+            settings: {
+                gravity: 1,
+                attraction: 0.0005,
+                repulsion: 0.1,
+                inertia: 0.6
+            }
+        })
+
+        // Style nodes
+        visualGraph.forEachNode((node) => {
+            const isCurrentNode = node === String(proofDiscoveryState.currentNodeId)
+
+            visualGraph.setNodeAttribute(node, 'size', 10)
+            visualGraph.setNodeAttribute(node, 'color', isCurrentNode ? '#2563eb' : '#94a3b8')
+            visualGraph.setNodeAttribute(node, 'label', `Node ${node}`)
+        })
+
+        // Style edges based on move kind
+        visualGraph.forEachEdge((edge) => {
+            const attributes = visualGraph.getEdgeAttributes(edge) as MoveDescription
+            const moveKind = attributes.kind
+
+            switch (moveKind) {
+                case "strengthening":
+                    visualGraph.setEdgeAttribute(edge, 'color', '#10b981')
+                    visualGraph.setEdgeAttribute(edge, 'size', 2)
+                    break
+                case "weakening":
+                    visualGraph.setEdgeAttribute(edge, 'color', '#f59e0b')
+                    visualGraph.setEdgeAttribute(edge, 'size', 2)
+                    break
+                case "equivalence":
+                    visualGraph.setEdgeAttribute(edge, 'color', '#8b5cf6')
+                    visualGraph.setEdgeAttribute(edge, 'size', 2)
+                    break
+                case "other":
+                    visualGraph.setEdgeAttribute(edge, 'color', '#9ca3af')
+                    visualGraph.setEdgeAttribute(edge, 'size', 1)
+                    break
+            }
+        })
+
+        // Load the graph into sigma
+        loadGraph(visualGraph)
+
+        // Register click events
+        registerEvents({
+            clickNode: (event: { node: string }) => {
+                console.log('Clicked node:', event.node)
+            }
+        })
+    }, [proofDiscoveryState, loadGraph, registerEvents])
+
+    return null
 }
 
-const nodeTypes: NodeTypes = {
-  proofNode: ProofNode,
-}
-
-/** Get color and style for edge based on move kind */
-function getEdgeStyle(moveKind: MoveKind): { 
-  stroke: string
-  strokeWidth: number
-  strokeDasharray?: string
-  markerEnd: { type: MarkerType; color: string }
-} {
-  switch (moveKind) {
-    case 'strengthening':
-      return {
-        stroke: '#10b981', // Green
-        strokeWidth: 3,
-        markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' },
-      }
-    case 'weakening':
-      return {
-        stroke: '#f59e0b', // Orange
-        strokeWidth: 3,
-        markerEnd: { type: MarkerType.ArrowClosed, color: '#f59e0b' },
-      }
-    case 'equivalence':
-      return {
-        stroke: '#8b5cf6', // Purple
-        strokeWidth: 3,
-        markerEnd: { type: MarkerType.Arrow, color: '#8b5cf6' },
-      }
-    case 'other':
-      return {
-        stroke: '#9ca3af', // Gray
-        strokeWidth: 2,
-        strokeDasharray: '5,5',
-        markerEnd: { type: MarkerType.ArrowClosed, color: '#9ca3af' },
-      }
-  }
-}
-
-/** Props for ProofDiscoveryState component */
+/** Props for the ProofDiscoveryState component */
 export type ProofDiscoveryStateProps = {
-  proofDiscoveryState: ProofDiscoveryState
+    /** The proof discovery state to visualize */
+    proofDiscoveryState: ProofDiscoveryStateType
+    /** Optional width of the container (default: 800px) */
+    width?: string
+    /** Optional height of the container (default: 600px) */
+    height?: string
 }
 
 /**
- * Visualize a proof discovery state as an interactive graph using React Flow.
+ * Renders a ProofDiscoveryState as an interactive graph using react-sigma.
  * 
- * Converts a graphology graph into React Flow format, with:
- * - Miniaturized proof states as nodes
- * - Color-coded edges based on move kind
- * - Current node highlighted
- * - Auto-layout using dagre algorithm
+ * The graph uses a force-directed layout where:
+ * - Nodes represent proof states
+ * - Edges represent transitions between states (strengthening, weakening, equivalence, or other)
+ * - The current node is highlighted in blue
+ * - Different edge types have different colors
  * 
- * @param props - ProofDiscoveryStateProps
- * @returns JSX element containing the React Flow graph
+ * @param props - `ProofDiscoveryStateProps`
+ * @returns A JSX element containing the rendered graph
  */
-export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryStateProps): JSX.Element {
-  const { graph, currentNodeId, isSolved } = proofDiscoveryState
-
-  // Convert graphology nodes to React Flow nodes
-  const nodes: Node<ProofNodeData>[] = useMemo(() => {
-    const flowNodes: Node<ProofNodeData>[] = []
-    
-    graph.forEachNode((nodeId, attributes) => {
-      const numericId = typeof nodeId === 'string' ? parseInt(nodeId) : nodeId
-      
-      flowNodes.push({
-        id: nodeId.toString(),
-        type: 'proofNode',
-        position: { x: numericId * 450, y: 0 }, // Temporary positioning
-        data: {
-          proofNodeId: numericId,
-          proofState: attributes.proofState,
-          isCurrentNode: numericId === currentNodeId,
-          isSolved: isSolved && numericId === currentNodeId,
-        },
-        sourcePosition: Position.Right,
-        targetPosition: Position.Left,
-      })
-    })
-
-    // Simple hierarchical layout
-    const layouted = simpleLayout(flowNodes, graph)
-    
-    return layouted
-  }, [graph, currentNodeId, isSolved])
-
-  // Convert graphology edges to React Flow edges
-  const edges: Edge[] = useMemo(() => {
-    const flowEdges: Edge[] = []
-    
-    graph.forEachEdge((edge, attributes, source, target, _sourceAttributes, _targetAttributes, undirected) => {
-      const moveKind = attributes.kind
-      const edgeStyle = getEdgeStyle(moveKind)
-      
-      flowEdges.push({
-        id: edge,
-        source: source.toString(),
-        target: target.toString(),
-        type: undirected ? 'straight' : 'smoothstep',
-        animated: attributes.kind === 'strengthening',
-        style: {
-          stroke: edgeStyle.stroke,
-          strokeWidth: edgeStyle.strokeWidth,
-          strokeDasharray: edgeStyle.strokeDasharray,
-        },
-        markerEnd: undirected ? undefined : edgeStyle.markerEnd,
-        label: attributes.description,
-        labelStyle: {
-          fill: edgeStyle.stroke,
-          fontWeight: 600,
-          fontSize: 11,
-        },
-        labelBgStyle: {
-          fill: '#ffffff',
-          fillOpacity: 0.9,
-        },
-      })
-    })
-    
-    return flowEdges
-  }, [graph])
-
-  return (
-    <div style={{ width: '100%', height: '800px', border: '2px solid #e5e7eb', borderRadius: '12px' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        fitView
-        minZoom={0.1}
-        maxZoom={1.5}
-        defaultEdgeOptions={{
-          type: 'smoothstep',
-        }}
-      >
-        <Background />
-        <Controls />
-        <MiniMap
-          nodeColor={(node) => {
-            if (node.data.isCurrentNode) return '#3b82f6'
-            if (node.data.isSolved) return '#22c55e'
-            return '#d1d5db'
-          }}
-          style={{
-            backgroundColor: '#f9fafb',
-          }}
-        />
-      </ReactFlow>
-      
-      {/* Legend */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          backgroundColor: 'white',
-          border: '2px solid #e5e7eb',
-          borderRadius: '8px',
-          padding: '12px',
-          fontSize: '12px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          zIndex: 5,
-        }}
-      >
-        <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Edge Types</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '30px', height: '3px', backgroundColor: '#10b981' }} />
-            <span>Strengthening</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '30px', height: '3px', backgroundColor: '#f59e0b' }} />
-            <span>Weakening</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '30px', height: '3px', backgroundColor: '#8b5cf6' }} />
-            <span>Equivalence</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '30px', height: '2px', backgroundColor: '#9ca3af', backgroundImage: 'repeating-linear-gradient(90deg, #9ca3af 0, #9ca3af 5px, transparent 5px, transparent 10px)' }} />
-            <span>Other</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/**
- * Simple layout algorithm for positioning nodes
- * Uses a basic hierarchical approach based on graph structure
- */
-function simpleLayout(nodes: Node<ProofNodeData>[], graph: any): Node<ProofNodeData>[] {
-  if (nodes.length === 0) return nodes
-
-  // Calculate levels using BFS from node 0
-  const levels = new Map<string, number>()
-  const queue: string[] = ['0']
-  levels.set('0', 0)
-  
-  while (queue.length > 0) {
-    const current = queue.shift()!
-    const currentLevel = levels.get(current)!
-    
-    // Get all neighbors
-    try {
-      graph.forEachOutboundNeighbor(parseInt(current), (neighbor: number) => {
-        const neighborStr = neighbor.toString()
-        if (!levels.has(neighborStr)) {
-          levels.set(neighborStr, currentLevel + 1)
-          queue.push(neighborStr)
-        }
-      })
-      
-      graph.forEachInboundNeighbor(parseInt(current), (neighbor: number) => {
-        const neighborStr = neighbor.toString()
-        if (!levels.has(neighborStr)) {
-          levels.set(neighborStr, currentLevel + 1)
-          queue.push(neighborStr)
-        }
-      })
-    } catch (e) {
-      // Node might not have neighbors
-    }
-  }
-  
-  // Position nodes by level
-  const nodesByLevel = new Map<number, Node[]>()
-  nodes.forEach(node => {
-    const level = levels.get(node.id) ?? 0
-    if (!nodesByLevel.has(level)) {
-      nodesByLevel.set(level, [])
-    }
-    nodesByLevel.get(level)!.push(node)
-  })
-  
-  // Arrange nodes with proper spacing
-  const levelSpacing = 500
-  const nodeSpacing = 200
-  
-  nodesByLevel.forEach((levelNodes, level) => {
-    const yOffset = -(levelNodes.length - 1) * nodeSpacing / 2
-    levelNodes.forEach((node, index) => {
-      node.position = {
-        x: level * levelSpacing,
-        y: yOffset + index * nodeSpacing,
-      }
-    })
-  })
-  
-  return nodes
+export function ProofDiscoveryState({
+    proofDiscoveryState,
+    width = "800px",
+    height = "600px"
+}: ProofDiscoveryStateProps): JSX.Element {
+    return (
+        <SigmaContainer
+            graph={Graph}
+            style={{ height, width }}
+            settings={{
+                renderEdgeLabels: false,
+                defaultNodeColor: '#94a3b8',
+                defaultEdgeColor: '#9ca3af'
+            }}
+        >
+            <ProofDiscoveryGraphLoader proofDiscoveryState={proofDiscoveryState} />
+        </SigmaContainer>
+    )
 }
