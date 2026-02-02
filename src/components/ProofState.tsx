@@ -87,7 +87,7 @@ export function ProofStateContext({ proofContext }: ProofStateContextProps): JSX
                     </span>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1 }}>
                         <div style={{ flex: '1' }}>
-                            <MathStatement address={[]} statement={hypothesis.statement} />
+                            <MathStatement address={[]} statement={hypothesis.statement} polarity={true} />
                         </div>
                         <span 
                             style={{
@@ -128,7 +128,7 @@ export function ProofStateContext({ proofContext }: ProofStateContextProps): JSX
                     </span>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1 }}>
                         <div style={{ flex: '1' }}>
-                            <MathStatement address={[]} statement={goal.statement} />
+                            <MathStatement address={[]} statement={goal.statement} polarity={false} />
                         </div>
                         <span 
                             style={{

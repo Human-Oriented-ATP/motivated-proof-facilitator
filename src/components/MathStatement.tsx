@@ -1,7 +1,8 @@
 import React, { JSX, useContext, useState } from "react"
 import { Statement } from "../core/ProofState"
 import { AtomicStatement } from "./AtomicStatement"
-import { StatementAddress, ProofStateSelectionContext, ProofStateLocationContext, areStatementAddressesEqual, StatementCoordinate } from "../core/ProofStateSelectionContext"
+import { StatementAddress, ProofStateSelectionContext, ProofStateLocationContext, StatementCoordinate,
+        areStatementAddressesEqual, locationPolarity, addressPolarity, coordinatePolarity } from "../core/ProofStateSelectionContext"
 import { ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
 
 // Import generated logical symbol SVGs
@@ -118,6 +119,8 @@ export type MathStatementProps = {
     address: StatementAddress
     /** The statement to render. */
     statement: Statement
+    /** The polarity of this statement location (true for positive, false for negative, null for neutral). */
+    polarity: boolean | null
 }
 
 /**
@@ -128,10 +131,11 @@ export type MathStatementProps = {
  * @param props - `MathStatementProps`
  * @param props.address - The location within the logical structure of a bigger statement
  * @param props.statement - The statement to render
+ * @param props.polarity - The polarity of this statement location
  * 
  * @returns A JSX element containing the rendered statement
  */
-export function MathStatement({ address, statement }: MathStatementProps): JSX.Element {
+export function MathStatement({ address, statement, polarity }: MathStatementProps): JSX.Element {
     const { selections, dispatch } = useContext(ProofStateSelectionContext)
     const proofStateLocation = useContext(ProofStateLocationContext)
     const proofStateId = useContext(ProofStateIdContext)
@@ -182,28 +186,108 @@ export function MathStatement({ address, statement }: MathStatementProps): JSX.E
         setIsHovered(false)
     }
 
-    // Helper to render a child statement with updated address
-    const renderChild = (child: Statement, coord: StatementCoordinate): JSX.Element => {
-        return <MathStatement address={[...address, coord]} statement={child} />
+    // Helper to calculate child polarity based on coordinate
+    const getChildPolarity = (coord: StatementCoordinate): boolean | null => {
+        const coordPolarity = coordinatePolarity(coord)
+        if (coordPolarity === null || polarity === null) {
+            return null
+        } else {
+            return polarity !== coordPolarity
+        }
     }
 
-    // Style for hoverable/selectable segments
+    // Helper to render a child statement with updated address
+    const renderChild = (child: Statement, coord: StatementCoordinate): JSX.Element => {
+        return <MathStatement 
+            address={[...address, coord]} 
+            statement={child} 
+            polarity={getChildPolarity(coord)}
+        />
+    }
+
+    // Determine if this is a variable coordinate
+    const isVariable = address.length > 0 && 
+        (address[address.length - 1] === "universal_var" || address[address.length - 1] === "existential_var")
+
+    // Style for hoverable/selectable segments based on polarity
+    const getPolarityStyles = () => {
+        // Special styling for variables
+        if (isVariable && typeof statement === "string") {
+            if (polarity === true && (isHovered || isSelected)) {
+                // True polarity variables: reddish hue
+                return {
+                    color: 'rgba(220, 80, 80, 0.9)',
+                    fontWeight: '500' as const
+                }
+            } else if (polarity === false && (isHovered || isSelected)) {
+                // False polarity variables: purplish hue
+                return {
+                    color: 'rgba(150, 80, 200, 0.9)',
+                    fontWeight: '500' as const
+                }
+            }
+        }
+
+        // Only show polarity effects when hovered or selected
+        if (!isHovered && !isSelected) {
+            return {
+                backgroundColor: 'transparent',
+                border: '1px solid transparent',
+                boxShadow: 'none'
+            }
+        }
+
+        // Regular statement styling based on polarity
+        if (polarity === true) {
+            // True polarity: orange outward bevel
+            return {
+                backgroundColor: isSelected 
+                    ? 'rgba(255, 165, 0, 0.25)' 
+                    : 'rgba(255, 165, 0, 0.12)',
+                border: isSelected 
+                    ? '1px solid rgba(255, 140, 0, 0.6)' 
+                    : '1px solid rgba(255, 140, 0, 0.35)',
+                boxShadow: isSelected 
+                    ? '0 2px 4px rgba(255, 140, 0, 0.3), inset 0 -1px 2px rgba(0, 0, 0, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.4)' 
+                    : '0 1px 3px rgba(255, 140, 0, 0.2), inset 0 -1px 1px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.3)'
+            }
+        } else if (polarity === false) {
+            // False polarity: inward light blue bevel
+            return {
+                backgroundColor: isSelected 
+                    ? 'rgba(33, 150, 243, 0.2)' 
+                    : 'rgba(33, 150, 243, 0.08)',
+                border: isSelected 
+                    ? '1px solid rgba(33, 150, 243, 0.6)' 
+                    : '1px solid rgba(33, 150, 243, 0.3)',
+                boxShadow: isSelected 
+                    ? 'inset 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(33, 150, 243, 0.3)' 
+                    : 'inset 0 1px 3px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(33, 150, 243, 0.2)'
+            }
+        } else {
+            // Null polarity: flat bevel with subtle parent-inherited appearance
+            return {
+                backgroundColor: isSelected 
+                    ? 'rgba(158, 158, 158, 0.15)' 
+                    : 'rgba(158, 158, 158, 0.08)',
+                border: isSelected 
+                    ? '1px solid rgba(130, 130, 130, 0.4)' 
+                    : '1px solid rgba(130, 130, 130, 0.25)',
+                boxShadow: isSelected 
+                    ? '0 0 0 1px rgba(130, 130, 130, 0.15)' 
+                    : '0 0 0 1px rgba(130, 130, 130, 0.1)'
+            }
+        }
+    }
+
     const segmentStyle: React.CSSProperties = {
         cursor: 'pointer',
         padding: '2px 4px',
         borderRadius: '3px',
-        backgroundColor: isSelected 
-            ? 'rgba(33, 150, 243, 0.2)' 
-            : (isHovered ? 'rgba(33, 150, 243, 0.08)' : 'transparent'),
-        border: isSelected 
-            ? '1px solid rgba(33, 150, 243, 0.6)' 
-            : (isHovered ? '1px solid rgba(33, 150, 243, 0.3)' : '1px solid transparent'),
-        boxShadow: isSelected 
-            ? '0 1px 2px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.3)' 
-            : (isHovered ? '0 1px 1px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : 'none'),
         display: 'inline-block',
         width: 'fit-content',
-        transition: 'all 0.15s ease'
+        transition: 'all 0.15s ease',
+        ...getPolarityStyles()
     }
 
     // Render based on statement type
@@ -311,9 +395,17 @@ export function MathStatement({ address, statement }: MathStatementProps): JSX.E
                     onMouseLeave={handleMouseLeave}
                 >
                     <UniversalSymbol />
-                    <MathStatement address={[...address, "universal_var"]} statement={statement.variable.name} />
+                    <MathStatement 
+                        address={[...address, "universal_var"]} 
+                        statement={statement.variable.name} 
+                        polarity={getChildPolarity("universal_var")}
+                    />
                     <span style={{ margin: '0 4px' }}>:</span>
-                    <MathStatement address={[...address, "universal_var_type"]} statement={statement.variable.description} />
+                    <MathStatement 
+                        address={[...address, "universal_var_type"]} 
+                        statement={statement.variable.description} 
+                        polarity={getChildPolarity("universal_var_type")}
+                    />
                     <span style={{ margin: '0 6px' }}>.</span>
                     {renderChild(statement.statement, "universal_body")}
                 </span>
@@ -329,9 +421,17 @@ export function MathStatement({ address, statement }: MathStatementProps): JSX.E
                     onMouseLeave={handleMouseLeave}
                 >
                     <ExistentialSymbol />
-                    <MathStatement address={[...address, "existential_var"]} statement={statement.variable.name} />
+                    <MathStatement 
+                        address={[...address, "existential_var"]} 
+                        statement={statement.variable.name} 
+                        polarity={getChildPolarity("existential_var")}
+                    />
                     <span style={{ margin: '0 4px' }}>:</span>
-                    <MathStatement address={[...address, "existential_var_type"]} statement={statement.variable.description} />
+                    <MathStatement 
+                        address={[...address, "existential_var_type"]} 
+                        statement={statement.variable.description} 
+                        polarity={getChildPolarity("existential_var_type")}
+                    />
                     <span style={{ margin: '0 6px' }}>.</span>
                     {renderChild(statement.statement, "existential_body")}
                 </span>

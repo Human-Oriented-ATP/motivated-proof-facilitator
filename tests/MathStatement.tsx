@@ -67,7 +67,7 @@ function MathStatementContent(): JSX.Element {
                             lineHeight: '1.6',
                             border: '1px solid #eee'
                         }}>
-                            <MathStatement address={[]} statement={stmt} />
+                            <MathStatement address={[]} statement={stmt} polarity={false} />
                         </div>
                     </div>
                 ))}
