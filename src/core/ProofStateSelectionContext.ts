@@ -76,11 +76,10 @@ export function coordinatePolarity(coord: StatementCoordinate): boolean | null {
     switch (coord) {
       case "implication_antecedent":
       case "negation":
+      case "universal_var":
         return true
       case "equivalence_left":
       case "equivalence_right":
-      case "universal_var":
-      case "existential_var":
       case "universal_var_type":
       case "existential_var_type":
         return null
