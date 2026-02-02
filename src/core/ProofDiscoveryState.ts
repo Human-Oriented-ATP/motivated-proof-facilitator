@@ -1,5 +1,5 @@
 import Graph from 'graphology';
-import { ProofState } from './ProofStateZod'
+import { ProofState, Statement } from './ProofStateZod'
 
 export type MoveKind = "strengthening" | "weakening" | "equivalence" | "other"
 
@@ -20,6 +20,8 @@ export interface ProofDiscoveryState {
     statement: string
     graph: ProofDiscoveryGraph
     currentNodeId: ProofNodeId
+    library: Statement[]
+    highlightedLibraryStatement: number | null
     isSolved: boolean
 }
 
@@ -27,6 +29,8 @@ export const nullProofDiscoveryState = {
     statement: "",
     graph: new Graph<ProofNode, MoveDescription>(),
     currentNodeId: -1,
+    library: [],
+    highlightedLibraryStatement: null,
     isSolved: false
 }
 
@@ -37,6 +41,9 @@ export type ProofDiscoveryAction =
 | { action: "transition",
     move: MoveDescription,
     newProofState: ProofState }
+| { action: "addToLibrary", statement: Statement }
+| { action: "setHighlightedStatement", index: number }
+| { action: "clearHighlightedStatement" }
 | { action: "finish" }
 
 export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: ProofDiscoveryAction): ProofDiscoveryState {
@@ -95,6 +102,25 @@ export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: P
             return {
                 ...state,
                 isSolved: true
+            }
+        }
+        case "addToLibrary": {
+            return {
+                ...state,
+                library: [...state.library, action.statement],
+                highlightedLibraryStatement: state.library.length
+            }
+        }
+        case "setHighlightedStatement": {
+            return {
+                ...state,
+                highlightedLibraryStatement: action.index
+            }
+        }
+        case "clearHighlightedStatement": {
+            return {
+                ...state,
+                highlightedLibraryStatement: null
             }
         }
         default:
