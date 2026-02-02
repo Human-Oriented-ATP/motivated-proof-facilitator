@@ -57,7 +57,9 @@ export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: P
                 ...state,
                 statement: action.statement,
                 currentNodeId: 0,
-                isSolved: false
+                isSolved: false,
+                library: [],
+                highlightedLibraryStatement: null
             }
         }
         case "repair": {
@@ -95,13 +97,15 @@ export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: P
             }
             return {
                 ...state,
-                currentNodeId: newNodeId
+                currentNodeId: newNodeId,
+                highlightedLibraryStatement: null
             }
         }
         case "finish": {
             return {
                 ...state,
-                isSolved: true
+                isSolved: true,
+                highlightedLibraryStatement: null
             }
         }
         case "addToLibrary": {
