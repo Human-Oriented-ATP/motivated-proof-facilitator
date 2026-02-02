@@ -60,6 +60,46 @@ function areProofStateSelectionsEqual(a: ProofStateSelection, b: ProofStateSelec
         areSubExpressionSelectionsEqual(a.selection, b.selection) : true)
 }
 
+export function locationPolarity(location: ProofStateLocation): boolean | null {
+  switch (location.kind) {
+    case "goal":
+      return false
+    case "hypothesis":
+      return true
+    case "variable":
+    case "variable_body":
+      return null
+  }
+}
+
+export function coordinatePolarity(coord: StatementCoordinate): boolean | null {
+    switch (coord) {
+      case "implication_antecedent":
+      case "negation":
+        return true
+      case "equivalence_left":
+      case "equivalence_right":
+      case "universal_var":
+      case "existential_var":
+      case "universal_var_type":
+      case "existential_var_type":
+        return null
+      default:
+        return false
+    }
+}
+
+export function addressPolarity(init: boolean | null, address: StatementAddress): boolean | null {
+  return address.reduce((polarity, coord) => {
+    const coordPolarity = coordinatePolarity(coord)
+    if (coordPolarity === null || polarity === null) {
+      return null
+    } else {
+      return polarity !== coordPolarity
+    }
+  }, init)
+}
+
 type ProofStateSelectionAction = {
     type: 'TOGGLE_SELECTION'
     selection: ProofStateSelection
