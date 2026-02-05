@@ -1,7 +1,7 @@
 import React, { useState, useReducer, JSX } from "react"
 import { ProofState, ProofStateSchema } from "../src/core/ProofStateZod"
 import { proofDiscoveryStateReducer, nullProofDiscoveryState } from "../src/core/ProofDiscoveryState"
-import { ProofState as ProofStateComponent } from "../src/components/ProofState"
+import { ProofState as ProofStateComponent, ProofStateWithLibraryResultComponent } from "../src/components/ProofState"
 import ProofStateContextProvider from "./ProofStateContext"
 
 /**
@@ -263,7 +263,15 @@ export default function RenderFormalizer(): JSX.Element {
             <strong>Statement:</strong> {proofDiscoveryState.statement}
           </div>
           <ProofStateContextProvider>
-            <ProofStateComponent proofState={proofDiscoveryState.graph.getNodeAttribute(proofDiscoveryState.currentNodeId, 'proofState')} />
+            { proofDiscoveryState.highlightedLibraryStatement ? 
+              <ProofStateWithLibraryResultComponent 
+                proofState={proofDiscoveryState.graph.getNodeAttribute(proofDiscoveryState.currentNodeId, 'proofState')}
+                libraryResult={proofDiscoveryState.library[proofDiscoveryState.highlightedLibraryStatement]}
+              /> : 
+              <ProofStateComponent 
+                proofState={proofDiscoveryState.graph.getNodeAttribute(proofDiscoveryState.currentNodeId, 'proofState')} 
+              /> 
+            }
           </ProofStateContextProvider>
 
           <div style={styles.moveSection}>

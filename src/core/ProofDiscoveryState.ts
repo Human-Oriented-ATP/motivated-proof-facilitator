@@ -21,7 +21,7 @@ export interface ProofDiscoveryState {
     graph: ProofDiscoveryGraph
     currentNodeId: ProofNodeId
     library: LabelledStatement[]
-    highlightedLibraryStatement: number | null
+    highlightedLibraryStatement?: number
     isSolved: boolean
 }
 
@@ -30,7 +30,7 @@ export const nullProofDiscoveryState = {
     graph: new Graph<ProofNode, MoveDescription>(),
     currentNodeId: -1,
     library: [],
-    highlightedLibraryStatement: null,
+    highlightedLibraryStatement: undefined,
     isSolved: false
 }
 
@@ -59,7 +59,7 @@ export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: P
                 currentNodeId: 0,
                 isSolved: false,
                 library: [],
-                highlightedLibraryStatement: null
+                highlightedLibraryStatement: undefined
             }
         }
         case "repair": {
@@ -98,14 +98,14 @@ export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: P
             return {
                 ...state,
                 currentNodeId: newNodeId,
-                highlightedLibraryStatement: null
+                highlightedLibraryStatement: undefined
             }
         }
         case "finish": {
             return {
                 ...state,
                 isSolved: true,
-                highlightedLibraryStatement: null
+                highlightedLibraryStatement: undefined
             }
         }
         case "addToLibrary": {
@@ -124,7 +124,7 @@ export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: P
         case "clearHighlightedStatement": {
             return {
                 ...state,
-                highlightedLibraryStatement: null
+                highlightedLibraryStatement: undefined
             }
         }
         default:

@@ -285,12 +285,9 @@ export function ProofState({ proofState }: ProofStateProps): JSX.Element {
     )
 }
 
-export function ProofStateWithLibraryResult({ proofState, libraryResult }: ProofStateWithLibraryResult): JSX.Element {
+export function ProofStateWithLibraryResultComponent({ proofState, libraryResult }: ProofStateWithLibraryResult): JSX.Element {
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-            {/* Render the main proof state */}
-            <ProofState proofState={proofState} />
-            
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>           
             {/* Library Result - Yellowish */}
             {libraryResult && (
                 <>
@@ -359,6 +356,9 @@ export function ProofStateWithLibraryResult({ proofState, libraryResult }: Proof
                     </div>
                 </>
             )}
+            
+            {/* Render the main proof state */}
+            <ProofState proofState={proofState} />
         </div>
     )
 }
