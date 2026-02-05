@@ -1,5 +1,5 @@
 import React, { JSX, useContext } from "react"
-import { ProofStateContext as ProofStateContextType, ProofState as ProofStateType, ContextVariable, ProofStateContext } from "../core/ProofStateZod"
+import { ProofStateContext as ProofStateContextType, ProofState as ProofStateType, ContextVariable, ProofStateContext, LabelledStatement, ProofStateWithLibraryResult } from "../core/ProofStateZod"
 import { MathStatement } from "./MathStatement"
 import { AtomicStatement } from "./AtomicStatement"
 import { ProofStateLocationContext } from "../core/ProofStateSelectionContext"
@@ -70,7 +70,7 @@ export function ProofStateContext({ proofContext }: ProofStateContextProps): JSX
     }
 
     /** Render a hypothesis with its label */
-    const renderHypothesis = (hypothesis: { label: string; statement: any }, idx: number): JSX.Element => {
+    const renderHypothesis = (hypothesis: LabelledStatement, idx: number): JSX.Element => {
         return (
             <ProofStateLocationContext.Provider value={{ kind: "hypothesis", label: hypothesis.label }} key={idx}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -111,7 +111,7 @@ export function ProofStateContext({ proofContext }: ProofStateContextProps): JSX
     }
 
     /** Render a goal with its label */
-    const renderGoal = (goal: { label: string; statement: any }, idx: number): JSX.Element => {
+    const renderGoal = (goal: LabelledStatement, idx: number): JSX.Element => {
         return (
             <ProofStateLocationContext.Provider value={{ kind: "goal", label: goal.label }} key={idx}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -281,6 +281,84 @@ export function ProofState({ proofState }: ProofStateProps): JSX.Element {
                     )}
                 </React.Fragment>
             ))}
+        </div>
+    )
+}
+
+export function ProofStateWithLibraryResult({ proofState, libraryResult }: ProofStateWithLibraryResult): JSX.Element {
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            {/* Render the main proof state */}
+            <ProofState proofState={proofState} />
+            
+            {/* Library Result - Yellowish */}
+            {libraryResult && (
+                <>
+                    <div style={{
+                        borderTop: '1px dashed #6b7280',
+                        margin: '0 20px'
+                    }} />
+                    <div style={{
+                        backgroundColor: '#fefce8',
+                        border: '2px solid #fde047',
+                        borderRadius: '12px',
+                        padding: '20px',
+                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                        position: 'relative'
+                    }}>
+                        <div style={{
+                            position: 'absolute',
+                            top: '-12px',
+                            left: '20px',
+                            backgroundColor: '#fefce8',
+                            padding: '0 8px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: '#a16207',
+                            letterSpacing: '0.1em'
+                        }}>
+                            LIBRARY RESULT
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <ProofStateLocationContext.Provider value={{ kind: "library_statement", label: libraryResult.label }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <span 
+                                        style={{ 
+                                            color: '#a16207', 
+                                            fontSize: '16px', 
+                                            fontWeight: 'bold',
+                                            flexShrink: 0,
+                                            userSelect: 'none'
+                                        }}
+                                    >
+                                        ★
+                                    </span>
+                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1 }}>
+                                        <div style={{ flex: '1' }}>
+                                            <MathStatement address={[]} statement={libraryResult.statement} polarity={true} />
+                                        </div>
+                                        <span 
+                                            style={{
+                                                backgroundColor: '#fefce8',
+                                                border: '1px solid #eab308',
+                                                color: '#a16207',
+                                                fontSize: '12px',
+                                                fontWeight: '500',
+                                                padding: '4px 8px',
+                                                borderRadius: '6px',
+                                                whiteSpace: 'nowrap',
+                                                userSelect: 'none'
+                                            }}
+                                        >
+                                            {libraryResult.label}
+                                        </span>
+                                    </div>
+                                </div>
+                            </ProofStateLocationContext.Provider>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     )
 }

@@ -66,12 +66,14 @@ export type ProofStateContext = {
  * It is made up of one or more proof contexts, each consisting of 
  * a list of variables involved in the proof, hypotheses concerning them
  * and goals to be proved.
- * 
- * It also features an optional highlighted library statement
- * picked from the library that the user can reference.
- * 
  */
-export type ProofState = { 
-  highlightedLibraryStatement? : LabelledStatement
-  contexts: ProofStateContext[]
+export type ProofState = ProofStateContext[]
+
+/**
+ * A proof state bundled together with an optional 
+ * highlighted library statement that the user can reference.
+ */
+export type ProofStateWithLibraryResult = {
+  proofState: ProofState
+  libraryResult?: LabelledStatement
 }
