@@ -2,6 +2,7 @@ import React, { useState, useReducer, JSX } from "react"
 import { ProofState, ProofStateSchema } from "../src/core/ProofStateZod"
 import { proofDiscoveryStateReducer, nullProofDiscoveryState } from "../src/core/ProofDiscoveryState"
 import { ProofState as ProofStateComponent, ProofStateWithLibraryResultComponent } from "../src/components/ProofState"
+import { MathStatement } from "../src/components/MathStatement"
 import ProofStateContextProvider from "./ProofStateContext"
 
 /**
@@ -262,6 +263,70 @@ export default function RenderFormalizer(): JSX.Element {
           <div style={styles.statementDisplay}>
             <strong>Statement:</strong> {proofDiscoveryState.statement}
           </div>
+
+          {/* Library Browser Panel */}
+          {proofDiscoveryState.library.length > 0 && (
+            <div style={styles.libraryPanel}>
+              <div style={styles.libraryHeader}>
+                <h3 style={styles.libraryTitle}>Library</h3>
+                {proofDiscoveryState.highlightedLibraryStatement !== undefined && (
+                  <button 
+                    style={styles.clearButton}
+                    onClick={() => dispatch({ action: "clearHighlightedStatement" })}
+                  >
+                    Clear Selection
+                  </button>
+                )}
+              </div>
+              <div style={styles.libraryList}>
+                {proofDiscoveryState.library.map((lemma, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      ...styles.libraryItem,
+                      ...(proofDiscoveryState.highlightedLibraryStatement === idx ? styles.libraryItemActive : {}),
+                    }}
+                    onClick={() => dispatch({ action: "setHighlightedStatement", index: idx })}
+                  >
+                    <div style={styles.libraryItemContent}>
+                      <span 
+                        style={{ 
+                          color: '#a16207', 
+                          fontSize: '16px', 
+                          fontWeight: 'bold',
+                          flexShrink: 0,
+                          userSelect: 'none'
+                        }}
+                      >
+                        ★
+                      </span>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1 }}>
+                        <div style={{ flex: '1' }}>
+                          <MathStatement address={[]} statement={lemma.statement} polarity={true} />
+                        </div>
+                        <span 
+                          style={{
+                            backgroundColor: '#fefce8',
+                            border: '1px solid #eab308',
+                            color: '#a16207',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            whiteSpace: 'nowrap',
+                            userSelect: 'none'
+                          }}
+                        >
+                          {lemma.label}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <ProofStateContextProvider>
             { proofDiscoveryState.highlightedLibraryStatement ? 
               <ProofStateWithLibraryResultComponent 
@@ -602,4 +667,59 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: "#2d3748",
     whiteSpace: "pre-wrap",
   },
+  libraryPanel: {
+    marginBottom: "1.5rem",
+    background: "#fefce8",
+    border: "2px solid #fde047",
+    borderRadius: "12px",
+    padding: "1.5rem",
+    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+  },
+  libraryHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "1rem",
+  },
+  libraryTitle: {
+    fontSize: "1.25rem",
+    fontWeight: "600",
+    color: "#a16207",
+    margin: 0,
+  },
+  clearButton: {
+    padding: "0.375rem 1rem",
+    fontSize: "0.875rem",
+    fontWeight: "500",
+    color: "#a16207",
+    background: "white",
+    border: "1px solid #eab308",
+    borderRadius: "6px",
+    cursor: "pointer",
+    transition: "all 0.2s",
+  },
+  libraryList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+  },
+  libraryItem: {
+    padding: "0.875rem",
+    background: "white",
+    border: "2px solid #fde047",
+    borderRadius: "8px",
+    cursor: "pointer",
+    transition: "all 0.2s",
+  },
+  libraryItemContent: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+  },
+  libraryItemActive: {
+    background: "#fef9c3",
+    border: "2px solid #eab308",
+    boxShadow: "0 2px 8px rgba(234, 179, 8, 0.2)",
+  },
+
 }
