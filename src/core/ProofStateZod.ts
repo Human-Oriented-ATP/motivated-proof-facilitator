@@ -119,6 +119,13 @@ export type ProofStateContext = z.infer<typeof ProofStateContextSchema>
  * It is made up of one or more proof contexts, each consisting of 
  * a list of variables involved in the proof, hypotheses concerning them
  * and goals to be proved.
+ * 
+ * It also features an optional highlighted library statement
+ * picked from the library that the user can reference.
+ * 
  */
-export const ProofStateSchema = z.array(ProofStateContextSchema)
+export const ProofStateSchema = z.object({
+  highlightedLibraryStatement: LabelledStatementSchema.optional(),
+  contexts: z.array(ProofStateContextSchema)
+})
 export type ProofState = z.infer<typeof ProofStateSchema>

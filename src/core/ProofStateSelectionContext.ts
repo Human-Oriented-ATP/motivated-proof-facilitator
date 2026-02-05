@@ -39,7 +39,7 @@ export function areStatementAddressesEqual(a: StatementAddress, b: StatementAddr
 
 /** A location within the proof state. */
 export type ProofStateLocation = 
- { kind: "variable" | "variable_body" | "hypothesis" | "goal",
+ { kind: "variable" | "variable_body" | "hypothesis" | "goal" | "library_statement",
    label: string }
 
 export const ProofStateLocationContext = React.createContext<ProofStateLocation>({ kind: "goal", label: "" })
@@ -65,6 +65,7 @@ export function locationPolarity(location: ProofStateLocation): boolean | null {
     case "goal":
       return false
     case "hypothesis":
+    case "library_statement":
       return true
     case "variable":
     case "variable_body":

@@ -1,5 +1,5 @@
 import Graph from 'graphology';
-import { ProofState, Statement } from './ProofStateZod'
+import { LabelledStatement, ProofState, Statement } from './ProofStateZod'
 
 export type MoveKind = "strengthening" | "weakening" | "equivalence" | "other"
 
@@ -20,7 +20,7 @@ export interface ProofDiscoveryState {
     statement: string
     graph: ProofDiscoveryGraph
     currentNodeId: ProofNodeId
-    library: Statement[]
+    library: LabelledStatement[]
     highlightedLibraryStatement: number | null
     isSolved: boolean
 }
@@ -41,7 +41,7 @@ export type ProofDiscoveryAction =
 | { action: "transition",
     move: MoveDescription,
     newProofState: ProofState }
-| { action: "addToLibrary", statement: Statement }
+| { action: "addToLibrary", statement: LabelledStatement }
 | { action: "setHighlightedStatement", index: number }
 | { action: "clearHighlightedStatement" }
 | { action: "finish" }
