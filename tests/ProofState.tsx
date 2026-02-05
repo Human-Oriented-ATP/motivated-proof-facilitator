@@ -1,6 +1,6 @@
 import { JSX, useContext } from "react"
 import ProofStateContextProvider from "./ProofStateContext"
-import { ProofState } from "../src/components/ProofState"
+import { ProofState, ProofStateWithLibraryResult } from "../src/components/ProofState"
 import { ProofStateSelectionContext } from "../src/core/ProofStateSelectionContext"
 import { sampleProofStates } from "./samples/ProofState"
 
@@ -94,7 +94,7 @@ export default function RenderProofStates(): JSX.Element {
                             border: '1px solid #eee'
                         }}>
                             <ProofStateContextProvider>
-                                <ProofState proofState={testCase.proofState} />
+                                <ProofStateWithLibraryResult proofState={testCase.proofState} libraryResult={testCase.libraryResult} />
                                 <SelectionDisplay />
                             </ProofStateContextProvider>
                         </div>

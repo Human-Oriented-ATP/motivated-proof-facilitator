@@ -1,6 +1,6 @@
-import { ProofState } from "../../src/core/ProofStateZod";
+import { ProofState, ProofStateWithLibraryResult } from "../../src/core/ProofStateZod";
 
-export const sampleProofStates: { description: string; proofState: ProofState }[] = [
+export const sampleProofStates: (ProofStateWithLibraryResult & { description: string })[] = [
     {
         description: "Every finite group G of order greater than 2 admits a non-trivial automorphism.",
         proofState: [
@@ -274,6 +274,35 @@ export const sampleProofStates: { description: string; proofState: ProofState }[
     },
     {
         description: "Every subgroup of a free group is free.",
+        proofState: [
+            {
+                variables: [
+                    { name: "$G$", kind: "free", description: "Group" },
+                    { name: "$H$", kind: "free", description: "Subgroup of $G$" }
+                ],
+                hypotheses: [
+                    { 
+                        label: "hyp_G_free", 
+                        statement: "$G$ is a free group" 
+                    }
+                ],
+                goals: [{
+                    label: "H_free",
+                    statement: "$H$ is a free group"
+                }]
+            }
+        ]
+    },
+    {
+        description: "Every subgroup of a free group is free.",
+        libraryResult: { 
+            label: "graph_fundamental_group",
+            statement: { 
+                kind: "universal", variable: { name: "$X$", description: "Graph" },
+                statement: { kind: "universal", variable: { name: "$x$", description: "vertex of $X$" },
+                statement: "$upright(\"fundamental_group\")(X, x)$ is a free group" }
+            }
+        },
         proofState: [
             {
                 variables: [

@@ -1,7 +1,7 @@
 import React, { useState, useReducer, JSX } from "react"
 import { ProofState, ProofStateSchema } from "../src/core/ProofStateZod"
 import { proofDiscoveryStateReducer, nullProofDiscoveryState } from "../src/core/ProofDiscoveryState"
-import { ProofState as ProofStateComponent, ProofStateWithLibraryResultComponent } from "../src/components/ProofState"
+import { ProofState as ProofStateComponent, ProofStateWithLibraryResult } from "../src/components/ProofState"
 import { MathStatement } from "../src/components/MathStatement"
 import ProofStateContextProvider from "./ProofStateContext"
 
@@ -329,7 +329,7 @@ export default function RenderFormalizer(): JSX.Element {
 
           <ProofStateContextProvider>
             { proofDiscoveryState.highlightedLibraryStatement ? 
-              <ProofStateWithLibraryResultComponent 
+              <ProofStateWithLibraryResult 
                 proofState={proofDiscoveryState.graph.getNodeAttribute(proofDiscoveryState.currentNodeId, 'proofState')}
                 libraryResult={proofDiscoveryState.library[proofDiscoveryState.highlightedLibraryStatement]}
               /> : 
