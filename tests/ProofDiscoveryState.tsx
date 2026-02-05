@@ -1,6 +1,19 @@
 import React from 'react'
 import { ProofDiscoveryState } from '../src/components/ProofDiscoveryState'
 import { proofDiscoveryStates } from './samples/ProofDiscoveryState'
+import TypstContextProvider from '../src/components/TypstContext'
+import { ProofDiscoveryStateContext } from '../src/core/ProofDiscoveryStateContext'
+import { proofDiscoveryStateReducer, ProofDiscoveryState as ProofDiscoveryStateType } from '../src/core/ProofDiscoveryState'
+
+function ProofDiscoveryStateInteractive({ initialState }: { initialState: ProofDiscoveryStateType }) {
+    const [state, dispatch] = React.useReducer(proofDiscoveryStateReducer, initialState)
+
+    return (
+        <ProofDiscoveryStateContext.Provider value={{ proofDiscoveryState: state, dispatchProofDiscoveryAction: dispatch }}>
+            <ProofDiscoveryState proofDiscoveryState={state} />
+        </ProofDiscoveryStateContext.Provider>
+    )
+}
 
 /**
  * Test component for the ProofDiscoveryState graph visualization.
@@ -13,6 +26,7 @@ import { proofDiscoveryStates } from './samples/ProofDiscoveryState'
  */
 export default function Test() {
     return (
+        <TypstContextProvider>
         <div style={{ 
             padding: '20px', 
             display: 'flex', 
@@ -31,7 +45,7 @@ export default function Test() {
                 <p style={{ marginBottom: '10px', color: '#6b7280' }}>
                     A simple linear progression with strengthening moves
                 </p>
-                <ProofDiscoveryState proofDiscoveryState={proofDiscoveryStates.simple} />
+                <ProofDiscoveryStateInteractive initialState={proofDiscoveryStates.simple} />
             </div>
             
             <div>
@@ -42,7 +56,7 @@ export default function Test() {
                     Multiple branches showing strengthening (green), weakening (orange), 
                     and equivalence (purple) moves
                 </p>
-                <ProofDiscoveryState proofDiscoveryState={proofDiscoveryStates.branching} />
+                <ProofDiscoveryStateInteractive initialState={proofDiscoveryStates.branching} />
             </div>
             
             <div>
@@ -52,9 +66,7 @@ export default function Test() {
                 <p style={{ marginBottom: '10px', color: '#6b7280' }}>
                     A complex graph with all move types including exploratory moves (gray, dashed)
                 </p>
-                <ProofDiscoveryState 
-                    proofDiscoveryState={proofDiscoveryStates.complex} 
-                />
+                <ProofDiscoveryStateInteractive initialState={proofDiscoveryStates.complex} />
             </div>
             
             <div>
@@ -64,9 +76,7 @@ export default function Test() {
                 <p style={{ marginBottom: '10px', color: '#6b7280' }}>
                     A completed proof (isSolved = true)
                 </p>
-                <ProofDiscoveryState 
-                    proofDiscoveryState={proofDiscoveryStates.solved}
-                />
+                <ProofDiscoveryStateInteractive initialState={proofDiscoveryStates.solved} />
             </div>
             
             <div style={{ 
@@ -106,5 +116,6 @@ export default function Test() {
                 </ul>
             </div>
         </div>
+        </TypstContextProvider>
     )
 }

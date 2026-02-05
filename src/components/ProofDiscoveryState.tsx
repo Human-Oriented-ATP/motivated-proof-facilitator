@@ -1,4 +1,4 @@
-import React, { JSX, useMemo } from 'react'
+import React, { JSX, useContext, useEffect, useMemo } from 'react'
 import {
   ReactFlow,
   Node,
@@ -9,12 +9,15 @@ import {
   NodeTypes,
   MarkerType,
   Position,
+  Handle,
+  useEdgesState,
+  useNodesState,
 } from '@xyflow/react'
 // @ts-ignore
 import '@xyflow/react/dist/style.css'
 import { ProofDiscoveryState, MoveKind } from '../core/ProofDiscoveryState'
 import { ProofState as ProofStateComponent } from './ProofState'
-import { ProofStateIdContext } from '../core/ProofDiscoveryStateContext'
+import { ProofDiscoveryStateContext, ProofStateIdContext } from '../core/ProofDiscoveryStateContext'
 
 /** Props for custom node component */
 type ProofNodeData = {
@@ -27,6 +30,7 @@ type ProofNodeData = {
 /** Custom node component that displays a miniaturized proof state */
 function ProofNode({ data }: { data: ProofNodeData }): JSX.Element {
   const { proofNodeId, proofState, isCurrentNode, isSolved } = data
+  const { dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
   
   return (
     <div
@@ -42,8 +46,20 @@ function ProofNode({ data }: { data: ProofNodeData }): JSX.Element {
           : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
         fontSize: '11px',
         position: 'relative',
+        cursor: 'pointer',
       }}
+      onClick={() => dispatchProofDiscoveryAction({ action: 'focus', nodeId: proofNodeId })}
     >
+      <Handle
+        type="target"
+        position={Position.Left}
+        style={{ opacity: 0 }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={{ opacity: 0 }}
+      />
       {/* Node ID Badge */}
       <div
         style={{
@@ -68,7 +84,9 @@ function ProofNode({ data }: { data: ProofNodeData }): JSX.Element {
           transform: 'scale(0.75)',
           transformOrigin: 'top left',
           width: '133%',
-          overflow: 'hidden',
+          overflow: 'visible',
+          pointerEvents: 'none',
+          paddingTop: '8px',
         }}
       >
         <ProofStateIdContext.Provider value={{ proofNodeId, proofContextId: 0 }}>
@@ -140,7 +158,7 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
   const { graph, currentNodeId, isSolved } = proofDiscoveryState
 
   // Convert graphology nodes to React Flow nodes
-  const nodes: Node<ProofNodeData>[] = useMemo(() => {
+  const derivedNodes: Node<ProofNodeData>[] = useMemo(() => {
     const flowNodes: Node<ProofNodeData>[] = []
     
     graph.forEachNode((nodeId, attributes) => {
@@ -156,6 +174,7 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
           isCurrentNode: numericId === currentNodeId,
           isSolved: isSolved && numericId === currentNodeId,
         },
+        draggable: true,
         sourcePosition: Position.Right,
         targetPosition: Position.Left,
       })
@@ -168,15 +187,15 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
   }, [graph, currentNodeId, isSolved])
 
   // Convert graphology edges to React Flow edges
-  const edges: Edge[] = useMemo(() => {
+  const derivedEdges: Edge[] = useMemo(() => {
     const flowEdges: Edge[] = []
     
     graph.forEachEdge((edge, attributes, source, target, _sourceAttributes, _targetAttributes, undirected) => {
       const moveKind = attributes.kind
       const edgeStyle = getEdgeStyle(moveKind)
       
-      flowEdges.push({
-        id: edge,
+        flowEdges.push({
+          id: edge.toString(),
         source: source.toString(),
         target: target.toString(),
         type: undirected ? 'straight' : 'smoothstep',
@@ -197,11 +216,34 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
           fill: '#ffffff',
           fillOpacity: 0.9,
         },
+        zIndex: 10,
       })
     })
     
     return flowEdges
   }, [graph])
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(derivedNodes)
+  const [edges, setEdges, onEdgesChange] = useEdgesState(derivedEdges)
+
+  useEffect(() => {
+    setNodes((currentNodes) => {
+      const existingById = new Map(currentNodes.map((node) => [node.id, node]))
+      return derivedNodes.map((node) => {
+        const existing = existingById.get(node.id)
+        if (!existing) return node
+
+        return {
+          ...node,
+          position: existing.position,
+        }
+      })
+    })
+  }, [derivedNodes, setNodes])
+
+  useEffect(() => {
+    setEdges(derivedEdges)
+  }, [derivedEdges, setEdges])
 
   return (
     <div style={{ width: '100%', height: '800px', border: '2px solid #e5e7eb', borderRadius: '12px' }}>
@@ -209,12 +251,20 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         fitView
         minZoom={0.1}
         maxZoom={1.5}
+        nodesDraggable={true}
+        nodesConnectable={false}
+        elementsSelectable={true}
+        selectNodesOnDrag={false}
+        panOnDrag={true}
         defaultEdgeOptions={{
           type: 'smoothstep',
         }}
+        proOptions={{ hideAttribution: true }}
       >
         <Background />
         <Controls />
