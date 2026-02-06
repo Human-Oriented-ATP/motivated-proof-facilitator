@@ -3,16 +3,18 @@ import "./MathExpression"
 import "./MathStatement"
 import "./ProofState"
 import "./ProofDiscoveryState"
+import "./ProofDiscoveryEnvironment"
 import "./Formalizer"
 import RenderMathExpressions from "./MathExpression"
 import RenderMathStatements from "./MathStatement"
 import RenderProofStates from "./ProofState"
 import RenderProofDiscoveryStates from "./ProofDiscoveryState"
+import RenderProofDiscoveryEnvironment from "./ProofDiscoveryEnvironment"
 import RenderFormalizer from "./Formalizer"
 import MoveGenerator from "./MoveGenerator"
 
 export default function Test(): JSX.Element {
-    const [activeTest, setActiveTest] = useState<'expressions' | 'statements' | 'proofstates' | 'proofdiscoverystates' | 'formalizer' | 'movegenerator'>('proofstates')
+    const [activeTest, setActiveTest] = useState<'expressions' | 'statements' | 'proofstates' | 'proofdiscoverystates' | 'proofdiscoveryenvironment' | 'formalizer' | 'movegenerator'>('proofstates')
     
     return (
         <div>
@@ -102,6 +104,21 @@ export default function Test(): JSX.Element {
                     Formalizer
                 </button>
                 <button
+                    onClick={() => setActiveTest('proofdiscoveryenvironment')}
+                    style={{
+                        padding: '10px 20px',
+                        backgroundColor: activeTest === 'proofdiscoveryenvironment' ? '#2196F3' : '#555',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    Proof Discovery Environment
+                </button>
+                <button
                     onClick={() => setActiveTest('movegenerator')}
                     style={{
                         padding: '10px 20px',
@@ -122,6 +139,7 @@ export default function Test(): JSX.Element {
              activeTest === 'statements' ? <RenderMathStatements /> :
              activeTest === 'proofstates' ? <RenderProofStates /> :
              activeTest === 'proofdiscoverystates' ? <RenderProofDiscoveryStates /> :
+             activeTest === 'proofdiscoveryenvironment' ? <RenderProofDiscoveryEnvironment /> :
              activeTest === 'formalizer' ? <RenderFormalizer /> :
              <MoveGenerator />}
         </div>
