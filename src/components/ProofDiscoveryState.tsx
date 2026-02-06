@@ -75,7 +75,7 @@ function ProofNode({ data }: { data: ProofNodeData }): JSX.Element {
           zIndex: 1,
         }}
       >
-        {isCurrentNode ? '● Current' : isSolved ? '✓ Solved' : `Node ${proofNodeId}`}
+        {isCurrentNode ? '● Current' : isSolved ? '✓ Solved' : `State ${proofNodeId}`}
       </div>
       
       {/* Miniaturized Proof State */}
@@ -192,12 +192,11 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
   const derivedEdges: Edge[] = useMemo(() => {
     const flowEdges: Edge[] = []
     
-    graph.forEachEdge((edge, attributes, source, target, _sourceAttributes, _targetAttributes, undirected) => {
-      const moveKind = attributes.kind
-      const edgeStyle = getEdgeStyle(moveKind)
+    graph.forEachEdge((edge, attributes, source, target, _sa, _ta, undirected) => {
+      const edgeStyle = getEdgeStyle(attributes.kind)
       
-        flowEdges.push({
-          id: edge.toString(),
+      flowEdges.push({
+        id: edge.toString(),
         source: target.toString(),
         target: source.toString(),
         type: undirected ? 'straight' : 'bezier',
@@ -209,15 +208,8 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
         },
         markerEnd: undirected ? undefined : edgeStyle.markerEnd,
         label: attributes.description,
-        labelStyle: {
-          fill: edgeStyle.stroke,
-          fontWeight: 600,
-          fontSize: 11,
-        },
-        labelBgStyle: {
-          fill: '#ffffff',
-          fillOpacity: 0.9,
-        },
+        labelStyle: { fill: edgeStyle.stroke, fontWeight: 600, fontSize: 11 },
+        labelBgStyle: { fill: '#ffffff', fillOpacity: 0.9 },
       })
     })
     
@@ -338,21 +330,16 @@ function simpleLayout(nodes: Node<ProofNodeData>[], graph: any): Node<ProofNodeD
     
     // Get all neighbors
     try {
-      graph.forEachOutboundNeighbor(parseInt(current), (neighbor: number) => {
+      const processNeighbor = (neighbor: number) => {
         const neighborStr = neighbor.toString()
         if (!levels.has(neighborStr)) {
           levels.set(neighborStr, currentLevel + 1)
           queue.push(neighborStr)
         }
-      })
+      }
       
-      graph.forEachInboundNeighbor(parseInt(current), (neighbor: number) => {
-        const neighborStr = neighbor.toString()
-        if (!levels.has(neighborStr)) {
-          levels.set(neighborStr, currentLevel + 1)
-          queue.push(neighborStr)
-        }
-      })
+      graph.forEachOutboundNeighbor(parseInt(current), processNeighbor)
+      graph.forEachInboundNeighbor(parseInt(current), processNeighbor)
     } catch (e) {
       // Node might not have neighbors
     }
