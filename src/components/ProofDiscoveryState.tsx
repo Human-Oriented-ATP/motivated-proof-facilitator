@@ -273,7 +273,7 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
         />
       </ReactFlow>
       
-      {/* Legend */}
+      {/* Legend
       <div
         style={{
           position: 'absolute',
@@ -307,8 +307,8 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
             <span>Other</span>
           </div>
         </div>
-      </div>
-    </div>
+      </div> */ }
+    </div> 
   )
 }
 

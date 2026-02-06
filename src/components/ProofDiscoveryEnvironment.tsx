@@ -134,10 +134,16 @@ export function ProofDiscoveryEnvironment({
               {proofDiscoveryState.library.map((statement, idx) => (
                 <div
                   key={idx}
-                  onClick={() => dispatchProofDiscoveryAction({
-                    action: 'setHighlightedStatement',
-                    index: idx
-                  })}
+                  onClick={() => {
+                    if (proofDiscoveryState.highlightedLibraryStatement === idx) {
+                      dispatchProofDiscoveryAction({ action: 'clearHighlightedStatement' })
+                    } else {
+                      dispatchProofDiscoveryAction({
+                        action: 'setHighlightedStatement',
+                        index: idx
+                      })
+                    }
+                  }}
                   style={{
                     ...styles.libraryItem,
                     ...(proofDiscoveryState.highlightedLibraryStatement === idx 
@@ -292,22 +298,19 @@ export function ProofDiscoveryEnvironment({
 
           {isGraphExpanded && (
             <div style={styles.graphContent}>
-              <div style={styles.graphHeader}>
-                <h3 style={styles.graphTitle}>Proof Discovery Graph</h3>
-                <button
-                  onClick={() => setIsGraphFullscreen(!isGraphFullscreen)}
-                  style={styles.fullscreenButton}
-                  title={isGraphFullscreen ? 'Exit fullscreen' : 'Fullscreen view'}
-                >
-                  <svg style={styles.buttonIcon} viewBox="0 0 20 20" fill="currentColor">
-                    {isGraphFullscreen ? (
-                      <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-14-14zM5 5a1 1 0 011-1h3a1 1 0 110 2H6v3a1 1 0 01-2 0V5zm10 10a1 1 0 01-1 1h-3a1 1 0 110-2h3v-3a1 1 0 112 0v4z" clipRule="evenodd" />
-                    ) : (
-                      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clipRule="evenodd" />
-                    )}
-                  </svg>
-                </button>
-              </div>
+              <button
+                onClick={() => setIsGraphFullscreen(!isGraphFullscreen)}
+                style={styles.fullscreenButton}
+                title={isGraphFullscreen ? 'Exit fullscreen' : 'Fullscreen view'}
+              >
+                <svg style={styles.buttonIcon} viewBox="0 0 20 20" fill="currentColor">
+                  {isGraphFullscreen ? (
+                    <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-14-14zM5 5a1 1 0 011-1h3a1 1 0 110 2H6v3a1 1 0 01-2 0V5zm10 10a1 1 0 01-1 1h-3a1 1 0 110-2h3v-3a1 1 0 112 0v4z" clipRule="evenodd" />
+                  ) : (
+                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clipRule="evenodd" />
+                  )}
+                </svg>
+              </button>
               <div style={styles.graphVisualization}>
                 <ProofDiscoveryStateContext.Provider
                   value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}
@@ -486,11 +489,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: '600',
     color: '#92400e',
     marginBottom: '0.25rem',
+    textAlign: 'center',
   },
   libraryItemStatement: {
     fontSize: '0.875rem',
     color: '#78350f',
     marginTop: '0.5rem',
+    textAlign: 'center',
   },
   proofStateSection: {
     flex: 1,
@@ -566,32 +571,26 @@ const styles: { [key: string]: React.CSSProperties } = {
     flexDirection: 'column',
     height: '100%',
     padding: '1rem',
-    paddingTop: '4rem',
-  },
-  graphHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '1rem',
-  },
-  graphTitle: {
-    fontSize: '1.25rem',
-    fontWeight: '600',
-    color: '#1a202c',
-    margin: 0,
+    paddingTop: '4.5rem',
+    position: 'relative',
   },
   fullscreenButton: {
+    position: 'absolute',
+    top: '1rem',
+    right: '1rem',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '36px',
-    height: '36px',
+    width: '40px',
+    height: '40px',
     background: '#667eea',
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: '8px',
     cursor: 'pointer',
     color: 'white',
     transition: 'all 0.2s',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    zIndex: 10,
   },
   graphVisualization: {
     flex: 1,
