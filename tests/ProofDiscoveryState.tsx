@@ -1,6 +1,6 @@
 import React from 'react'
 import { ProofDiscoveryState } from '../src/components/ProofDiscoveryState'
-import { proofDiscoveryStates } from './samples/ProofDiscoveryState'
+import { sampleProofDiscoveryState } from './samples/ProofDiscoveryState'
 import TypstContextProvider from '../src/components/TypstContext'
 import { ProofDiscoveryStateContext } from '../src/core/ProofDiscoveryStateContext'
 import { proofDiscoveryStateReducer, ProofDiscoveryState as ProofDiscoveryStateType } from '../src/core/ProofDiscoveryState'
@@ -17,12 +17,8 @@ function ProofDiscoveryStateInteractive({ initialState }: { initialState: ProofD
 
 /**
  * Test component for the ProofDiscoveryState graph visualization.
- * 
- * This demonstrates rendering different types of proof discovery states:
- * - Simple: A linear sequence of proof states
- * - Branching: Multiple branches with different move types
- * - Complex: A more intricate graph structure
- * - Solved: A completed proof
+ *
+ * This renders the latest sample proof discovery state.
  */
 export default function Test() {
     return (
@@ -35,48 +31,15 @@ export default function Test() {
             backgroundColor: '#f9fafb'
         }}>
             <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px' }}>
-                ProofDiscoveryState Graph Visualization Tests
+                ProofDiscoveryState Graph Visualization
             </h1>
             
             <div>
                 <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '10px' }}>
-                    Simple Linear Proof Discovery
+                    Sample Proof Discovery State
                 </h2>
-                <p style={{ marginBottom: '10px', color: '#6b7280' }}>
-                    A simple linear progression with strengthening moves
-                </p>
-                <ProofDiscoveryStateInteractive initialState={proofDiscoveryStates.simple} />
-            </div>
-            
-            <div>
-                <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '10px' }}>
-                    Branching Proof Discovery
-                </h2>
-                <p style={{ marginBottom: '10px', color: '#6b7280' }}>
-                    Multiple branches showing strengthening (green), weakening (orange), 
-                    and equivalence (purple) moves
-                </p>
-                <ProofDiscoveryStateInteractive initialState={proofDiscoveryStates.branching} />
-            </div>
-            
-            <div>
-                <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '10px' }}>
-                    Complex Proof Discovery
-                </h2>
-                <p style={{ marginBottom: '10px', color: '#6b7280' }}>
-                    A complex graph with all move types including exploratory moves (gray, dashed)
-                </p>
-                <ProofDiscoveryStateInteractive initialState={proofDiscoveryStates.complex} />
-            </div>
-            
-            <div>
-                <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '10px' }}>
-                    Solved Proof Discovery
-                </h2>
-                <p style={{ marginBottom: '10px', color: '#6b7280' }}>
-                    A completed proof (isSolved = true)
-                </p>
-                <ProofDiscoveryStateInteractive initialState={proofDiscoveryStates.solved} />
+                
+                <ProofDiscoveryStateInteractive initialState={sampleProofDiscoveryState} />
             </div>
             
             <div style={{ 
