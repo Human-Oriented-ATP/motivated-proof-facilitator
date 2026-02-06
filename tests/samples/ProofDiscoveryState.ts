@@ -1,5 +1,5 @@
 import Graph from 'graphology'
-import { ProofDiscoveryState, ProofNode, MoveDescription, proofDiscoveryStateReducer, ProofDiscoveryAction } from '../../src/core/ProofDiscoveryState'
+import { ProofDiscoveryState, ProofNode, MoveDescription, proofDiscoveryStateReducer, ProofDiscoveryAction, nullProofDiscoveryState } from '../../src/core/ProofDiscoveryState'
 import { ProofState } from '../../src/core/ProofStateZod'
 import { sampleProofStates } from './ProofState'
 
@@ -116,3 +116,5 @@ const sampleProofDiscoveryStateActions: ProofDiscoveryAction[] = [
         index: 2
     },
 ]
+
+export const sampleProofDiscoveryState: ProofDiscoveryState = sampleProofDiscoveryStateActions.reduce(proofDiscoveryStateReducer, nullProofDiscoveryState) 
