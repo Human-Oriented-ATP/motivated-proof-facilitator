@@ -52,12 +52,12 @@ function ProofNode({ data }: { data: ProofNodeData }): JSX.Element {
     >
       <Handle
         type="target"
-        position={Position.Left}
+        position={Position.Top}
         style={{ opacity: 0 }}
       />
       <Handle
         type="source"
-        position={Position.Right}
+        position={Position.Bottom}
         style={{ opacity: 0 }}
       />
       {/* Node ID Badge */}
@@ -87,6 +87,7 @@ function ProofNode({ data }: { data: ProofNodeData }): JSX.Element {
           overflow: 'visible',
           pointerEvents: 'none',
           paddingTop: '8px',
+          marginBottom: '-75px',
         }}
       >
         <ProofStateIdContext.Provider value={{ proofNodeId, proofContextId: 0 }}>
@@ -119,6 +120,7 @@ function getEdgeStyle(moveKind: MoveKind): {
       return {
         stroke: '#f59e0b', // Orange
         strokeWidth: 3,
+        strokeDasharray: '5,5',
         markerEnd: { type: MarkerType.ArrowClosed, color: '#f59e0b' },
       }
     case 'equivalence':
@@ -175,8 +177,8 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
           isSolved: isSolved && numericId === currentNodeId,
         },
         draggable: true,
-        sourcePosition: Position.Right,
-        targetPosition: Position.Left,
+        sourcePosition: Position.Bottom,
+        targetPosition: Position.Top,
       })
     })
 
@@ -196,10 +198,10 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
       
         flowEdges.push({
           id: edge.toString(),
-        source: source.toString(),
-        target: target.toString(),
-        type: undirected ? 'straight' : 'smoothstep',
-        animated: attributes.kind === 'strengthening',
+        source: target.toString(),
+        target: source.toString(),
+        type: undirected ? 'straight' : 'bezier',
+        animated: false,
         style: {
           stroke: edgeStyle.stroke,
           strokeWidth: edgeStyle.strokeWidth,
@@ -216,7 +218,6 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
           fill: '#ffffff',
           fillOpacity: 0.9,
         },
-        zIndex: 10,
       })
     })
     
@@ -262,7 +263,7 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
         selectNodesOnDrag={false}
         panOnDrag={true}
         defaultEdgeOptions={{
-          type: 'smoothstep',
+          type: 'bezier',
         }}
         proOptions={{ hideAttribution: true }}
       >
@@ -357,26 +358,33 @@ function simpleLayout(nodes: Node<ProofNodeData>[], graph: any): Node<ProofNodeD
     }
   }
   
-  // Position nodes by level
+  // Position nodes by level (x) and chronological order (y)
   const nodesByLevel = new Map<number, Node[]>()
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     const level = levels.get(node.id) ?? 0
     if (!nodesByLevel.has(level)) {
       nodesByLevel.set(level, [])
     }
     nodesByLevel.get(level)!.push(node)
   })
-  
-  // Arrange nodes with proper spacing
-  const levelSpacing = 500
-  const nodeSpacing = 200
-  
+
+  // Arrange nodes with proper spacing (vertical levels)
+  const levelSpacing = 440
+  const nodeSpacing = 360
+
   nodesByLevel.forEach((levelNodes, level) => {
-    const yOffset = -(levelNodes.length - 1) * nodeSpacing / 2
-    levelNodes.forEach((node, index) => {
+    const sortedById = [...levelNodes].sort((a, b) => {
+      const aId = Number(a.id)
+      const bId = Number(b.id)
+      if (Number.isNaN(aId) || Number.isNaN(bId)) return a.id.localeCompare(b.id)
+      return aId - bId
+    })
+
+    const xOffset = -((sortedById.length - 1) * nodeSpacing) / 2
+    sortedById.forEach((node, index) => {
       node.position = {
-        x: level * levelSpacing,
-        y: yOffset + index * nodeSpacing,
+        x: xOffset + index * nodeSpacing,
+        y: level * levelSpacing,
       }
     })
   })
