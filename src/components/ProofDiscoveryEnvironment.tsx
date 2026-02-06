@@ -1,8 +1,9 @@
 import React, { JSX, useState, useContext, useReducer } from 'react'
 import { ProofDiscoveryState, proofDiscoveryStateReducer } from '../core/ProofDiscoveryState'
-import { ProofState as ProofStateComponent } from './ProofState'
+import { ProofStateWithLibraryResult as ProofStateComponent } from './ProofState'
 import { ProofDiscoveryState as ProofDiscoveryStateVisualization } from './ProofDiscoveryState'
-import { ProofStateSelectionContext } from '../core/ProofStateSelectionContext'
+import { MathStatement } from './MathStatement'
+import { ProofStateSelectionContext, ProofStateLocationContext } from '../core/ProofStateSelectionContext'
 import { ProofStateIdContext, ProofDiscoveryStateContext } from '../core/ProofDiscoveryStateContext'
 
 export type ProofDiscoveryEnvironmentProps = {
@@ -23,7 +24,8 @@ export function ProofDiscoveryEnvironment({
     proofDiscoveryStateReducer,
     initialProofDiscoveryState
   )
-  const [isGraphExpanded, setIsGraphExpanded] = useState(false)
+  const [isGraphExpanded, setIsGraphExpanded] = useState(true)
+  const [isGraphFullscreen, setIsGraphFullscreen] = useState(false)
   const [isLibraryExpanded, setIsLibraryExpanded] = useState(true)
   const [isInformalizePopupOpen, setIsInformalizePopupOpen] = useState(false)
   const [informalizedText, setInformalizedText] = useState("")
@@ -105,6 +107,63 @@ export function ProofDiscoveryEnvironment({
 
   return (
     <div style={styles.container}>
+      {/* Library Statements at Top */}
+      {proofDiscoveryState.library.length > 0 && (
+        <div style={styles.librarySection}>
+          <button
+            onClick={() => setIsLibraryExpanded(!isLibraryExpanded)}
+            style={styles.libraryToggle}
+          >
+            <svg 
+              style={{
+                ...styles.chevron,
+                transform: isLibraryExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+              }} 
+              viewBox="0 0 20 20" 
+              fill="currentColor"
+            >
+              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            </svg>
+            <span style={styles.libraryTitle}>
+              Library Statements ({proofDiscoveryState.library.length})
+            </span>
+          </button>
+
+          {isLibraryExpanded && (
+            <div style={styles.libraryList}>
+              {proofDiscoveryState.library.map((statement, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => dispatchProofDiscoveryAction({
+                    action: 'setHighlightedStatement',
+                    index: idx
+                  })}
+                  style={{
+                    ...styles.libraryItem,
+                    ...(proofDiscoveryState.highlightedLibraryStatement === idx 
+                      ? styles.libraryItemActive 
+                      : {})
+                  }}
+                >
+                  <div style={styles.libraryItemLabel}>
+                    {statement.label}
+                  </div>
+                  <div style={styles.libraryItemStatement}>
+                    <ProofStateLocationContext.Provider value={{ kind: 'library_statement', label: statement.label }}>
+                      <MathStatement
+                        address={[]}
+                        statement={statement.statement}
+                        polarity={null}
+                      />
+                    </ProofStateLocationContext.Provider>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Top Action Panel */}
       <div style={styles.actionPanel}>
         <div style={styles.actionButtons}>
@@ -177,70 +236,18 @@ export function ProofDiscoveryEnvironment({
       </div>
 
       <div style={styles.mainContent}>
-        {/* Library Statements Dropdown */}
-        {proofDiscoveryState.library.length > 0 && (
-          <div style={styles.librarySection}>
-            <button
-              onClick={() => setIsLibraryExpanded(!isLibraryExpanded)}
-              style={styles.libraryToggle}
-            >
-              <svg 
-                style={{
-                  ...styles.chevron,
-                  transform: isLibraryExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
-                }} 
-                viewBox="0 0 20 20" 
-                fill="currentColor"
-              >
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
-              <span style={styles.libraryTitle}>
-                Library Statements ({proofDiscoveryState.library.length})
-              </span>
-            </button>
-
-            {isLibraryExpanded && (
-              <div style={styles.libraryList}>
-                {proofDiscoveryState.library.map((statement, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => dispatchProofDiscoveryAction({
-                      action: 'setHighlightedStatement',
-                      index: idx
-                    })}
-                    style={{
-                      ...styles.libraryItem,
-                      ...(proofDiscoveryState.highlightedLibraryStatement === idx 
-                        ? styles.libraryItemActive 
-                        : {})
-                    }}
-                  >
-                    <div style={styles.libraryItemLabel}>
-                      {statement.label}
-                    </div>
-                    <div style={styles.libraryItemStatement}>
-                      {JSON.stringify(statement.statement)}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Main Proof State Display */}
         <div style={styles.proofStateSection}>
-          <div style={styles.proofStateHeader}>
-            <h2 style={styles.proofStateTitle}>Current Proof State</h2>
-            {proofDiscoveryState.isSolved && (
+          {proofDiscoveryState.isSolved && (
+            <div style={styles.proofStateHeader}>
               <div style={styles.solvedBadge}>
                 <svg style={styles.checkIcon} viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
                 Solved!
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           <div style={styles.proofStateContent}>
             <ProofStateIdContext.Provider 
@@ -249,7 +256,14 @@ export function ProofDiscoveryEnvironment({
                 proofContextId: 0 
               }}
             >
-              <ProofStateComponent proofState={currentProofState} />
+              <ProofStateComponent 
+                proofState={currentProofState}
+                libraryResult={
+                  proofDiscoveryState.highlightedLibraryStatement !== undefined
+                    ? proofDiscoveryState.library[proofDiscoveryState.highlightedLibraryStatement]
+                    : undefined
+                }
+              />
             </ProofStateIdContext.Provider>
           </div>
         </div>
@@ -278,7 +292,22 @@ export function ProofDiscoveryEnvironment({
 
           {isGraphExpanded && (
             <div style={styles.graphContent}>
-              <h3 style={styles.graphTitle}>Proof Discovery Graph</h3>
+              <div style={styles.graphHeader}>
+                <h3 style={styles.graphTitle}>Proof Discovery Graph</h3>
+                <button
+                  onClick={() => setIsGraphFullscreen(!isGraphFullscreen)}
+                  style={styles.fullscreenButton}
+                  title={isGraphFullscreen ? 'Exit fullscreen' : 'Fullscreen view'}
+                >
+                  <svg style={styles.buttonIcon} viewBox="0 0 20 20" fill="currentColor">
+                    {isGraphFullscreen ? (
+                      <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-14-14zM5 5a1 1 0 011-1h3a1 1 0 110 2H6v3a1 1 0 01-2 0V5zm10 10a1 1 0 01-1 1h-3a1 1 0 110-2h3v-3a1 1 0 112 0v4z" clipRule="evenodd" />
+                    ) : (
+                      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clipRule="evenodd" />
+                    )}
+                  </svg>
+                </button>
+              </div>
               <div style={styles.graphVisualization}>
                 <ProofDiscoveryStateContext.Provider
                   value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}
@@ -292,6 +321,33 @@ export function ProofDiscoveryEnvironment({
           )}
         </div>
       </div>
+
+      {/* Fullscreen Graph Overlay */}
+      {isGraphFullscreen && (
+        <div style={styles.graphOverlay} onClick={() => setIsGraphFullscreen(false)}>
+          <div style={styles.graphOverlayContent} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.graphOverlayHeader}>
+              <h3 style={styles.graphOverlayTitle}>Proof Discovery Graph</h3>
+              <button 
+                style={styles.closeButton}
+                onClick={() => setIsGraphFullscreen(false)}
+                title="Close fullscreen view"
+              >
+                ✕
+              </button>
+            </div>
+            <div style={styles.graphOverlayBody}>
+              <ProofDiscoveryStateContext.Provider
+                value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}
+              >
+                <ProofDiscoveryStateVisualization 
+                  proofDiscoveryState={proofDiscoveryState} 
+                />
+              </ProofDiscoveryStateContext.Provider>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 
@@ -325,12 +381,13 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   actionPanel: {
     display: 'flex',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     padding: '1rem 1.5rem',
     background: 'white',
     borderBottom: '2px solid #e2e8f0',
     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+    gap: '1.5rem',
   },
   actionButtons: {
     display: 'flex',
@@ -374,11 +431,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     overflow: 'hidden',
   },
   librarySection: {
-    width: '300px',
     background: '#fffbeb',
-    borderRight: '2px solid #fbbf24',
-    padding: '1rem',
-    overflowY: 'auto',
+    borderBottom: '2px solid #fbbf24',
+    padding: '1rem 1.5rem',
   },
   libraryToggle: {
     display: 'flex',
@@ -409,6 +464,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.75rem',
+    maxHeight: '200px',
+    overflowY: 'auto',
   },
   libraryItem: {
     padding: '0.875rem',
@@ -431,12 +488,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     marginBottom: '0.25rem',
   },
   libraryItemStatement: {
-    fontSize: '0.75rem',
+    fontSize: '0.875rem',
     color: '#78350f',
-    fontFamily: "'SF Mono', Monaco, monospace",
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    marginTop: '0.5rem',
   },
   proofStateSection: {
     flex: 1,
@@ -447,15 +501,9 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   proofStateHeader: {
     display: 'flex',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    marginBottom: '1.5rem',
-  },
-  proofStateTitle: {
-    fontSize: '1.875rem',
-    fontWeight: '700',
-    color: '#1a202c',
-    margin: 0,
+    marginBottom: '1rem',
   },
   solvedBadge: {
     display: 'flex',
@@ -520,12 +568,30 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: '1rem',
     paddingTop: '4rem',
   },
+  graphHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1rem',
+  },
   graphTitle: {
     fontSize: '1.25rem',
     fontWeight: '600',
     color: '#1a202c',
-    marginBottom: '1rem',
-    marginTop: 0,
+    margin: 0,
+  },
+  fullscreenButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '36px',
+    height: '36px',
+    background: '#667eea',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    color: 'white',
+    transition: 'all 0.2s',
   },
   graphVisualization: {
     flex: 1,
@@ -539,6 +605,48 @@ const styles: { [key: string]: React.CSSProperties } = {
   spinnerPath: {
     opacity: 0.75,
   },
+  graphOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '2rem',
+  },
+  graphOverlayContent: {
+    background: 'white',
+    borderRadius: '12px',
+    width: '95%',
+    height: '95%',
+    display: 'flex',
+    flexDirection: 'column',
+    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+  },
+  graphOverlayHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '1.5rem',
+    borderBottom: '2px solid #e2e8f0',
+    flexShrink: 0,
+  },
+  graphOverlayTitle: {
+    fontSize: '1.5rem',
+    fontWeight: '700',
+    color: '#1a202c',
+    margin: 0,
+  },
+  graphOverlayBody: {
+    flex: 1,
+    padding: '1.5rem',
+    overflow: 'auto',
+    background: '#f7fafc',
+  },
   modalOverlay: {
     position: 'fixed',
     top: 0,
@@ -549,7 +657,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1000,
+    zIndex: 1001,
   },
   modalContent: {
     background: 'white',
