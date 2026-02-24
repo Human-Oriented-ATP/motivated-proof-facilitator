@@ -1,8 +1,8 @@
 import React, { useState, useReducer, JSX } from "react"
-import { ProofState, ProofStateSchema } from "../src/core/ProofStateZod"
+import { ProofState, ProofStateSchema, ProofStateWithLibraryResult as ProofStateWithLibraryResultType, LabelledStatementSchema, StatementSchema } from "../src/core/ProofStateZod"
 import { ProofDiscoveryMove, MoveKind } from "../src/core/ProofDiscoveryMove"
 import { proofDiscoveryStateReducer, nullProofDiscoveryState } from "../src/core/ProofDiscoveryState"
-import { ProofState as ProofStateComponent } from "../src/components/ProofState"
+import { ProofStateWithLibraryResult as ProofStateWithLibraryResultComponent } from "../src/components/ProofState"
 import ProofStateContextProvider from "./ProofStateContext"
 import { ProofStateSelection, ProofStateSelectionContext, proofStateSelectionReducer } from "../src/core/ProofStateSelectionContext"
 import TypstContextProvider from "../src/components/TypstContext"
@@ -12,8 +12,8 @@ type WorkflowState = "idle" | "formalizing" | "formalized" | "applying" | "appli
 interface Example {
   id: string
   description: string
-  inputState: ProofState
-  outputState: ProofState | null
+  inputState: ProofStateWithLibraryResultType
+  outputState: ProofStateWithLibraryResultType | null
   comment?: string
   kind: "example" | "non-example"
 }
@@ -34,10 +34,11 @@ export default function MoveGenerator(): JSX.Element {
   // Current example being constructed
   const [workflowState, setWorkflowState] = useState<WorkflowState>("idle")
   const [problemDescription, setProblemDescription] = useState("")
+  const [libraryStatement, setLibraryStatement] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [currentInputState, setCurrentInputState] = useState<ProofState | null>(null)
-  const [currentOutputState, setCurrentOutputState] = useState<ProofState | null>(null)
+  const [currentInputState, setCurrentInputState] = useState<ProofStateWithLibraryResultType | null>(null)
+  const [currentOutputState, setCurrentOutputState] = useState<ProofStateWithLibraryResultType | null>(null)
   const [exampleComment, setExampleComment] = useState("")
 
   // Proof discovery state for interactive selection
@@ -124,6 +125,7 @@ export default function MoveGenerator(): JSX.Element {
     setWorkflowState("formalizing")
 
     try {
+      // Always call the formalize endpoint for the problem
       const response = await fetch("https://atp-backend-rygt.onrender.com/formalize", {
         method: "POST",
         mode: "cors",
@@ -138,15 +140,39 @@ export default function MoveGenerator(): JSX.Element {
       }
 
       const data: unknown = await response.json()
+      console.log("Formalization response:", data)
       const proofState = ProofStateSchema.parse([data])
+
+      let proofStateWithLibrary: ProofStateWithLibraryResultType = { proofState }
+
+      // If library statement is provided, also call formalize-statement
+      if (libraryStatement.trim()) {
+        const libraryResponse = await fetch("https://atp-backend-rygt.onrender.com/formalize-statement", {
+          method: "POST",
+          mode: "cors",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ statement: libraryStatement }),
+        })
+
+        if (!libraryResponse.ok) {
+          throw new Error(`HTTP error from formalize-statement! status: ${libraryResponse.status}`)
+        }
+
+        const libraryData: unknown = await libraryResponse.json()
+        console.log("Formalized library statement:", libraryData)
+        const libraryResult = StatementSchema.parse(libraryData)
+        proofStateWithLibrary.libraryResult = { label: "", statement: libraryResult }
+      }
 
       dispatch({
         action: "initialize",
         statement: problemDescription,
-        proofState: proofState,
+        proofState: proofStateWithLibrary.proofState,
       })
 
-      setCurrentInputState(proofState)
+      setCurrentInputState(proofStateWithLibrary)
       setWorkflowState("formalized")
     } catch (err) {
       if (err instanceof Error) {
@@ -191,7 +217,7 @@ export default function MoveGenerator(): JSX.Element {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          proofState: currentInputState,
+          proofState: currentInputState.proofState,
           move: action,
         }),
       })
@@ -203,7 +229,11 @@ export default function MoveGenerator(): JSX.Element {
       const data: unknown = await response.json()
       const newProofState = ProofStateSchema.parse([data])
 
-      setCurrentOutputState(newProofState)
+      // Keep the library result from the input state in the output state
+      setCurrentOutputState({
+        proofState: newProofState,
+        libraryResult: currentInputState.libraryResult
+      })
       setWorkflowState("applied")
     } catch (err) {
       if (err instanceof Error) {
@@ -235,6 +265,7 @@ export default function MoveGenerator(): JSX.Element {
 
   const handleReset = (): void => {
     setProblemDescription("")
+    setLibraryStatement("")
     setCurrentInputState(null)
     setCurrentOutputState(null)
     setExampleComment("")
@@ -393,6 +424,16 @@ export default function MoveGenerator(): JSX.Element {
                 placeholder="Describe the proof state you want to use as an example..."
               />
             </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Library Statement (optional)</label>
+              <textarea
+                value={libraryStatement}
+                onChange={(e) => setLibraryStatement(e.target.value)}
+                style={styles.textarea}
+                rows={2}
+                placeholder="Enter a library statement to include in the proof state..."
+              />
+            </div>
             <button
               onClick={handleFormalize}
               disabled={isLoading || !problemDescription.trim()}
@@ -423,7 +464,7 @@ export default function MoveGenerator(): JSX.Element {
               </p>
               <ProofStateSelectionContext.Provider value={{ selections, dispatch: selectionsDispatch }}>
               <TypstContextProvider>
-                <ProofStateComponent proofState={currentInputState} />
+                <ProofStateWithLibraryResultComponent proofState={currentInputState.proofState} libraryResult={currentInputState.libraryResult} />
               </TypstContextProvider>
               </ProofStateSelectionContext.Provider>
               <div style={styles.selectionInfo}>
@@ -469,7 +510,7 @@ export default function MoveGenerator(): JSX.Element {
             <div style={styles.proofStateSection}>
               <h3 style={styles.sectionHeading}>Output State</h3>
               <ProofStateContextProvider>
-                <ProofStateComponent proofState={currentOutputState} />
+                <ProofStateWithLibraryResultComponent proofState={currentOutputState.proofState} libraryResult={currentOutputState.libraryResult} />
               </ProofStateContextProvider>
             </div>
 

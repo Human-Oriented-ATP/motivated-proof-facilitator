@@ -1,5 +1,5 @@
 import { ProofStateSelection } from "./ProofStateSelectionContext";
-import { ProofState } from "./ProofStateZod";
+import { ProofStateWithLibraryResult } from "./ProofStateZod";
 
 export type MoveKind = "strengthening" | "weakening" | "equivalence"
 
@@ -12,8 +12,8 @@ export interface ProofDiscoveryMove {
     action: string
     examples: {
         description: string 
-        inputState: ProofState
-        outputState: ProofState | null
+        inputState: ProofStateWithLibraryResult
+        outputState: ProofStateWithLibraryResult | null
         comment?: string
         kind: "example" | "non-example"
     }[]
