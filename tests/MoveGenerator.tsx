@@ -6,6 +6,7 @@ import { ProofStateWithLibraryResult as ProofStateWithLibraryResultComponent } f
 import ProofStateContextProvider from "./ProofStateContext"
 import { ProofStateSelection, ProofStateSelectionContext, proofStateSelectionReducer } from "../src/core/ProofStateSelectionContext"
 import TypstContextProvider from "../src/components/TypstContext"
+import { ProofStateEditor } from "./ProofStateEditor"
 
 type WorkflowState = "idle" | "formalizing" | "formalized" | "applying" | "applied"
 
@@ -277,6 +278,27 @@ export default function MoveGenerator(): JSX.Element {
     dispatch({ action: "initialize", statement: "", proofState: [] })
   }
 
+  const handleCreateManually = (): void => {
+    const emptyState: ProofStateWithLibraryResultType = {
+      proofState: [{ variables: [], hypotheses: [], goals: [] }]
+    }
+    setCurrentInputState(emptyState)
+    dispatch({ action: "initialize", statement: "Manual proof state", proofState: emptyState.proofState })
+    setWorkflowState("formalized")
+  }
+
+  const handleUpdateInputProofState = (newProofState: ProofState): void => {
+    if (!currentInputState) return
+    const updated = { ...currentInputState, proofState: newProofState }
+    setCurrentInputState(updated)
+    dispatch({ action: "initialize", statement: problemDescription || "Manual proof state", proofState: newProofState })
+  }
+
+  const handleUpdateOutputProofState = (newProofState: ProofState): void => {
+    if (!currentOutputState) return
+    setCurrentOutputState({ ...currentOutputState, proofState: newProofState })
+  }
+
   const handleDeleteExample = (id: string): void => {
     setExamples(examples.filter(e => e.id !== id))
   }
@@ -434,13 +456,21 @@ export default function MoveGenerator(): JSX.Element {
                 placeholder="Enter a library statement to include in the proof state..."
               />
             </div>
-            <button
-              onClick={handleFormalize}
-              disabled={isLoading || !problemDescription.trim()}
-              style={styles.primaryButton}
-            >
-              {isLoading ? "Generating..." : "Generate"}
-            </button>
+            <div style={styles.actionButtons}>
+              <button
+                onClick={handleFormalize}
+                disabled={isLoading || !problemDescription.trim()}
+                style={styles.primaryButton}
+              >
+                {isLoading ? "Generating..." : "Generate"}
+              </button>
+              <button
+                onClick={handleCreateManually}
+                style={styles.secondaryButton}
+              >
+                Create Manually
+              </button>
+            </div>
           </div>
         )}
 
@@ -470,6 +500,10 @@ export default function MoveGenerator(): JSX.Element {
               <div style={styles.selectionInfo}>
                 {currentSelectionsCount} selection{currentSelectionsCount !== 1 ? 's' : ''} made
               </div>
+              <ProofStateEditor
+                proofState={currentInputState.proofState}
+                onUpdate={handleUpdateInputProofState}
+              />
             </div>
 
             {workflowState === "formalized" && (
@@ -512,6 +546,10 @@ export default function MoveGenerator(): JSX.Element {
               <ProofStateContextProvider>
                 <ProofStateWithLibraryResultComponent proofState={currentOutputState.proofState} libraryResult={currentOutputState.libraryResult} />
               </ProofStateContextProvider>
+              <ProofStateEditor
+                proofState={currentOutputState.proofState}
+                onUpdate={handleUpdateOutputProofState}
+              />
             </div>
 
             <div style={styles.formGroup}>
