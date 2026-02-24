@@ -9,9 +9,6 @@ export type SubExpressionCore = {
  * include its location within the underlying source text
  * as well as its bounding box within a rendered SVG. */
 export interface SubExpression extends SubExpressionCore {
-  text: string
-  source_start: number
-  source_end: number
   x: number
   y: number
   width: number
