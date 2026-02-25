@@ -55,14 +55,15 @@ const goalConjunctionMove: ProofDiscoveryMove = {
             kind: "example"
         },
         {
-            description: "An example with several conjuncts",
+            description: "An example with several conjuncts and additional goals",
             inputState: {
                 proofState: [
                     {
                         variables: [
                             { name: "A", kind: "free", description: "proposition" }, 
                             { name: "B", kind: "free", description: "proposition" },
-                            { name: "C", kind: "free", description: "proposition" }
+                            { name: "C", kind: "free", description: "proposition" },
+                            { name: "D", kind: "free", description: "proposition" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -75,6 +76,10 @@ const goalConjunctionMove: ProofDiscoveryMove = {
                                         statements: [ "A", "B", "C" ]
                                     }
                                 }
+                            },
+                            {
+                                label: "other_goal",
+                                statement: "D"
                             }
                         ]
                     }
@@ -86,7 +91,8 @@ const goalConjunctionMove: ProofDiscoveryMove = {
                         variables: [
                             { name: "A", kind: "free", description: "proposition" }, 
                             { name: "B", kind: "free", description: "proposition" },
-                            { name: "C", kind: "free", description: "proposition" }
+                            { name: "C", kind: "free", description: "proposition" },
+                            { name: "D", kind: "free", description: "proposition" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -101,6 +107,10 @@ const goalConjunctionMove: ProofDiscoveryMove = {
                             {
                                 label: "goal_C",
                                 statement: "C"
+                            },
+                            {
+                                label: "other_goal",
+                                statement: "D"
                             }
                         ]
                     }
@@ -122,7 +132,7 @@ const goalConjunctionMove: ProofDiscoveryMove = {
                                     kind: "highlight",
                                     statement: {
                                         kind: "conjunction",
-                                        statements: [ "X is compact", "X is Hausdorff" ]
+                                        statements: [ "$X$ is compact", "$X$ is Hausdorff" ]
                                     }
                                 }
                             }
@@ -142,7 +152,7 @@ const goalConjunctionMove: ProofDiscoveryMove = {
                             },
                             {
                                 label: "X_hausdorff",
-                                statement:"X is Hausdorff"
+                                statement:"$X$ is Hausdorff"
                             }
                         ]
                     }
@@ -155,12 +165,12 @@ const goalConjunctionMove: ProofDiscoveryMove = {
             inputState: {
                 proofState: [
                     {
-                        variables: [{ name: "X", kind: "free", description: "proposition" }],
+                        variables: [{ name: "P", kind: "free", description: "proposition" }],
                         hypotheses: [],
                         goals: [
                             {
                                 label: "main_goal",
-                                statement: { kind: "highlight", statement: "X" }
+                                statement: { kind: "highlight", statement: "P" }
                             }
                         ]
                     }
@@ -168,6 +178,26 @@ const goalConjunctionMove: ProofDiscoveryMove = {
             },
             outputState: null,
             comment: "This move is not relevant here, since the goal is not a conjunction.",
+            kind: "non-example"
+        },
+        {
+            description: "A non-example with an incorrect selection",
+            inputState: {
+                proofState: [
+                    {
+                        variables: [{ name: "P", kind: "free", description: "proposition" }],
+                        hypotheses: [
+                            {
+                                label: "hyp_P",
+                                statement: { kind: "highlight", statement: "P" }
+                            }
+                        ],
+                        goals: []
+                    }
+                ]
+            },
+            outputState: null,
+            comment: "This move is not relevant here, since the selection is a hypothesis rather than a goal.",
             kind: "non-example"
         }
     ]
