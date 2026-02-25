@@ -1,7 +1,7 @@
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
 
 const hypothesisDisjunctionMove: ProofDiscoveryMove = {
-    name: "Split a disjunction in a hypothesis",
+    name: "Perform case distinction on a disjunction",
     kind: "strengthening",
     trigger: "This move is relevant when the only selection in the proof state is a hypothesis statement that is a disjunction.",
     action: "Split the disjunction into separate proof states (cases), one corresponding to each disjunct. In each case, the disjunctive hypothesis is replaced by the corresponding disjunct as a new hypothesis.",
