@@ -1,4 +1,5 @@
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
+import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 
 const hypothesisDisjunctionMove: ProofDiscoveryMove = {
     name: "Perform case distinction on a disjunction",
@@ -20,11 +21,8 @@ const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                             {
                                 label: "disj_hyp",
                                 statement: {
-                                    kind: "highlight",
-                                    statement: {
-                                        kind: "disjunction",
-                                        statements: [ "A", "B" ]
-                                    }
+                                    kind: "disjunction",
+                                    statements: [ "A", "B" ]
                                 }
                             }
                         ],
@@ -37,6 +35,14 @@ const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                     }
                 ]
             },
+            selections: [
+                {
+                    proofStateId: { proofNodeId: 0, proofContextId: 0 },
+                    location: { kind: "hypothesis", label: "disj_hyp" },
+                    address: [],
+                    selection: { kind: "disjunction", statements: [ "A", "B" ] }
+                }
+            ],
             outputState: {
                 proofState: [
                     {
@@ -97,11 +103,8 @@ const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                             {
                                 label: "disj_hyp",
                                 statement: {
-                                    kind: "highlight",
-                                    statement: {
-                                        kind: "disjunction",
-                                        statements: [ "A", "B", "C" ]
-                                    }
+                                    kind: "disjunction",
+                                    statements: [ "A", "B", "C" ]
                                 }
                             },
                             {
@@ -118,6 +121,14 @@ const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                     }
                 ]
             },
+            selections: [
+                {
+                    proofStateId: { proofNodeId: 0, proofContextId: 0 },
+                    location: { kind: "hypothesis", label: "disj_hyp" },
+                    address: [],
+                    selection: { kind: "disjunction", statements: [ "A", "B", "C" ] }
+                }
+            ],
             outputState: {
                 proofState: [
                     {
@@ -211,10 +222,7 @@ const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                         hypotheses: [
                             {
                                 label: "hyp_A",
-                                statement: {
-                                    kind: "highlight",
-                                    statement: "A"
-                                }
+                                statement: "A"
                             }
                         ],
                         goals: [
@@ -226,8 +234,16 @@ const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                     }
                 ]
             },
+            selections: [
+                {
+                    proofStateId: { proofNodeId: 0, proofContextId: 0 },
+                    location: { kind: "hypothesis", label: "hyp_A" },
+                    address: [],
+                    selection: "A"
+                }
+            ],
             outputState: null,
-            comment: "This is a non-example because the highlighted hypothesis is not a disjunction.",
+            comment: "This is a non-example because the selected hypothesis is not a disjunction.",
             kind: "non-example"
         },
         {
@@ -244,17 +260,22 @@ const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                             {
                                 label: "main_goal",
                                 statement: {
-                                    kind: "highlight",
-                                    statement: {
-                                        kind: "disjunction",
-                                        statements: [ "A", "B" ]
-                                    }
+                                    kind: "disjunction",
+                                    statements: [ "A", "B" ]
                                 }
                             }
                         ]
                     }
                 ]
             },
+            selections: [
+                {
+                    proofStateId: { proofNodeId: 0, proofContextId: 0 },
+                    location: { kind: "goal", label: "main_goal" },
+                    address: [],
+                    selection: { kind: "disjunction", statements: [ "A", "B" ] }
+                }
+            ],
             outputState: null,
             comment: "The move is not relevant here, since the selection is a goal rather than a hypothesis.",
             kind: "non-example"

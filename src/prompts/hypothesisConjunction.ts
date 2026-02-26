@@ -1,4 +1,5 @@
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
+import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 
 const hypothesisConjunctionMove: ProofDiscoveryMove = {
     name: "Split a conjunction in a hypothesis",
@@ -19,11 +20,8 @@ const hypothesisConjunctionMove: ProofDiscoveryMove = {
                             {
                                 label: "conj_hyp",
                                 statement: {
-                                    kind: "highlight", 
-                                    statement: {
-                                        kind: "conjunction",
-                                        statements: [ "A", "B" ]
-                                    }
+                                    kind: "conjunction",
+                                    statements: [ "A", "B" ]
                                 }
                             }
                         ],
@@ -31,6 +29,14 @@ const hypothesisConjunctionMove: ProofDiscoveryMove = {
                     }
                 ]
             },
+            selections: [
+                {
+                    proofStateId: { proofNodeId: 0, proofContextId: 0 },
+                    location: { kind: "hypothesis", label: "conj_hyp" },
+                    address: [],
+                    selection: { kind: "conjunction", statements: [ "A", "B" ] }
+                }
+            ],
             outputState: {
                 proofState: [
                     {
@@ -69,11 +75,8 @@ const hypothesisConjunctionMove: ProofDiscoveryMove = {
                             {
                                 label: "conj_hyp",
                                 statement: {
-                                    kind: "highlight",
-                                    statement: {
-                                        kind: "conjunction",
-                                        statements: [ "A", "B", "C" ]
-                                    }
+                                    kind: "conjunction",
+                                    statements: [ "A", "B", "C" ]
                                 }
                             },
                             {
@@ -85,6 +88,14 @@ const hypothesisConjunctionMove: ProofDiscoveryMove = {
                     }
                 ]
             },
+            selections: [
+                {
+                    proofStateId: { proofNodeId: 0, proofContextId: 0 },
+                    location: { kind: "hypothesis", label: "conj_hyp" },
+                    address: [],
+                    selection: { kind: "conjunction", statements: [ "A", "B", "C" ] }
+                }
+            ],
             outputState: {
                 proofState: [
                     {
@@ -127,13 +138,10 @@ const hypothesisConjunctionMove: ProofDiscoveryMove = {
                       hypotheses: [
                           {   label: "X_compact_hausdorff",
                               statement: {
-                                  kind: "highlight", 
-                                  statement: {
-                                      kind: "conjunction",
-                                      statements: [
-                                          "$X$ is compact", "$X$ is Hausdorff"
-                                      ]
-                                  }
+                                  kind: "conjunction",
+                                  statements: [
+                                      "$X$ is compact", "$X$ is Hausdorff"
+                                  ]
                               }
                           }
                       ],
@@ -141,6 +149,14 @@ const hypothesisConjunctionMove: ProofDiscoveryMove = {
                   }
               ]
             },
+            selections: [
+                {
+                    proofStateId: { proofNodeId: 0, proofContextId: 0 },
+                    location: { kind: "hypothesis", label: "X_compact_hausdorff" },
+                    address: [],
+                    selection: { kind: "conjunction", statements: [ "$X$ is compact", "$X$ is Hausdorff" ] }
+                }
+            ],
             outputState: {
                 proofState: [
                    {
@@ -166,18 +182,23 @@ const hypothesisConjunctionMove: ProofDiscoveryMove = {
                         hypotheses: [
                             {
                                 label: "hyp_A",
-                                statement: {
-                                    kind: "highlight",
-                                    statement: "A"
-                                }
+                                statement: "A"
                             }
                         ],
                         goals: []
                     }
                 ]
             },
+            selections: [
+                {
+                    proofStateId: { proofNodeId: 0, proofContextId: 0 },
+                    location: { kind: "hypothesis", label: "hyp_A" },
+                    address: [],
+                    selection: "A"
+                }
+            ],
             outputState: null,
-            comment: "This is a non-example because the highlighted hypothesis is not a conjunction.",
+            comment: "This is a non-example because the selected hypothesis is not a conjunction.",
             kind: "non-example"
         },
         {
@@ -192,15 +213,20 @@ const hypothesisConjunctionMove: ProofDiscoveryMove = {
                         goals: [
                             {
                                 label: "goal_A",
-                                statement: {
-                                    kind: "highlight",
-                                    statement: "A"
-                                }
+                                statement: "A"
                             }
                         ]
                     }
                 ]
             },
+            selections: [
+                {
+                    proofStateId: { proofNodeId: 0, proofContextId: 0 },
+                    location: { kind: "goal", label: "goal_A" },
+                    address: [],
+                    selection: "A"
+                }
+            ],
             outputState: null,
             comment: "The move is not relevant here, since the selection is a goal rather than a hypothesis.",
             kind: "non-example"

@@ -1,4 +1,5 @@
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
+import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 
 const goalConjunctionMove: ProofDiscoveryMove = {
     name: "Split a conjunction in the goal",
@@ -19,18 +20,23 @@ const goalConjunctionMove: ProofDiscoveryMove = {
                         goals: [
                             {
                                 label: "main_goal",
-                                statement: { 
-                                    kind: "highlight", 
-                                    statement: {
-                                        kind: "conjunction",
-                                        statements: [ "A", "B" ]
-                                    }
+                                statement: {
+                                    kind: "conjunction",
+                                    statements: [ "A", "B" ]
                                 }
                             }
                         ]
                     }
                 ]
             },
+            selections: [
+                {
+                    proofStateId: { proofNodeId: 0, proofContextId: 0 },
+                    location: { kind: "goal", label: "main_goal" },
+                    address: [],
+                    selection: { kind: "conjunction", statements: [ "A", "B" ] }
+                }
+            ],
             outputState: {
                 proofState: [
                     {
@@ -70,11 +76,8 @@ const goalConjunctionMove: ProofDiscoveryMove = {
                             {
                                 label: "main_goal",
                                 statement: {
-                                    kind: "highlight",
-                                    statement: {
-                                        kind: "conjunction",
-                                        statements: [ "A", "B", "C" ]
-                                    }
+                                    kind: "conjunction",
+                                    statements: [ "A", "B", "C" ]
                                 }
                             },
                             {
@@ -85,6 +88,14 @@ const goalConjunctionMove: ProofDiscoveryMove = {
                     }
                 ]
             },
+            selections: [
+                {
+                    proofStateId: { proofNodeId: 0, proofContextId: 0 },
+                    location: { kind: "goal", label: "main_goal" },
+                    address: [],
+                    selection: { kind: "conjunction", statements: [ "A", "B", "C" ] }
+                }
+            ] satisfies ProofStateSelection[],
             outputState: {
                 proofState: [
                     {
@@ -129,17 +140,22 @@ const goalConjunctionMove: ProofDiscoveryMove = {
                             {
                                 label: "X_compact_and_hausdorff",
                                 statement: {
-                                    kind: "highlight",
-                                    statement: {
-                                        kind: "conjunction",
-                                        statements: [ "$X$ is compact", "$X$ is Hausdorff" ]
-                                    }
+                                    kind: "conjunction",
+                                    statements: [ "$X$ is compact", "$X$ is Hausdorff" ]
                                 }
                             }
                         ]
                     }
                 ]
             },
+            selections: [
+                {
+                    proofStateId: { proofNodeId: 0, proofContextId: 0 },
+                    location: { kind: "goal", label: "X_compact_and_hausdorff" },
+                    address: [],
+                    selection: { kind: "conjunction", statements: [ "$X$ is compact", "$X$ is Hausdorff" ] }
+                }
+            ],
             outputState: {
                 proofState: [
                     {
@@ -170,12 +186,20 @@ const goalConjunctionMove: ProofDiscoveryMove = {
                         goals: [
                             {
                                 label: "main_goal",
-                                statement: { kind: "highlight", statement: "P" }
+                                statement: "P"
                             }
                         ]
                     }
                 ]
             },
+            selections: [
+                {
+                    proofStateId: { proofNodeId: 0, proofContextId: 0 },
+                    location: { kind: "goal", label: "main_goal" },
+                    address: [],
+                    selection: "P"
+                }
+            ],
             outputState: null,
             comment: "This move is not relevant here, since the goal is not a conjunction.",
             kind: "non-example"
@@ -189,13 +213,21 @@ const goalConjunctionMove: ProofDiscoveryMove = {
                         hypotheses: [
                             {
                                 label: "hyp_P",
-                                statement: { kind: "highlight", statement: "P" }
+                                statement: "P"
                             }
                         ],
                         goals: []
                     }
                 ]
             },
+            selections: [
+                {
+                    proofStateId: { proofNodeId: 0, proofContextId: 0 },
+                    location: { kind: "hypothesis", label: "hyp_P" },
+                    address: [],
+                    selection: "P"
+                }
+            ],
             outputState: null,
             comment: "This move is not relevant here, since the selection is a hypothesis rather than a goal.",
             kind: "non-example"
