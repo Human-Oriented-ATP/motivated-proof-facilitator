@@ -13,6 +13,7 @@ export interface ProofDiscoveryMove {
     examples: {
         description: string 
         inputState: ProofStateWithLibraryResult
+        selections: ProofStateSelection[]
         outputState: ProofStateWithLibraryResult | null
         comment?: string
         kind: "example" | "non-example"
