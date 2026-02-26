@@ -3,7 +3,7 @@ import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 
 const goalConjunctionMove: ProofDiscoveryMove = {
     name: "Split a conjunction in the goal",
-    kind: "strengthening",
+    kind: "equivalence",
     trigger: "This move is relevant when the only selection in the proof state is a goal statement that is a conjunction.",
     action: "Split the conjunction into separate goals, one corresponding to each conjunct.",
     examples: [
