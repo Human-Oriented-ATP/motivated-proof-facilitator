@@ -1,6 +1,8 @@
 import React, { useState, useReducer, JSX } from "react"
 import { ProofState, ProofStateSchema, ProofStateWithLibraryResult as ProofStateWithLibraryResultType, LabelledStatementSchema, StatementSchema } from "../src/core/ProofStateZod"
-import { ProofDiscoveryMove, MoveKind } from "../src/core/ProofDiscoveryMove"
+import { ProofDiscoveryMove, MoveKind, ProofDiscoveryMoveExample } from "../src/core/ProofDiscoveryMove"
+
+type UIExample = ProofDiscoveryMoveExample & { id: string }
 import { proofDiscoveryStateReducer, nullProofDiscoveryState } from "../src/core/ProofDiscoveryState"
 import { ProofStateWithLibraryResult as ProofStateWithLibraryResultComponent } from "../src/components/ProofState"
 import ProofStateContextProvider from "./ProofStateContext"
@@ -8,15 +10,6 @@ import { ProofStateSelection, ProofStateSelectionContext, proofStateSelectionRed
 import TypstContextProvider from "../src/components/TypstContext"
 
 type WorkflowState = "idle" | "formalizing" | "formalized" | "applying" | "applied"
-
-interface Example {
-  id: string
-  description: string
-  inputState: ProofStateWithLibraryResultType
-  outputState: ProofStateWithLibraryResultType | null
-  comment?: string
-  kind: "example" | "non-example"
-}
 
 /**
  * Move Generator UI - Allows users to interactively create ProofDiscoveryMove definitions
@@ -29,7 +22,7 @@ export default function MoveGenerator(): JSX.Element {
   const [action, setAction] = useState("")
 
   // Examples collection
-  const [examples, setExamples] = useState<Example[]>([])
+  const [examples, setExamples] = useState<UIExample[]>([])
 
   // Current example being constructed
   const [workflowState, setWorkflowState] = useState<WorkflowState>("idle")
@@ -74,10 +67,11 @@ export default function MoveGenerator(): JSX.Element {
       
       // Load examples if they exist
       if (Array.isArray(parsed.examples)) {
-        const loadedExamples: Example[] = parsed.examples.map((ex, idx) => ({
+        const loadedExamples: UIExample[] = parsed.examples.map((ex, idx) => ({
           id: `loaded-${Date.now()}-${idx}`,
           description: ex.description,
           inputState: ex.inputState,
+          selections: ex.selections ?? [],
           outputState: ex.outputState,
           comment: ex.comment,
           kind: ex.kind,
@@ -219,6 +213,7 @@ export default function MoveGenerator(): JSX.Element {
         body: JSON.stringify({
           proofState: currentInputState.proofState,
           move: action,
+          selections: selections,
         }),
       })
 
@@ -250,10 +245,11 @@ export default function MoveGenerator(): JSX.Element {
   const handleSaveExample = (kind: "example" | "non-example"): void => {
     if (!currentInputState) return
 
-    const newExample: Example = {
+    const newExample: UIExample = {
       id: Date.now().toString(),
       description: problemDescription,
       inputState: currentInputState,
+      selections: selections,
       outputState: currentOutputState,
       comment: exampleComment || undefined,
       kind: kind,
@@ -278,16 +274,18 @@ export default function MoveGenerator(): JSX.Element {
   }
 
   const handleDeleteExample = (id: string): void => {
-    setExamples(examples.filter(e => e.id !== id))
+    setExamples(examples.filter((e) => e.id !== id))
   }
 
   const generateMoveJSON = (): string => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const strippedExamples: ProofDiscoveryMoveExample[] = examples.map(({ id: _id, ...rest }) => rest)
     const move: ProofDiscoveryMove = {
       name: moveName,
       kind: moveKind,
       trigger: trigger,
       action: action,
-      examples: examples,
+      examples: strippedExamples,
     }
 
     return JSON.stringify(move, null, 2)
@@ -400,6 +398,9 @@ export default function MoveGenerator(): JSX.Element {
                   ✕
                 </button>
               </div>
+              {ex.selections.length === 0 && (
+                <div style={styles.noSelectionsWarning}>⚠ No selections recorded for this example</div>
+              )}
               {ex.comment && (
                 <div style={styles.commentText}>{ex.comment}</div>
               )}
@@ -757,6 +758,15 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#718096",
     marginTop: "8px",
     fontStyle: "italic",
+  },
+  noSelectionsWarning: {
+    fontSize: "12px",
+    color: "#b7791f",
+    backgroundColor: "#fefcbf",
+    border: "1px solid #f6e05e",
+    borderRadius: "4px",
+    padding: "4px 8px",
+    marginTop: "8px",
   },
   deleteButton: {
     padding: "4px 8px",
