@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ProofStateWithLibraryResult as ProofStateWithLibraryResultComponent } from '../src/components/ProofState';
 import { ProofStateSelectionContext } from '../src/core/ProofStateSelectionContext';
+import { ProofStateIdContext } from '../src/core/ProofDiscoveryStateContext';
 import TypstContextProvider from '../src/components/TypstContext';
 
 import { goalConjunctionMove } from '../src/prompts/goalConjunction';
@@ -38,6 +39,7 @@ export default function MoveVisualizer(): React.JSX.Element {
     };
 
     return (
+        <TypstContextProvider>
         <div style={styles.container}>
             <select 
                 style={styles.selector}
@@ -74,25 +76,23 @@ export default function MoveVisualizer(): React.JSX.Element {
                     <div style={styles.stateContainer}>
                         <div style={styles.stateBox}>
                             <h5>Input State</h5>
+                            <ProofStateIdContext.Provider value={{ proofNodeId: 0, proofContextId: -1 }}>
                             <ProofStateSelectionContext.Provider value={{ selections: example.selections, dispatch: () => {} }}>
-                                <TypstContextProvider>
-                                    <ProofStateWithLibraryResultComponent 
-                                        proofState={example.inputState.proofState} 
-                                        libraryResult={example.inputState.libraryResult ?? undefined} 
-                                    />
-                                </TypstContextProvider>
+                                <ProofStateWithLibraryResultComponent 
+                                    proofState={example.inputState.proofState} 
+                                    libraryResult={example.inputState.libraryResult ?? undefined} 
+                                />
                             </ProofStateSelectionContext.Provider>
+                            </ProofStateIdContext.Provider>
                         </div>
                         
                         <div style={styles.stateBox}>
                             <h5>Output State</h5>
                             {example.outputState ? (
-                                <TypstContextProvider>
-                                    <ProofStateWithLibraryResultComponent 
-                                        proofState={example.outputState.proofState} 
-                                        libraryResult={example.outputState.libraryResult ?? undefined} 
-                                    />
-                                </TypstContextProvider>
+                                <ProofStateWithLibraryResultComponent 
+                                    proofState={example.outputState.proofState} 
+                                    libraryResult={example.outputState.libraryResult ?? undefined} 
+                                />
                             ) : (
                                 <p style={{ color: '#888' }}>No output state</p>
                             )}
@@ -101,5 +101,6 @@ export default function MoveVisualizer(): React.JSX.Element {
                 </div>
             ))}
         </div>
+        </TypstContextProvider>
     );
 }

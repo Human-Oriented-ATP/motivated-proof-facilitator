@@ -3,7 +3,7 @@ import { Statement } from "../core/ProofState"
 import { AtomicStatement } from "./AtomicStatement"
 import { StatementAddress, ProofStateSelectionContext, ProofStateLocationContext, StatementCoordinate,
         areStatementAddressesEqual, locationPolarity, addressPolarity, coordinatePolarity } from "../core/ProofStateSelectionContext"
-import { ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
+import { areProofStateIdsEqual, ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
 
 // Import generated logical symbol SVGs
 import conjunctionSvg from "../assets/logical-symbols/conjunction.svg"
@@ -143,11 +143,11 @@ export function MathStatement({ address, statement, polarity }: MathStatementPro
 
     // Check if current statement is selected
     const isSelected = selections.some(sel => 
-        sel.proofStateId === proofStateId &&
+        areProofStateIdsEqual(sel.proofStateId, proofStateId) &&
         sel.location.kind === proofStateLocation.kind &&
         sel.location.label === proofStateLocation.label &&
         areStatementAddressesEqual(sel.address, address) &&
-        sel.selection === statement
+        JSON.stringify(sel.selection) === JSON.stringify(statement)
     )
 
     // Handle click to toggle selection
