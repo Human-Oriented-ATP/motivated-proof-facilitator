@@ -13,7 +13,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "P", kind: "free", description: "$NN -> \"proposition\"$" }
+                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -21,7 +21,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                                 label: "main_goal",
                                 statement: {
                                     kind: "existential",
-                                    variable: { name: "a", description: "$NN$" },
+                                    variable: { name: "$a$", description: "$NN$" },
                                     statement: "$P(a)$"
                                 }
                             }
@@ -36,7 +36,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                     address: [],
                     selection: {
                         kind: "existential",
-                        variable: { name: "a", description: "$NN$" },
+                        variable: { name: "$a$", description: "$NN$" },
                         statement: "$P(a)$"
                     }
                 }
@@ -45,8 +45,8 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "P", kind: "free", description: "$NN -> \"proposition\"$" },
-                            { name: "a", kind: "meta", description: "$NN$" }
+                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" },
+                            { name: "$a$", kind: "meta", description: "$NN$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -66,7 +66,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "P", kind: "free", description: "$NN -> \"proposition\"$" }
+                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -74,7 +74,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                                 label: "main_goal",
                                 statement: {
                                     kind: "existential",
-                                    variable: { name: "a", description: "$NN$" },
+                                    variable: { name: "$a$", description: "$NN$" },
                                     statement: "$P(a)$"
                                 }
                             }
@@ -87,15 +87,15 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                     proofStateId: { proofNodeId: 0, proofContextId: 0 },
                     location: { kind: "goal", label: "main_goal" },
                     address: [ "existential_var" ],
-                    selection: "a"
+                    selection: "$a$"
                 }
             ],
             outputState: {
                 proofState: [
                     {
                         variables: [
-                            { name: "P", kind: "free", description: "$NN -> \"proposition\"$" },
-                            { name: "a", kind: "meta", description: "$NN$" }
+                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" },
+                            { name: "$a$", kind: "meta", description: "$NN$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -115,7 +115,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "A", kind: "free", description: "proposition" },
+                            { name: "$A$", kind: "free", description: "proposition" },
                             { name: "Q", kind: "free", description: "$NN -> \"proposition\"$" }
                         ],
                         hypotheses: [
@@ -129,7 +129,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                                 label: "main_goal",
                                 statement: {
                                     kind: "existential",
-                                    variable: { name: "a", description: "$NN$" },
+                                    variable: { name: "$a$", description: "$NN$" },
                                     statement: "$Q(a)$"
                                 }
                             }
@@ -144,7 +144,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                     address: [],
                     selection: {
                         kind: "existential",
-                        variable: { name: "a", description: "$NN$" },
+                        variable: { name: "$a$", description: "$NN$" },
                         statement: "$Q(a)$"
                     }
                 }
@@ -153,9 +153,9 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "A", kind: "free", description: "proposition" },
+                            { name: "$A$", kind: "free", description: "proposition" },
                             { name: "Q", kind: "free", description: "$NN -> \"proposition\"$" },
-                            { name: "a", kind: "meta", description: "$NN$" }
+                            { name: "$a$", kind: "meta", description: "$NN$" }
                         ],
                         hypotheses: [
                             {
@@ -180,9 +180,9 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "A", kind: "free", description: "proposition" },
-                            { name: "B", kind: "free", description: "proposition" },
-                            { name: "P", kind: "free", description: "$NN -> \"proposition\"$" }
+                            { name: "$A$", kind: "free", description: "proposition" },
+                            { name: "$B$", kind: "free", description: "proposition" },
+                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -190,7 +190,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                                 label: "exists_goal",
                                 statement: {
                                     kind: "existential",
-                                    variable: { name: "a", description: "$NN$" },
+                                    variable: { name: "$a$", description: "$NN$" },
                                     statement: "$P(a)$"
                                 }
                             },
@@ -209,7 +209,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                     address: [],
                     selection: {
                         kind: "existential",
-                        variable: { name: "a", description: "$NN$" },
+                        variable: { name: "$a$", description: "$NN$" },
                         statement: "$P(a)$"
                     }
                 }
@@ -218,10 +218,10 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "A", kind: "free", description: "proposition" },
-                            { name: "B", kind: "free", description: "proposition" },
-                            { name: "P", kind: "free", description: "$NN -> \"proposition\"$" },
-                            { name: "a", kind: "meta", description: "$NN$" }
+                            { name: "$A$", kind: "free", description: "proposition" },
+                            { name: "$B$", kind: "free", description: "proposition" },
+                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" },
+                            { name: "$a$", kind: "meta", description: "$NN$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -233,9 +233,9 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                     },
                     {
                         variables: [
-                            { name: "A", kind: "free", description: "proposition" },
-                            { name: "B", kind: "free", description: "proposition" },
-                            { name: "P", kind: "free", description: "$NN -> \"proposition\"$" }
+                            { name: "$A$", kind: "free", description: "proposition" },
+                            { name: "$B$", kind: "free", description: "proposition" },
+                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -283,15 +283,15 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "a", kind: "free", description: "$NN$" },
-                            { name: "P", kind: "free", description: "$NN -> \"proposition\"$" }
+                            { name: "$a$", kind: "free", description: "$NN$" },
+                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" }
                         ],
                         hypotheses: [
                             {
                                 label: "hyp",
                                 statement: {
                                     kind: "existential",
-                                    variable: { name: "b", description: "$NN$" },
+                                    variable: { name: "$b$", description: "$NN$" },
                                     statement: "$P(b)$"
                                 }
                             }
@@ -312,7 +312,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                     address: [],
                     selection: {
                         kind: "existential",
-                        variable: { name: "b", description: "$NN$" },
+                        variable: { name: "$b$", description: "$NN$" },
                         statement: "$P(b)$"
                     }
                 }

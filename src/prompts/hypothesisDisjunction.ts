@@ -13,23 +13,23 @@ export const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "A", kind: "free", description: "proposition" },
-                            { name: "B", kind: "free", description: "proposition" },
-                            { name: "C", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "proposition" },
+                            { name: "$B$", kind: "free", description: "proposition" },
+                            { name: "$C$", kind: "free", description: "proposition" }
                         ],
                         hypotheses: [
                             {
                                 label: "disj_hyp",
                                 statement: {
                                     kind: "disjunction",
-                                    statements: [ "A", "B" ]
+                                    statements: [ "$A$", "$B$" ]
                                 }
                             }
                         ],
                         goals: [
                             {
                                 label: "main_goal",
-                                statement: "C"
+                                statement: "$C$"
                             }
                         ]
                     }
@@ -40,46 +40,46 @@ export const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                     proofStateId: { proofNodeId: 0, proofContextId: 0 },
                     location: { kind: "hypothesis", label: "disj_hyp" },
                     address: [],
-                    selection: { kind: "disjunction", statements: [ "A", "B" ] }
+                    selection: { kind: "disjunction", statements: [ "$A$", "$B$" ] }
                 }
             ],
             outputState: {
                 proofState: [
                     {
                         variables: [
-                            { name: "A", kind: "free", description: "proposition" },
-                            { name: "B", kind: "free", description: "proposition" },
-                            { name: "C", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "proposition" },
+                            { name: "$B$", kind: "free", description: "proposition" },
+                            { name: "$C$", kind: "free", description: "proposition" }
                         ],
                         hypotheses: [
                             {
                                 label: "hyp_A",
-                                statement: "A"
+                                statement: "$A$"
                             }
                         ],
                         goals: [
                             {
                                 label: "main_goal",
-                                statement: "C"
+                                statement: "$C$"
                             }
                         ]
                     },
                     {
                         variables: [
-                            { name: "A", kind: "free", description: "proposition" },
-                            { name: "B", kind: "free", description: "proposition" },
-                            { name: "C", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "proposition" },
+                            { name: "$B$", kind: "free", description: "proposition" },
+                            { name: "$C$", kind: "free", description: "proposition" }
                         ],
                         hypotheses: [
                             {
                                 label: "hyp_B",
-                                statement: "B"
+                                statement: "$B$"
                             }
                         ],
                         goals: [
                             {
                                 label: "main_goal",
-                                statement: "C"
+                                statement: "$C$"
                             }
                         ]
                     }
@@ -93,10 +93,10 @@ export const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "A", kind: "free", description: "proposition" },
-                            { name: "B", kind: "free", description: "proposition" },
-                            { name: "C", kind: "free", description: "proposition" },
-                            { name: "D", kind: "free", description: "proposition" },
+                            { name: "$A$", kind: "free", description: "proposition" },
+                            { name: "$B$", kind: "free", description: "proposition" },
+                            { name: "$C$", kind: "free", description: "proposition" },
+                            { name: "$D$", kind: "free", description: "proposition" },
                             { name: "E", kind: "free", description: "proposition" }
                         ],
                         hypotheses: [
@@ -104,12 +104,12 @@ export const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                                 label: "disj_hyp",
                                 statement: {
                                     kind: "disjunction",
-                                    statements: [ "A", "B", "C" ]
+                                    statements: [ "$A$", "$B$", "$C$" ]
                                 }
                             },
                             {
                                 label: "other_hyp",
-                                statement: "D"
+                                statement: "$D$"
                             }
                         ],
                         goals: [
@@ -126,27 +126,27 @@ export const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                     proofStateId: { proofNodeId: 0, proofContextId: 0 },
                     location: { kind: "hypothesis", label: "disj_hyp" },
                     address: [],
-                    selection: { kind: "disjunction", statements: [ "A", "B", "C" ] }
+                    selection: { kind: "disjunction", statements: [ "$A$", "$B$", "$C$" ] }
                 }
             ],
             outputState: {
                 proofState: [
                     {
                         variables: [
-                            { name: "A", kind: "free", description: "proposition" },
-                            { name: "B", kind: "free", description: "proposition" },
-                            { name: "C", kind: "free", description: "proposition" },
-                            { name: "D", kind: "free", description: "proposition" },
+                            { name: "$A$", kind: "free", description: "proposition" },
+                            { name: "$B$", kind: "free", description: "proposition" },
+                            { name: "$C$", kind: "free", description: "proposition" },
+                            { name: "$D$", kind: "free", description: "proposition" },
                             { name: "E", kind: "free", description: "proposition" }
                         ],
                         hypotheses: [
                             {
                                 label: "hyp_A",
-                                statement: "A"
+                                statement: "$A$"
                             },
                             {
                                 label: "other_hyp",
-                                statement: "D"
+                                statement: "$D$"
                             }
                         ],
                         goals: [
@@ -158,20 +158,20 @@ export const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                     },
                     {
                         variables: [
-                            { name: "A", kind: "free", description: "proposition" },
-                            { name: "B", kind: "free", description: "proposition" },
-                            { name: "C", kind: "free", description: "proposition" },
-                            { name: "D", kind: "free", description: "proposition" },
+                            { name: "$A$", kind: "free", description: "proposition" },
+                            { name: "$B$", kind: "free", description: "proposition" },
+                            { name: "$C$", kind: "free", description: "proposition" },
+                            { name: "$D$", kind: "free", description: "proposition" },
                             { name: "E", kind: "free", description: "proposition" }
                         ],
                         hypotheses: [
                             {
                                 label: "hyp_B",
-                                statement: "B"
+                                statement: "$B$"
                             },
                             {
                                 label: "other_hyp",
-                                statement: "D"
+                                statement: "$D$"
                             }
                         ],
                         goals: [
@@ -183,20 +183,20 @@ export const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                     },
                     {
                         variables: [
-                            { name: "A", kind: "free", description: "proposition" },
-                            { name: "B", kind: "free", description: "proposition" },
-                            { name: "C", kind: "free", description: "proposition" },
-                            { name: "D", kind: "free", description: "proposition" },
+                            { name: "$A$", kind: "free", description: "proposition" },
+                            { name: "$B$", kind: "free", description: "proposition" },
+                            { name: "$C$", kind: "free", description: "proposition" },
+                            { name: "$D$", kind: "free", description: "proposition" },
                             { name: "E", kind: "free", description: "proposition" }
                         ],
                         hypotheses: [
                             {
                                 label: "hyp_C",
-                                statement: "C"
+                                statement: "$C$"
                             },
                             {
                                 label: "other_hyp",
-                                statement: "D"
+                                statement: "$D$"
                             }
                         ],
                         goals: [
@@ -216,19 +216,19 @@ export const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "A", kind: "free", description: "proposition" },
-                            { name: "B", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "proposition" },
+                            { name: "$B$", kind: "free", description: "proposition" }
                         ],
                         hypotheses: [
                             {
                                 label: "hyp_A",
-                                statement: "A"
+                                statement: "$A$"
                             }
                         ],
                         goals: [
                             {
                                 label: "main_goal",
-                                statement: "B"
+                                statement: "$B$"
                             }
                         ]
                     }
@@ -239,7 +239,7 @@ export const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                     proofStateId: { proofNodeId: 0, proofContextId: 0 },
                     location: { kind: "hypothesis", label: "hyp_A" },
                     address: [],
-                    selection: "A"
+                    selection: "$A$"
                 }
             ],
             outputState: null,
@@ -252,8 +252,8 @@ export const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "A", kind: "free", description: "proposition" },
-                            { name: "B", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "proposition" },
+                            { name: "$B$", kind: "free", description: "proposition" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -261,7 +261,7 @@ export const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                                 label: "main_goal",
                                 statement: {
                                     kind: "disjunction",
-                                    statements: [ "A", "B" ]
+                                    statements: [ "$A$", "$B$" ]
                                 }
                             }
                         ]
@@ -273,7 +273,7 @@ export const hypothesisDisjunctionMove: ProofDiscoveryMove = {
                     proofStateId: { proofNodeId: 0, proofContextId: 0 },
                     location: { kind: "goal", label: "main_goal" },
                     address: [],
-                    selection: { kind: "disjunction", statements: [ "A", "B" ] }
+                    selection: { kind: "disjunction", statements: [ "$A$", "$B$" ] }
                 }
             ],
             outputState: null,
