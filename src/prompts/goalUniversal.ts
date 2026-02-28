@@ -1,7 +1,7 @@
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
 import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 
-const goalUniversalMove: ProofDiscoveryMove = {
+export const goalUniversalMove: ProofDiscoveryMove = {
     name: "Peel universally quantified variable in the goal",
     kind: "equivalence",
     trigger: "This move is relevant when the only selection in the proof state is either a goal statement that is a universally quantified statement, or the universally quantified variable within such a goal.",
@@ -323,5 +323,3 @@ const goalUniversalMove: ProofDiscoveryMove = {
         }
     ]
 }
-
-export default goalUniversalMove

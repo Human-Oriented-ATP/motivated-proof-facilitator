@@ -12,9 +12,10 @@ import RenderProofDiscoveryStates from "./ProofDiscoveryState"
 import RenderProofDiscoveryEnvironment from "./ProofDiscoveryEnvironment"
 import RenderFormalizer from "./Formalizer"
 import MoveGenerator from "./MoveGenerator"
+import MoveVisualizer from "./MoveVisualizer"
 
 export default function Test(): JSX.Element {
-    const [activeTest, setActiveTest] = useState<'expressions' | 'statements' | 'proofstates' | 'proofdiscoverystates' | 'proofdiscoveryenvironment' | 'formalizer' | 'movegenerator'>('proofstates')
+    const [activeTest, setActiveTest] = useState<'expressions' | 'statements' | 'proofstates' | 'proofdiscoverystates' | 'proofdiscoveryenvironment' | 'formalizer' | 'movegenerator' | 'movevisualizer'>('proofstates')
     
     return (
         <div>
@@ -133,6 +134,21 @@ export default function Test(): JSX.Element {
                 >
                     Move Generator
                 </button>
+                <button
+                    onClick={() => setActiveTest('movevisualizer')}
+                    style={{
+                        padding: '10px 20px',
+                        backgroundColor: activeTest === 'movevisualizer' ? '#2196F3' : '#555',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    Move Visualizer
+                </button>
             </div>
             
             {activeTest === 'expressions' ? <RenderMathExpressions /> : 
@@ -141,7 +157,8 @@ export default function Test(): JSX.Element {
              activeTest === 'proofdiscoverystates' ? <RenderProofDiscoveryStates /> :
              activeTest === 'proofdiscoveryenvironment' ? <RenderProofDiscoveryEnvironment /> :
              activeTest === 'formalizer' ? <RenderFormalizer /> :
-             <MoveGenerator />}
+             activeTest === 'movegenerator' ? <MoveGenerator /> :
+             <MoveVisualizer />}
         </div>
     )
 }

@@ -1,7 +1,7 @@
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
 import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 
-const goalDisjunctionMove: ProofDiscoveryMove = {
+export const goalDisjunctionMove: ProofDiscoveryMove = {
     name: "Choose a branch in a disjunctive goal",
     kind: "strengthening",
     trigger: "This move is relevant when the only selection in the proof state is a single disjunct within a goal statement that is a disjunction.",
@@ -283,5 +283,3 @@ const goalDisjunctionMove: ProofDiscoveryMove = {
         }
     ]
 }
-
-export default goalDisjunctionMove

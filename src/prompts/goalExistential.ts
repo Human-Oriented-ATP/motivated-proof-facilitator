@@ -1,7 +1,7 @@
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
 import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 
-const goalExistentialMove: ProofDiscoveryMove = {
+export const goalExistentialMove: ProofDiscoveryMove = {
     name: "Peel existentially quantified variable in the goal",
     kind: "equivalence",
     trigger: "This move is relevant when the only selection in the proof state is either a goal statement that is an existentially quantified statement, or the existentially quantified variable within such a goal.",
@@ -89,7 +89,7 @@ const goalExistentialMove: ProofDiscoveryMove = {
                     address: [ "existential_var" ],
                     selection: "a"
                 }
-            ] satisfies ProofStateSelection[],
+            ],
             outputState: {
                 proofState: [
                     {
@@ -323,5 +323,3 @@ const goalExistentialMove: ProofDiscoveryMove = {
         }
     ]
 }
-
-export default goalExistentialMove

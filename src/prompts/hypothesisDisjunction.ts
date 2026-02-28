@@ -1,7 +1,7 @@
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
 import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 
-const hypothesisDisjunctionMove: ProofDiscoveryMove = {
+export const hypothesisDisjunctionMove: ProofDiscoveryMove = {
     name: "Perform case distinction on a disjunctive hypothesis",
     kind: "strengthening",
     trigger: "This move is relevant when the only selection in the proof state is a hypothesis statement that is a disjunction.",
@@ -282,5 +282,3 @@ const hypothesisDisjunctionMove: ProofDiscoveryMove = {
         }
     ]
 }
-
-export default hypothesisDisjunctionMove

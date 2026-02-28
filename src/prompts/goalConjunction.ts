@@ -1,7 +1,7 @@
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
 import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 
-const goalConjunctionMove: ProofDiscoveryMove = {
+export const goalConjunctionMove: ProofDiscoveryMove = {
     name: "Split a conjunction in the goal",
     kind: "equivalence",
     trigger: "This move is relevant when the only selection in the proof state is a goal statement that is a conjunction.",
@@ -95,7 +95,7 @@ const goalConjunctionMove: ProofDiscoveryMove = {
                     address: [],
                     selection: { kind: "conjunction", statements: [ "A", "B", "C" ] }
                 }
-            ] satisfies ProofStateSelection[],
+            ],
             outputState: {
                 proofState: [
                     {
