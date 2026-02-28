@@ -19,12 +19,10 @@ import { ProofDiscoveryState, MoveKind } from '../core/ProofDiscoveryState'
 import { ProofState as ProofStateComponent } from './ProofState'
 import { ProofDiscoveryStateContext, ProofStateIdContext } from '../core/ProofDiscoveryStateContext'
 
-/** Props for custom node component */
-type ProofNodeData = {
-  proofNodeId: number
-  proofState: any
-  isCurrentNode: boolean
-  isSolved: boolean
+/** Props for the ProofDiscoveryGraphLoader component */
+export type ProofDiscoveryGraphLoaderProps = {
+    /** The proof discovery state to visualize */
+    proofDiscoveryState: ProofDiscoveryStateType
 }
 
 /** Custom node component that displays a miniaturized proof state */
@@ -139,7 +137,7 @@ function getEdgeStyle(moveKind: MoveKind): {
   }
 }
 
-/** Props for ProofDiscoveryState component */
+/** Props for the ProofDiscoveryState component */
 export type ProofDiscoveryStateProps = {
   proofDiscoveryState: ProofDiscoveryState
 }
