@@ -13,8 +13,8 @@ export const goalConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" }, 
-                            { name: "$B$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" }, 
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -41,8 +41,8 @@ export const goalConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" }, 
-                            { name: "$B$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" }, 
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -66,10 +66,10 @@ export const goalConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" }, 
-                            { name: "$B$", kind: "free", description: "proposition" },
-                            { name: "$C$", kind: "free", description: "proposition" },
-                            { name: "$D$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" }, 
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$C$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$D$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -100,10 +100,10 @@ export const goalConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" }, 
-                            { name: "$B$", kind: "free", description: "proposition" },
-                            { name: "$C$", kind: "free", description: "proposition" },
-                            { name: "$D$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" }, 
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$C$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$D$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -181,7 +181,7 @@ export const goalConjunctionMove: ProofDiscoveryMove = {
             inputState: {
                 proofState: [
                     {
-                        variables: [{ name: "$P$", kind: "free", description: "proposition" }],
+                        variables: [{ name: "$P$", kind: "free", description: "$#text[proposition]$" }],
                         hypotheses: [],
                         goals: [
                             {
@@ -209,7 +209,7 @@ export const goalConjunctionMove: ProofDiscoveryMove = {
             inputState: {
                 proofState: [
                     {
-                        variables: [{ name: "$P$", kind: "free", description: "proposition" }],
+                        variables: [{ name: "$P$", kind: "free", description: "$#text[proposition]$" }],
                         hypotheses: [
                             {
                                 label: "hyp_P",

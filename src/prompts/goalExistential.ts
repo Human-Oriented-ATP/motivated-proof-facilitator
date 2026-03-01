@@ -110,78 +110,14 @@ export const goalExistentialMove: ProofDiscoveryMove = {
             kind: "example"
         },
         {
-            description: "An abstract example with existing variables, hypotheses, and a single goal",
-            inputState: {
-                proofState: [
-                    {
-                        variables: [
-                            { name: "$A$", kind: "free", description: "proposition" },
-                            { name: "Q", kind: "free", description: "$NN -> \"proposition\"$" }
-                        ],
-                        hypotheses: [
-                            {
-                                label: "hyp_A",
-                                statement: "$A$"
-                            }
-                        ],
-                        goals: [
-                            {
-                                label: "main_goal",
-                                statement: {
-                                    kind: "existential",
-                                    variable: { name: "$a$", description: "$NN$" },
-                                    statement: "$Q(a)$"
-                                }
-                            }
-                        ]
-                    }
-                ]
-            },
-            selections: [
-                {
-                    proofStateId: { proofNodeId: 0, proofContextId: 0 },
-                    location: { kind: "goal", label: "main_goal" },
-                    address: [],
-                    selection: {
-                        kind: "existential",
-                        variable: { name: "$a$", description: "$NN$" },
-                        statement: "$Q(a)$"
-                    }
-                }
-            ],
-            outputState: {
-                proofState: [
-                    {
-                        variables: [
-                            { name: "$A$", kind: "free", description: "proposition" },
-                            { name: "Q", kind: "free", description: "$NN -> \"proposition\"$" },
-                            { name: "$a$", kind: "meta", description: "$NN$" }
-                        ],
-                        hypotheses: [
-                            {
-                                label: "hyp_A",
-                                statement: "$A$"
-                            }
-                        ],
-                        goals: [
-                            {
-                                label: "main_goal",
-                                statement: "$Q(a)$"
-                            }
-                        ]
-                    }
-                ]
-            },
-            kind: "example"
-        },
-        {
             description: "An abstract example with multiple goals: the selected goal is split off into a new proof context",
             inputState: {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" },
-                            { name: "$B$", kind: "free", description: "proposition" },
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$C$", kind: "free", description: "$#text[proposition]$" },
                             { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" }
                         ],
                         hypotheses: [],
@@ -197,6 +133,10 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                             {
                                 label: "other_goal",
                                 statement: "$B$"
+                            },
+                            {
+                                label: "yet_another_goal",
+                                statement: "$C$"
                             }
                         ]
                     }
@@ -218,8 +158,9 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" },
-                            { name: "$B$", kind: "free", description: "proposition" },
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$C$", kind: "free", description: "$#text[proposition]$" },
                             { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" },
                             { name: "$a$", kind: "meta", description: "$NN$" }
                         ],
@@ -233,8 +174,9 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                     },
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" },
-                            { name: "$B$", kind: "free", description: "proposition" },
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$C$", kind: "free", description: "$#text[proposition]$" },
                             { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" }
                         ],
                         hypotheses: [],
@@ -242,9 +184,13 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                             {
                                 label: "other_goal",
                                 statement: "$B$"
+                            },
+                            {
+                                label: "yet_another_goal",
+                                statement: "$C$"
                             }
                         ]
-                    }
+                    },
                 ]
             },
             kind: "example"

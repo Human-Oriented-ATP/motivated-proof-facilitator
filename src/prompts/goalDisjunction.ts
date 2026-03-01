@@ -13,8 +13,8 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" },
-                            { name: "$B$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -41,8 +41,8 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" },
-                            { name: "$B$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -57,15 +57,15 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
             kind: "example"
         },
         {
-            description: "An example with several disjuncts and the last one selected",
+            description: "An example with several disjuncts",
             inputState: {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" },
-                            { name: "$B$", kind: "free", description: "proposition" },
-                            { name: "$C$", kind: "free", description: "proposition" },
-                            { name: "$D$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$C$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$D$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -96,10 +96,10 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" },
-                            { name: "$B$", kind: "free", description: "proposition" },
-                            { name: "$C$", kind: "free", description: "proposition" },
-                            { name: "$D$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$C$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$D$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -125,12 +125,7 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                         variables: [
                             { name: "$X$", kind: "free", description: "topological space" }
                         ],
-                        hypotheses: [
-                            {
-                                label: "X_metric",
-                                statement: "$X$ is a metric space"
-                            }
-                        ],
+                        hypotheses: [],
                         goals: [
                             {
                                 label: "main_goal",
@@ -160,12 +155,7 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                         variables: [
                             { name: "$X$", kind: "free", description: "topological space" }
                         ],
-                        hypotheses: [
-                            {
-                                label: "X_metric",
-                                statement: "$X$ is a metric space"
-                            }
-                        ],
+                        hypotheses: [],
                         goals: [
                             {
                                 label: "X_hausdorff",
@@ -183,7 +173,7 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -213,8 +203,8 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" },
-                            { name: "$B$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -247,9 +237,9 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" },
-                            { name: "$B$", kind: "free", description: "proposition" },
-                            { name: "$C$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$C$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [
                             {

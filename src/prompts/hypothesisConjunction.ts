@@ -13,8 +13,9 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" }, 
-                            { name: "$B$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" }, 
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$C$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [
                             {
@@ -25,7 +26,12 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                                 }
                             }
                         ],
-                        goals: []
+                        goals: [
+                            {
+                                label: "main_goal",
+                                statement: "$C$"
+                            }
+                        ]
                     }
                 ]
             },
@@ -41,8 +47,8 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" }, 
-                            { name: "$B$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" }, 
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [
                             {
@@ -54,7 +60,12 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                                 statement:"$B$"
                             }
                         ],
-                        goals: []
+                        goals: [
+                            {
+                                label: "main_goal",
+                                statement: "$C$"
+                            }
+                        ]
                     }
                 ]
             },
@@ -66,10 +77,10 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" },
-                            { name: "$B$", kind: "free", description: "proposition" },
-                            { name: "$C$", kind: "free", description: "proposition" },
-                            { name: "$D$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$C$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$D$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [
                             {
@@ -100,10 +111,10 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" },
-                            { name: "$B$", kind: "free", description: "proposition" },
-                            { name: "$C$", kind: "free", description: "proposition" },
-                            { name: "$D$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$B$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$C$", kind: "free", description: "$#text[proposition]$" },
+                            { name: "$D$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [
                             {   
@@ -145,7 +156,12 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                               }
                           }
                       ],
-                      goals: []
+                      goals: [
+                        {
+                            label: "X_first_countable",
+                            statement: "$X$ is first-countable"
+                        }
+                      ]
                   }
               ]
             },
@@ -165,7 +181,12 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                             { label: "X_compact", statement: "$X$ is compact" },
                             { label: "X_hausdorff", statement: "$X$ is Hausdorff" }
                         ],
-                        goals: []
+                        goals: [
+                            {
+                                label: "X_first_countable",
+                                statement: "$X$ is first-countable"
+                            }
+                        ]
                     }                
                 ]
             },
@@ -177,7 +198,7 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [
                             {
@@ -207,7 +228,7 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "proposition" }
+                            { name: "$A$", kind: "free", description: "$#text[proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
