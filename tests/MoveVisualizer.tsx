@@ -7,6 +7,7 @@ import TypstContextProvider from '../src/components/TypstContext';
 import { goalConjunctionMove } from '../src/prompts/goalConjunction';
 import { goalDisjunctionMove } from '../src/prompts/goalDisjunction';
 import { goalExistentialMove } from '../src/prompts/goalExistential';
+import { goalImplicationMove } from '../src/prompts/goalImplication';
 import { goalUniversalMove } from '../src/prompts/goalUniversal';
 import { hypothesisConjunctionMove } from '../src/prompts/hypothesisConjunction';
 import { hypothesisDisjunctionMove } from '../src/prompts/hypothesisDisjunction';
@@ -15,6 +16,7 @@ const prompts = {
     goalConjunctionMove,
     goalDisjunctionMove,
     goalExistentialMove,
+    goalImplicationMove,
     goalUniversalMove,
     hypothesisConjunctionMove,
     hypothesisDisjunctionMove
