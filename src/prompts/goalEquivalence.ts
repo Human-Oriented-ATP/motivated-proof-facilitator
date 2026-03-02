@@ -245,9 +245,12 @@ export const goalEquivalenceMove: ProofDiscoveryMove = {
                         variables: [
                             { name: "$G$", kind: "free", description: "group" },
                             { name: "$H$", kind: "free", description: "group" },
-                            { name: "$phi$", kind: "free", description: "group homomorphism from $G$ to $H$" }
+                            { name: "$phi$", kind: "free", description: "$G -> H$" }
                         ],
-                        hypotheses: [],
+                        hypotheses: [{
+                            label: "phi_homomorphism",
+                            statement: "$phi$ is a group homomorphism"
+                        }],
                         goals: [
                             {
                                 label: "main_goal",
@@ -279,9 +282,12 @@ export const goalEquivalenceMove: ProofDiscoveryMove = {
                         variables: [
                             { name: "$G$", kind: "free", description: "group" },
                             { name: "$H$", kind: "free", description: "group" },
-                            { name: "$phi$", kind: "free", description: "group homomorphism from $G$ to $H$" }
+                            { name: "$phi$", kind: "free", description: "$G -> H$" }
                         ],
-                        hypotheses: [],
+                        hypotheses: [{
+                            label: "phi_homomorphism",
+                            statement: "$phi$ is a group homomorphism"
+                        }],
                         goals: [
                             {
                                 label: "forward",

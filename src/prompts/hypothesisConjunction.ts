@@ -158,8 +158,8 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                       ],
                       goals: [
                         {
-                            label: "X_first_countable",
-                            statement: "$X$ is first-countable"
+                            label: "main_goal",
+                            statement: "$X$ is compact"
                         }
                       ]
                   }
@@ -183,8 +183,8 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                         ],
                         goals: [
                             {
-                                label: "X_first_countable",
-                                statement: "$X$ is first-countable"
+                                label: "main_goal",
+                                statement: "$X$ is compact"
                             }
                         ]
                     }                
