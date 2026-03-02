@@ -9,6 +9,7 @@ import { goalDisjunctionMove } from '../src/prompts/goalDisjunction';
 import { goalEquivalenceMove } from '../src/prompts/goalEquivalence';
 import { goalExistentialMove } from '../src/prompts/goalExistential';
 import { goalImplicationMove } from '../src/prompts/goalImplication';
+import { goalContradictionMove } from '../src/prompts/goalContradiction';
 import { goalUniversalMove } from '../src/prompts/goalUniversal';
 import { hypothesisConjunctionMove } from '../src/prompts/hypothesisConjunction';
 import { hypothesisDisjunctionMove } from '../src/prompts/hypothesisDisjunction';
@@ -19,6 +20,7 @@ const prompts = {
     goalEquivalenceMove,
     goalExistentialMove,
     goalImplicationMove,
+    goalContradictionMove,
     goalUniversalMove,
     hypothesisConjunctionMove,
     hypothesisDisjunctionMove
