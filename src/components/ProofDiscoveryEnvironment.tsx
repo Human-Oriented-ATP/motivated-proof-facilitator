@@ -5,6 +5,7 @@ import { ProofDiscoveryState as ProofDiscoveryStateVisualization } from './Proof
 import { MathStatement } from './MathStatement'
 import { ProofStateSelectionContext, ProofStateLocationContext } from '../core/ProofStateSelectionContext'
 import { ProofStateIdContext, ProofDiscoveryStateContext } from '../core/ProofDiscoveryStateContext'
+import { MovePanel } from './MovePanel'
 
 export type ProofDiscoveryEnvironmentProps = {
   initialProofDiscoveryState: ProofDiscoveryState
@@ -272,6 +273,15 @@ export function ProofDiscoveryEnvironment({
               />
             </ProofStateIdContext.Provider>
           </div>
+
+          {/* Move Suggestions Panel */}
+          <div style={styles.movePanelSection}>
+            <ProofDiscoveryStateContext.Provider
+              value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}
+            >
+              <MovePanel />
+            </ProofDiscoveryStateContext.Provider>
+          </div>
         </div>
 
         {/* Side Panel for Proof Discovery Graph */}
@@ -533,6 +543,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: '1.5rem',
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
     overflow: 'auto',
+  },
+  movePanelSection: {
+    padding: '0 0 1rem 0',
   },
   graphPanel: {
     position: 'relative',
