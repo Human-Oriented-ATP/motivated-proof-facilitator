@@ -1,6 +1,6 @@
 import React, { useState, useReducer, JSX } from "react"
 import { ProofState, ProofStateSchema } from "../src/core/ProofStateZod"
-import { proofDiscoveryStateReducer, nullProofDiscoveryState } from "../src/core/ProofDiscoveryState"
+import { proofDiscoveryStateReducer, nullProofDiscoveryState, getCurrentProofState } from "../src/core/ProofDiscoveryState"
 import { ProofState as ProofStateComponent, ProofStateWithLibraryResult } from "../src/components/ProofState"
 import { MathStatement } from "../src/components/MathStatement"
 import ProofStateContextProvider from "./ProofStateContext"
@@ -92,10 +92,7 @@ export default function RenderFormalizer(): JSX.Element {
     setMoveError(null)
 
     try {
-      const currentProofState = proofDiscoveryState.graph.getNodeAttribute(
-        proofDiscoveryState.currentNodeId,
-        'proofState'
-      )
+      const currentProofState = getCurrentProofState(proofDiscoveryState)
 
       const response = await fetch("https://atp-backend-rygt.onrender.com/move", {
         method: "POST",
@@ -143,10 +140,7 @@ export default function RenderFormalizer(): JSX.Element {
     setIsInformalizeLoading(true)
 
     try {
-      const currentProofState = proofDiscoveryState.graph.getNodeAttribute(
-        proofDiscoveryState.currentNodeId,
-        'proofState'
-      )
+      const currentProofState = getCurrentProofState(proofDiscoveryState)
 
       const response = await fetch("https://atp-backend-rygt.onrender.com/informalize", {
         method: "POST",
@@ -330,11 +324,11 @@ export default function RenderFormalizer(): JSX.Element {
           <ProofStateContextProvider>
             { proofDiscoveryState.highlightedLibraryStatement ? 
               <ProofStateWithLibraryResult 
-                proofState={proofDiscoveryState.graph.getNodeAttribute(proofDiscoveryState.currentNodeId, 'proofState')}
+                proofState={getCurrentProofState(proofDiscoveryState)}
                 libraryResult={proofDiscoveryState.library[proofDiscoveryState.highlightedLibraryStatement]}
               /> : 
               <ProofStateComponent 
-                proofState={proofDiscoveryState.graph.getNodeAttribute(proofDiscoveryState.currentNodeId, 'proofState')} 
+                proofState={getCurrentProofState(proofDiscoveryState)} 
               /> 
             }
           </ProofStateContextProvider>

@@ -131,3 +131,7 @@ export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: P
             return state
     }
 }
+
+export function getCurrentProofState(proofDiscoveryState: ProofDiscoveryState): ProofState {
+    return proofDiscoveryState.graph.getNodeAttribute(proofDiscoveryState.currentNodeId, 'proofState')
+}
