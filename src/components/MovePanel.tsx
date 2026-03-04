@@ -264,7 +264,20 @@ export function MovePanel(): JSX.Element {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  // Idle / prompt state
+  // No selections made yet
+  if (selections.length === 0 && status !== "loaded") {
+    return (
+      <div style={panelStyles.noSelectionContainer}>
+        <svg style={{ width: 28, height: 28, color: "#9ca3af" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+        </svg>
+        <span style={panelStyles.noSelectionTitle}>Select expressions in the proof state</span>
+        <span style={panelStyles.noSelectionSubtitle}>Click on hypotheses, goals, or sub-expressions to generate suggestions for modifying the proof state</span>
+      </div>
+    )
+  }
+
+  // Idle / prompt state (has selections but hasn't fetched yet)
   if (status === "idle") {
     return (
       <div
@@ -419,6 +432,30 @@ export function MovePanel(): JSX.Element {
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
 const panelStyles: Record<string, React.CSSProperties> = {
+  noSelectionContainer: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: "2rem 1.5rem",
+    background: "#f9fafb",
+    borderRadius: 12,
+    border: "2px dashed #e5e7eb",
+    textAlign: "center",
+    minHeight: 120,
+  },
+  noSelectionTitle: {
+    fontSize: "0.9rem",
+    fontWeight: 600,
+    color: "#6b7280",
+  },
+  noSelectionSubtitle: {
+    fontSize: "0.75rem",
+    color: "#9ca3af",
+    maxWidth: 300,
+    lineHeight: 1.4,
+  },
   idleContainer: {
     display: "flex",
     flexDirection: "column",

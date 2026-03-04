@@ -27,7 +27,7 @@ export function ProofDiscoveryEnvironment({
   )
   const [isGraphExpanded, setIsGraphExpanded] = useState(true)
   const [isGraphFullscreen, setIsGraphFullscreen] = useState(false)
-  const [isLibraryExpanded, setIsLibraryExpanded] = useState(true)
+  const [isLibraryExpanded, setIsLibraryExpanded] = useState(false)
   const [isInformalizePopupOpen, setIsInformalizePopupOpen] = useState(false)
   const [informalizedText, setInformalizedText] = useState("")
   const [isInformalizeLoading, setIsInformalizeLoading] = useState(false)
@@ -273,67 +273,69 @@ export function ProofDiscoveryEnvironment({
               />
             </ProofStateIdContext.Provider>
           </div>
+        </div>
 
-          {/* Move Suggestions Panel */}
-          <div style={styles.movePanelSection}>
+        {/* Right Side – Move Suggestions Panel */}
+        <div style={styles.movePanelSide}>
+          <ProofDiscoveryStateContext.Provider
+            value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}
+          >
+            <MovePanel />
+          </ProofDiscoveryStateContext.Provider>
+        </div>
+      </div>
+
+      {/* Floating Proof Discovery Graph */}
+      {isGraphExpanded && (
+        <div style={styles.floatingGraphContainer}>
+          <div style={styles.floatingGraphHeader}>
+            <span style={styles.floatingGraphTitle}>Proof Graph</span>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                onClick={() => setIsGraphFullscreen(true)}
+                style={styles.floatingGraphButton}
+                title="Fullscreen view"
+              >
+                <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setIsGraphExpanded(false)}
+                style={styles.floatingGraphButton}
+                title="Close graph"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+          <div style={styles.floatingGraphBody}>
             <ProofDiscoveryStateContext.Provider
               value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}
             >
-              <MovePanel />
+              <ProofDiscoveryStateVisualization 
+                proofDiscoveryState={proofDiscoveryState} 
+              />
             </ProofDiscoveryStateContext.Provider>
           </div>
         </div>
+      )}
 
-        {/* Side Panel for Proof Discovery Graph */}
-        <div style={{
-          ...styles.graphPanel,
-          width: isGraphExpanded ? '500px' : '50px'
-        }}>
-          <button
-            onClick={() => setIsGraphExpanded(!isGraphExpanded)}
-            style={styles.graphToggle}
-            title={isGraphExpanded ? 'Collapse graph' : 'Expand graph'}
-          >
-            <svg 
-              style={{
-                ...styles.graphToggleIcon,
-                transform: isGraphExpanded ? 'rotate(0deg)' : 'rotate(180deg)'
-              }} 
-              viewBox="0 0 20 20" 
-              fill="currentColor"
-            >
-              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-          </button>
-
-          {isGraphExpanded && (
-            <div style={styles.graphContent}>
-              <button
-                onClick={() => setIsGraphFullscreen(!isGraphFullscreen)}
-                style={styles.fullscreenButton}
-                title={isGraphFullscreen ? 'Exit fullscreen' : 'Fullscreen view'}
-              >
-                <svg style={styles.buttonIcon} viewBox="0 0 20 20" fill="currentColor">
-                  {isGraphFullscreen ? (
-                    <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-14-14zM5 5a1 1 0 011-1h3a1 1 0 110 2H6v3a1 1 0 01-2 0V5zm10 10a1 1 0 01-1 1h-3a1 1 0 110-2h3v-3a1 1 0 112 0v4z" clipRule="evenodd" />
-                  ) : (
-                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clipRule="evenodd" />
-                  )}
-                </svg>
-              </button>
-              <div style={styles.graphVisualization}>
-                <ProofDiscoveryStateContext.Provider
-                  value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}
-                >
-                  <ProofDiscoveryStateVisualization 
-                    proofDiscoveryState={proofDiscoveryState} 
-                  />
-                </ProofDiscoveryStateContext.Provider>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Floating graph toggle button (when collapsed) */}
+      {!isGraphExpanded && (
+        <button
+          onClick={() => setIsGraphExpanded(true)}
+          style={styles.floatingGraphToggle}
+          title="Show proof graph"
+        >
+          <svg style={{ width: 20, height: 20 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="5" cy="12" r="2" />
+            <circle cx="19" cy="6" r="2" />
+            <circle cx="19" cy="18" r="2" />
+            <path d="M7 11l8-4M7 13l8 4" />
+          </svg>
+        </button>
+      )}
 
       {/* Fullscreen Graph Overlay */}
       {isGraphFullscreen && (
@@ -544,72 +546,80 @@ const styles: { [key: string]: React.CSSProperties } = {
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
     overflow: 'auto',
   },
-  movePanelSection: {
-    padding: '0 0 1rem 0',
+  movePanelSide: {
+    width: '340px',
+    flexShrink: 0,
+    overflow: 'auto',
+    padding: '1.5rem 1rem 1.5rem 0',
+    display: 'flex',
+    flexDirection: 'column',
   },
-  graphPanel: {
-    position: 'relative',
+  floatingGraphContainer: {
+    position: 'fixed',
+    bottom: '1.5rem',
+    left: '1.5rem',
+    width: '380px',
+    height: '300px',
     background: 'white',
-    borderLeft: '2px solid #e2e8f0',
-    transition: 'width 0.3s ease',
+    borderRadius: '12px',
+    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.18)',
+    border: '2px solid #e2e8f0',
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
+    zIndex: 500,
+    resize: 'both',
   },
-  graphToggle: {
-    position: 'absolute',
-    top: '1rem',
-    left: '0',
-    width: '50px',
-    height: '50px',
+  floatingGraphHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.5rem 0.75rem',
     background: '#667eea',
-    border: 'none',
-    borderRadius: '0 8px 8px 0',
-    cursor: 'pointer',
+    cursor: 'grab',
+    flexShrink: 0,
+  },
+  floatingGraphTitle: {
+    fontSize: '0.8rem',
+    fontWeight: 700,
+    color: 'white',
+  },
+  floatingGraphButton: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'all 0.2s',
-    zIndex: 10,
-    boxShadow: '2px 2px 8px rgba(0, 0, 0, 0.1)',
-  },
-  graphToggleIcon: {
     width: '24px',
     height: '24px',
+    background: 'rgba(255,255,255,0.2)',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
     color: 'white',
-    transition: 'transform 0.3s',
+    fontSize: '0.85rem',
+    lineHeight: 1,
   },
-  graphContent: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    padding: '1rem',
-    paddingTop: '4.5rem',
-    position: 'relative',
+  floatingGraphBody: {
+    flex: 1,
+    overflow: 'auto',
+    background: '#f7fafc',
   },
-  fullscreenButton: {
-    position: 'absolute',
-    top: '1rem',
-    right: '1rem',
+  floatingGraphToggle: {
+    position: 'fixed',
+    bottom: '1.5rem',
+    left: '1.5rem',
+    width: '44px',
+    height: '44px',
+    background: '#667eea',
+    border: 'none',
+    borderRadius: '50%',
+    cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '40px',
-    height: '40px',
-    background: '#667eea',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
     color: 'white',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+    zIndex: 500,
     transition: 'all 0.2s',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-    zIndex: 10,
-  },
-  graphVisualization: {
-    flex: 1,
-    background: '#f7fafc',
-    borderRadius: '8px',
-    overflow: 'hidden',
   },
   spinnerCircle: {
     opacity: 0.25,
