@@ -1,4 +1,4 @@
-import React, { JSX, useState, useContext, useReducer } from 'react'
+import React, { JSX, useState, useContext, useReducer, useRef, useEffect, useCallback } from 'react'
 import { ProofDiscoveryState, proofDiscoveryStateReducer } from '../core/ProofDiscoveryState'
 import { ProofStateWithLibraryResult as ProofStateComponent } from './ProofState'
 import { ProofDiscoveryState as ProofDiscoveryStateVisualization } from './ProofDiscoveryState'
@@ -32,6 +32,38 @@ export function ProofDiscoveryEnvironment({
   const [informalizedText, setInformalizedText] = useState("")
   const [isInformalizeLoading, setIsInformalizeLoading] = useState(false)
   const { selections, dispatch: selectionsDispatch } = useContext(ProofStateSelectionContext)
+
+  // ── Draggable graph state ───────────────────────────────────────────────
+  const [graphPos, setGraphPos] = useState<{ x: number; y: number }>({ x: 24, y: 24 }) // distance from right / bottom
+  const isDraggingGraph = useRef(false)
+  const dragOffset = useRef({ x: 0, y: 0 })
+  const graphContainerRef = useRef<HTMLDivElement | null>(null)
+
+  const handleGraphDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    isDraggingGraph.current = true
+    const rect = graphContainerRef.current?.getBoundingClientRect()
+    if (rect) {
+      dragOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+    }
+  }, [])
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!isDraggingGraph.current || !graphContainerRef.current) return
+      const rect = graphContainerRef.current.getBoundingClientRect()
+      const newRight = window.innerWidth - e.clientX - (rect.width - dragOffset.current.x)
+      const newBottom = window.innerHeight - e.clientY - (rect.height - dragOffset.current.y)
+      setGraphPos({
+        x: Math.max(0, Math.min(newRight, window.innerWidth - rect.width)),
+        y: Math.max(0, Math.min(newBottom, window.innerHeight - rect.height)),
+      })
+    }
+    const onUp = () => { isDraggingGraph.current = false }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+    return () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
+  }, [])
 
   // Get current proof state from the current node
   const currentProofState = proofDiscoveryState.graph.getNodeAttribute(
@@ -287,8 +319,11 @@ export function ProofDiscoveryEnvironment({
 
       {/* Floating Proof Discovery Graph */}
       {isGraphExpanded && (
-        <div style={styles.floatingGraphContainer}>
-          <div style={styles.floatingGraphHeader}>
+        <div
+          ref={graphContainerRef}
+          style={{ ...styles.floatingGraphContainer, right: graphPos.x, bottom: graphPos.y }}
+        >
+          <div style={styles.floatingGraphHeader} onMouseDown={handleGraphDragStart}>
             <span style={styles.floatingGraphTitle}>Proof Graph</span>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button
@@ -363,8 +398,6 @@ export function ProofDiscoveryEnvironment({
           </div>
         </div>
       )}
-    </div>
-  )
 
       {/* Informalize Modal */}
       {isInformalizePopupOpen && (
@@ -385,6 +418,8 @@ export function ProofDiscoveryEnvironment({
           </div>
         </div>
       )}
+    </div>
+  )
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
@@ -556,8 +591,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   floatingGraphContainer: {
     position: 'fixed',
-    bottom: '1.5rem',
-    left: '1.5rem',
+    /* bottom / right set dynamically via graphPos */
     width: '380px',
     height: '300px',
     background: 'white',
@@ -606,7 +640,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   floatingGraphToggle: {
     position: 'fixed',
     bottom: '1.5rem',
-    left: '1.5rem',
+    right: '1.5rem',
     width: '44px',
     height: '44px',
     background: '#667eea',
