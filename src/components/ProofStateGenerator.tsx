@@ -155,7 +155,7 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
           <div style={styles.header}>
             <h1 style={styles.title}>Motivated Proof Facilitator</h1>
             <p style={styles.subtitle}>
-              A graphical user interface for constructing motivated proofs with AI assistance
+              A graphical user interface for constructing motivated proofs in natural language with AI assistance
             </p>
           </div>
 
