@@ -29,24 +29,37 @@ function TypstPreview({ input }: { input: string }): JSX.Element | null {
             | { error: string }
           if ("error" in result) {
             return (
-              <span key={i} style={{ color: "#e53e3e", fontStyle: "italic" }}>
+              <span key={i} style={{ color: "#e53e3e", fontStyle: "italic", margin: "0 0.4em" }}>
                 {part}
               </span>
             )
           }
-          const fixedSvg = result.svg
-            .replace(/fill="#ffffff"/g, 'fill="#000000"')
-            .replace(/<svg/, '<svg style="font-size:10pt"')
+          const SCALING = 1.5
+          const rawSvg = result.svg.replace(/fill="#ffffff"/g, 'fill="#000000"')
+          const wMatch = rawSvg.match(/\bwidth="([\d.]+)(pt|px)?"/)
+          const hMatch = rawSvg.match(/\bheight="([\d.]+)(pt|px)?"/)
+          const w = wMatch ? parseFloat(wMatch[1]) : null
+          const h = hMatch ? parseFloat(hMatch[1]) : null
+          const unit = wMatch?.[2] ?? "pt"
+          const svgStyle = "width:100%; height:100%; font-size:10pt; vertical-align:-0.2em"
+          const fixedSvg = rawSvg.includes(" style=")
+            ? rawSvg.replace(/(<svg[^>]*) style="([^"]*)"/, `$1 style="${svgStyle}; $2"`)
+            : rawSvg.replace("<svg", `<svg style="${svgStyle}"`)
           return (
             <span
               key={i}
-              style={{ display: "inline-flex", alignItems: "baseline", verticalAlign: "baseline", transform: "scale(1.5)", transformOrigin: "left baseline", margin: "0 0.4em" }}
+              style={{
+                display: "inline-block",
+                ...(w != null ? { width: `${w * SCALING}${unit}` } : {}),
+                ...(h != null ? { height: `${h * SCALING}${unit}` } : {}),
+                margin: "0 0.4em",
+              }}
               dangerouslySetInnerHTML={{ __html: fixedSvg }}
             />
           )
         } catch {
           return (
-            <span key={i} style={{ color: "#e53e3e", fontStyle: "italic" }}>
+            <span key={i} style={{ color: "#e53e3e", fontStyle: "italic", margin: "0 0.4em" }}>
               {part}
             </span>
           )
@@ -142,7 +155,7 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
           <div style={styles.header}>
             <h1 style={styles.title}>Motivated Proof Facilitator</h1>
             <p style={styles.subtitle}>
-              A graphical user interface for constructing motivated proofs.
+              A graphical user interface for constructing motivated proofs with AI assistance
             </p>
           </div>
 
@@ -192,7 +205,7 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
             </a>
             <span style={styles.linkDivider}>·</span>
             <a
-              href="https://example.com/about-motivated-proofs"
+              href="https://gowers.wordpress.com/2025/09/22/creating-a-database-of-motivated-proofs/"
               target="_blank"
               rel="noopener noreferrer"
               style={styles.link}
