@@ -29,24 +29,37 @@ function TypstPreview({ input }: { input: string }): JSX.Element | null {
             | { error: string }
           if ("error" in result) {
             return (
-              <span key={i} style={{ color: "#e53e3e", fontStyle: "italic" }}>
+              <span key={i} style={{ color: "#e53e3e", fontStyle: "italic", margin: "0 0.4em" }}>
                 {part}
               </span>
             )
           }
-          const fixedSvg = result.svg
-            .replace(/fill="#ffffff"/g, 'fill="#000000"')
-            .replace(/<svg/, '<svg style="font-size:10pt"')
+          const SCALING = 1.5
+          const rawSvg = result.svg.replace(/fill="#ffffff"/g, 'fill="#000000"')
+          const wMatch = rawSvg.match(/\bwidth="([\d.]+)(pt|px)?"/)
+          const hMatch = rawSvg.match(/\bheight="([\d.]+)(pt|px)?"/)
+          const w = wMatch ? parseFloat(wMatch[1]) : null
+          const h = hMatch ? parseFloat(hMatch[1]) : null
+          const unit = wMatch?.[2] ?? "pt"
+          const svgStyle = "width:100%; height:100%; font-size:10pt; vertical-align:-0.2em"
+          const fixedSvg = rawSvg.includes(" style=")
+            ? rawSvg.replace(/(<svg[^>]*) style="([^"]*)"/, `$1 style="${svgStyle}; $2"`)
+            : rawSvg.replace("<svg", `<svg style="${svgStyle}"`)
           return (
             <span
               key={i}
-              style={{ display: "inline-flex", alignItems: "baseline", verticalAlign: "baseline", transform: "scale(1.5)", transformOrigin: "left baseline", margin: "0 0.4em" }}
+              style={{
+                display: "inline-block",
+                ...(w != null ? { width: `${w * SCALING}${unit}` } : {}),
+                ...(h != null ? { height: `${h * SCALING}${unit}` } : {}),
+                margin: "0 0.4em",
+              }}
               dangerouslySetInnerHTML={{ __html: fixedSvg }}
             />
           )
         } catch {
           return (
-            <span key={i} style={{ color: "#e53e3e", fontStyle: "italic" }}>
+            <span key={i} style={{ color: "#e53e3e", fontStyle: "italic", margin: "0 0.4em" }}>
               {part}
             </span>
           )
@@ -142,7 +155,7 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
           <div style={styles.header}>
             <h1 style={styles.title}>Motivated Proof Facilitator</h1>
             <p style={styles.subtitle}>
-              A graphical user interface for constructing motivated proofs.
+              A graphical user interface for constructing motivated proofs in natural language with AI assistance
             </p>
           </div>
 
@@ -180,28 +193,6 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
             </div>
           )}
 
-          <div style={styles.links}>
-            <a
-              href="https://github.com/Human-Oriented-ATP/motivated-proof-facilitator"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={styles.link}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-              Source Code
-            </a>
-            <span style={styles.linkDivider}>·</span>
-            <a
-              href="https://example.com/about-motivated-proofs"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={styles.link}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-              About This Project
-            </a>
-          </div>
-
           <button
             onClick={handleFormalize}
             disabled={isLoading || !inputStatement.trim()}
@@ -238,6 +229,27 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
               </>
             )}
           </button>
+        </div>
+        <div style={styles.links}>
+          <a
+            href="https://github.com/Human-Oriented-ATP/motivated-proof-facilitator"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={styles.link}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            Source Code
+          </a>
+          <span style={styles.linkDivider}>·</span>
+          <a
+            href="https://gowers.wordpress.com/2025/09/22/creating-a-database-of-motivated-proofs/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={styles.link}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            About This Project
+          </a>
         </div>
       </div>
     </WasmContext.Provider>
@@ -416,11 +428,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     opacity: 0.75,
   },
   links: {
+    position: "fixed",
+    bottom: "1.25rem",
+    left: "50%",
+    transform: "translateX(-50%)",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
     gap: "0.5rem",
-    marginBottom: "2rem",
   },
   link: {
     display: "inline-flex",
