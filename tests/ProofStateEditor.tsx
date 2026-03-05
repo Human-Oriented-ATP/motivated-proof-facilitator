@@ -7,15 +7,60 @@ interface ProofStateEditorProps {
   onUpdate: (newState: ProofState) => void
 }
 
+/** Returns a concise human-readable preview of a Statement. */
+function statementPreview(stmt: Statement): string {
+  if (typeof stmt === "string") return stmt || "(empty)"
+  switch (stmt.kind) {
+    case "conjunction":  return stmt.statements.map(statementPreview).join(" ∧ ")
+    case "disjunction":  return stmt.statements.map(statementPreview).join(" ∨ ")
+    case "negation":     return `¬(${statementPreview(stmt.statement)})`
+    case "implication":  return `${statementPreview(stmt.antecedent)} → ${statementPreview(stmt.consequent)}`
+    case "equivalence":  return `${statementPreview(stmt.left)} ↔ ${statementPreview(stmt.right)}`
+    case "universal":    return `∀${stmt.variable.name}. ${statementPreview(stmt.statement)}`
+    case "existential":  return `∃${stmt.variable.name}. ${statementPreview(stmt.statement)}`
+    case "highlight":    return statementPreview(stmt.statement)
+  }
+}
+
+function truncate(s: string, max: number): string {
+  return s.length > max ? s.slice(0, max) + "…" : s
+}
+
+function kindBadgeStyle(kind: string): React.CSSProperties {
+  const palette: Record<string, { bg: string; color: string; border: string }> = {
+    free:  { bg: "#fef2f2", color: "#b91c1c", border: "#fecaca" },
+    meta:  { bg: "#faf5ff", color: "#9333ea", border: "#e9d5ff" },
+    let:   { bg: "#ecfeff", color: "#0891b2", border: "#cffafe" },
+    hyp:   { bg: "#fff7ed", color: "#c2410c", border: "#fed7aa" },
+    goal:  { bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe" },
+  }
+  const p = palette[kind] ?? { bg: "#f9fafb", color: "#374151", border: "#e5e7eb" }
+  return {
+    fontSize: "10px",
+    fontWeight: 600,
+    padding: "2px 6px",
+    borderRadius: "4px",
+    backgroundColor: p.bg,
+    color: p.color,
+    border: `1px solid ${p.border}`,
+    whiteSpace: "nowrap",
+    flexShrink: 0,
+    userSelect: "none",
+  }
+}
+
 /**
  * Editor for incrementally building or modifying a ProofState.
- * Supports raw JSON editing, and adding variables, hypotheses, and goals.
+ * Supports raw JSON editing, and adding/editing/deleting variables, hypotheses, and goals.
  * Hypotheses and goals can be added either via the formalization endpoint
  * or built interactively using the StatementBuilder component.
  */
 export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps): JSX.Element {
   // Active panel (only one at a time)
   const [activePanel, setActivePanel] = useState<"none" | "json" | "variable" | "hypothesis" | "goal">("none")
+
+  // null = adding new item; number = editing the item at that index
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
 
   // Context selector (for multi-context proof states)
   const [selectedContext, setSelectedContext] = useState(0)
@@ -24,13 +69,13 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
   const [rawJson, setRawJson] = useState("")
   const [jsonError, setJsonError] = useState<string | null>(null)
 
-  // Add variable state
+  // Add/edit variable state
   const [varName, setVarName] = useState("")
   const [varKind, setVarKind] = useState<"free" | "meta" | "let">("free")
   const [varDescription, setVarDescription] = useState("")
   const [varLetValue, setVarLetValue] = useState("")
 
-  // Add hypothesis state
+  // Add/edit hypothesis state
   const [hypLabel, setHypLabel] = useState("")
   const [hypMode, setHypMode] = useState<"formalize" | "build">("formalize")
   const [hypText, setHypText] = useState("")
@@ -38,7 +83,7 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
   const [hypLoading, setHypLoading] = useState(false)
   const [hypError, setHypError] = useState<string | null>(null)
 
-  // Add goal state
+  // Add/edit goal state
   const [goalLabel, setGoalLabel] = useState("")
   const [goalMode, setGoalMode] = useState<"formalize" | "build">("formalize")
   const [goalText, setGoalText] = useState("")
@@ -47,23 +92,66 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
   const [goalError, setGoalError] = useState<string | null>(null)
 
   const ctx = proofState[selectedContext] || { variables: [], hypotheses: [], goals: [] }
+  const ctxIdx = Math.min(selectedContext, Math.max(0, proofState.length - 1))
 
   const ensureContext = (): ProofState => {
     if (proofState.length === 0) return [{ variables: [], hypotheses: [], goals: [] }]
     return proofState.map(c => ({ ...c }))
   }
 
-  // Panel toggling
+  const resetVarForm  = () => { setVarName(""); setVarKind("free"); setVarDescription(""); setVarLetValue("") }
+  const resetHypForm  = () => { setHypLabel(""); setHypMode("formalize"); setHypText(""); setHypStatement(""); setHypError(null) }
+  const resetGoalForm = () => { setGoalLabel(""); setGoalMode("formalize"); setGoalText(""); setGoalStatement(""); setGoalError(null) }
+
+  const closePanel = () => { setActivePanel("none"); setEditingIndex(null) }
+
+  // Panel toggling (for the "+ ..." add buttons)
   const togglePanel = (panel: "json" | "variable" | "hypothesis" | "goal") => {
-    if (activePanel === panel) {
-      setActivePanel("none")
+    if (activePanel === panel && editingIndex === null) {
+      closePanel()
     } else {
+      setEditingIndex(null)
       setActivePanel(panel)
       if (panel === "json") {
         setRawJson(JSON.stringify(proofState, null, 2))
         setJsonError(null)
-      }
+      } else if (panel === "variable")   { resetVarForm() }
+        else if (panel === "hypothesis") { resetHypForm() }
+        else if (panel === "goal")       { resetGoalForm() }
     }
+  }
+
+  // Open edit panel pre-filled with existing item data
+  const handleEditVariable = (idx: number) => {
+    const v = ctx.variables[idx]
+    setVarName(v.name)
+    setVarKind(v.kind)
+    setVarDescription(v.description)
+    setVarLetValue(v.kind === "let" ? v.value : "")
+    setEditingIndex(idx)
+    setActivePanel("variable")
+  }
+
+  const handleEditHypothesis = (idx: number) => {
+    const h = ctx.hypotheses[idx]
+    setHypLabel(h.label)
+    setHypMode("build")
+    setHypStatement(h.statement)
+    setHypText("")
+    setHypError(null)
+    setEditingIndex(idx)
+    setActivePanel("hypothesis")
+  }
+
+  const handleEditGoal = (idx: number) => {
+    const g = ctx.goals[idx]
+    setGoalLabel(g.label)
+    setGoalMode("build")
+    setGoalStatement(g.statement)
+    setGoalText("")
+    setGoalError(null)
+    setEditingIndex(idx)
+    setActivePanel("goal")
   }
 
   // --- Raw JSON ---
@@ -71,28 +159,48 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
     try {
       const parsed = JSON.parse(rawJson)
       const validated = ProofStateSchema.parse(parsed)
-      onUpdate(validated)
+      try {
+        onUpdate(validated)
+      } catch (updateErr) {
+        setJsonError(updateErr instanceof Error ? updateErr.message : "Update failed")
+        return
+      }
       setJsonError(null)
-      setActivePanel("none")
+      closePanel()
     } catch (err) {
-      setJsonError(err instanceof Error ? err.message : "Invalid JSON")
+      if (err instanceof Error) {
+        const msg = err.message
+        setJsonError(msg.length > 500 ? msg.slice(0, 500) + "…" : msg)
+      } else {
+        setJsonError("Invalid JSON")
+      }
     }
   }
 
-  // --- Add Variable ---
-  const handleAddVariable = () => {
+  // --- Save/Delete Variable ---
+  const handleSaveVariable = () => {
     if (!varName.trim()) return
     const state = ensureContext()
-    const idx = Math.min(selectedContext, state.length - 1)
     const newVar: ContextVariable = varKind === "let"
       ? { kind: "let", name: varName, description: varDescription, value: varLetValue }
       : { kind: varKind, name: varName, description: varDescription }
-    state[idx] = { ...state[idx], variables: [...state[idx].variables, newVar] }
+    if (editingIndex !== null) {
+      const vars = [...state[ctxIdx].variables]
+      vars[editingIndex] = newVar
+      state[ctxIdx] = { ...state[ctxIdx], variables: vars }
+    } else {
+      state[ctxIdx] = { ...state[ctxIdx], variables: [...state[ctxIdx].variables, newVar] }
+    }
     onUpdate(state)
-    setVarName("")
-    setVarDescription("")
-    setVarLetValue("")
-    setActivePanel("none")
+    resetVarForm()
+    closePanel()
+  }
+
+  const handleDeleteVariable = (varIdx: number) => {
+    const state = ensureContext()
+    state[ctxIdx] = { ...state[ctxIdx], variables: state[ctxIdx].variables.filter((_, i) => i !== varIdx) }
+    onUpdate(state)
+    if (activePanel === "variable" && editingIndex === varIdx) closePanel()
   }
 
   // --- Formalize helper ---
@@ -107,8 +215,8 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
     return StatementSchema.parse(await resp.json())
   }
 
-  // --- Add Hypothesis ---
-  const handleAddHypothesis = async () => {
+  // --- Save/Delete Hypothesis ---
+  const handleSaveHypothesis = async () => {
     if (!hypLabel.trim()) return
     setHypError(null)
     let statement: Statement
@@ -127,17 +235,28 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
       statement = hypStatement
     }
     const state = ensureContext()
-    const idx = Math.min(selectedContext, state.length - 1)
-    state[idx] = { ...state[idx], hypotheses: [...state[idx].hypotheses, { label: hypLabel, statement }] }
+    const newHyp = { label: hypLabel, statement }
+    if (editingIndex !== null) {
+      const hyps = [...state[ctxIdx].hypotheses]
+      hyps[editingIndex] = newHyp
+      state[ctxIdx] = { ...state[ctxIdx], hypotheses: hyps }
+    } else {
+      state[ctxIdx] = { ...state[ctxIdx], hypotheses: [...state[ctxIdx].hypotheses, newHyp] }
+    }
     onUpdate(state)
-    setHypLabel("")
-    setHypText("")
-    setHypStatement("")
-    setActivePanel("none")
+    resetHypForm()
+    closePanel()
   }
 
-  // --- Add Goal ---
-  const handleAddGoal = async () => {
+  const handleDeleteHypothesis = (hypIdx: number) => {
+    const state = ensureContext()
+    state[ctxIdx] = { ...state[ctxIdx], hypotheses: state[ctxIdx].hypotheses.filter((_, i) => i !== hypIdx) }
+    onUpdate(state)
+    if (activePanel === "hypothesis" && editingIndex === hypIdx) closePanel()
+  }
+
+  // --- Save/Delete Goal ---
+  const handleSaveGoal = async () => {
     if (!goalLabel.trim()) return
     setGoalError(null)
     let statement: Statement
@@ -156,13 +275,24 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
       statement = goalStatement
     }
     const state = ensureContext()
-    const idx = Math.min(selectedContext, state.length - 1)
-    state[idx] = { ...state[idx], goals: [...state[idx].goals, { label: goalLabel, statement }] }
+    const newGoal = { label: goalLabel, statement }
+    if (editingIndex !== null) {
+      const goals = [...state[ctxIdx].goals]
+      goals[editingIndex] = newGoal
+      state[ctxIdx] = { ...state[ctxIdx], goals: goals }
+    } else {
+      state[ctxIdx] = { ...state[ctxIdx], goals: [...state[ctxIdx].goals, newGoal] }
+    }
     onUpdate(state)
-    setGoalLabel("")
-    setGoalText("")
-    setGoalStatement("")
-    setActivePanel("none")
+    resetGoalForm()
+    closePanel()
+  }
+
+  const handleDeleteGoal = (goalIdx: number) => {
+    const state = ensureContext()
+    state[ctxIdx] = { ...state[ctxIdx], goals: state[ctxIdx].goals.filter((_, i) => i !== goalIdx) }
+    onUpdate(state)
+    if (activePanel === "goal" && editingIndex === goalIdx) closePanel()
   }
 
   // --- Add Context ---
@@ -170,6 +300,8 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
     onUpdate([...proofState, { variables: [], hypotheses: [], goals: [] }])
     setSelectedContext(proofState.length)
   }
+
+  const hasItems = ctx.variables.length > 0 || ctx.hypotheses.length > 0 || ctx.goals.length > 0
 
   return (
     <div style={es.container}>
@@ -199,19 +331,67 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
         <button onClick={() => togglePanel("json")} style={activePanel === "json" ? es.btnActive : es.btn}>
           Edit JSON
         </button>
-        <button onClick={() => togglePanel("variable")} style={activePanel === "variable" ? es.btnActive : es.btn}>
+        <button onClick={() => togglePanel("variable")} style={activePanel === "variable" && editingIndex === null ? es.btnActive : es.btn}>
           + Variable
         </button>
-        <button onClick={() => togglePanel("hypothesis")} style={activePanel === "hypothesis" ? es.btnActive : es.btn}>
+        <button onClick={() => togglePanel("hypothesis")} style={activePanel === "hypothesis" && editingIndex === null ? es.btnActive : es.btn}>
           + Hypothesis
         </button>
-        <button onClick={() => togglePanel("goal")} style={activePanel === "goal" ? es.btnActive : es.btn}>
+        <button onClick={() => togglePanel("goal")} style={activePanel === "goal" && editingIndex === null ? es.btnActive : es.btn}>
           + Goal
         </button>
         <button onClick={handleAddContext} style={es.btn}>
           + Context
         </button>
       </div>
+
+      {/* Current items list — edit and delete existing variables, hypotheses, goals */}
+      {hasItems && (
+        <div style={es.itemsList}>
+          {ctx.variables.map((v, i) => (
+            <div key={`var-${i}`} style={activePanel === "variable" && editingIndex === i ? es.itemRowActive : es.itemRow}>
+              <span style={kindBadgeStyle(v.kind)}>{v.kind}</span>
+              <span style={es.itemText}>
+                <strong>{v.name}</strong>
+                {v.description ? ` : ${v.description}` : ""}
+                {v.kind === "let" ? ` ≔ ${v.value}` : ""}
+              </span>
+              <div style={es.itemActions}>
+                <button onClick={() => handleEditVariable(i)} style={es.editBtn} title="Edit">✎</button>
+                <button onClick={() => handleDeleteVariable(i)} style={es.deleteBtn} title="Delete">×</button>
+              </div>
+            </div>
+          ))}
+          {ctx.hypotheses.map((h, i) => (
+            <div key={`hyp-${i}`} style={activePanel === "hypothesis" && editingIndex === i ? es.itemRowActive : es.itemRow}>
+              <span style={kindBadgeStyle("hyp")}>hyp</span>
+              <span style={es.itemText} title={statementPreview(h.statement)}>
+                <strong>{h.label}</strong>
+                {" — "}
+                <span style={es.itemPreview}>{truncate(statementPreview(h.statement), 70)}</span>
+              </span>
+              <div style={es.itemActions}>
+                <button onClick={() => handleEditHypothesis(i)} style={es.editBtn} title="Edit">✎</button>
+                <button onClick={() => handleDeleteHypothesis(i)} style={es.deleteBtn} title="Delete">×</button>
+              </div>
+            </div>
+          ))}
+          {ctx.goals.map((g, i) => (
+            <div key={`goal-${i}`} style={activePanel === "goal" && editingIndex === i ? es.itemRowActive : es.itemRow}>
+              <span style={kindBadgeStyle("goal")}>goal</span>
+              <span style={es.itemText} title={statementPreview(g.statement)}>
+                <strong>{g.label}</strong>
+                {" — "}
+                <span style={es.itemPreview}>{truncate(statementPreview(g.statement), 70)}</span>
+              </span>
+              <div style={es.itemActions}>
+                <button onClick={() => handleEditGoal(i)} style={es.editBtn} title="Edit">✎</button>
+                <button onClick={() => handleDeleteGoal(i)} style={es.deleteBtn} title="Delete">×</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Raw JSON Panel */}
       {activePanel === "json" && (
@@ -226,15 +406,15 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
           {jsonError && <div style={es.error}>{jsonError}</div>}
           <div style={es.panelBtns}>
             <button onClick={handleApplyJson} style={es.primaryBtn}>Apply</button>
-            <button onClick={() => setActivePanel("none")} style={es.cancelBtn}>Cancel</button>
+            <button onClick={closePanel} style={es.cancelBtn}>Cancel</button>
           </div>
         </div>
       )}
 
-      {/* Add Variable Panel */}
+      {/* Add / Edit Variable Panel */}
       {activePanel === "variable" && (
         <div style={es.panel}>
-          <div style={es.panelHeader}>Add Variable</div>
+          <div style={es.panelHeader}>{editingIndex !== null ? "Edit Variable" : "Add Variable"}</div>
           <div style={es.row}>
             <div style={{ flex: 1 }}>
               <label style={es.label}>Name</label>
@@ -282,18 +462,23 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
             </div>
           )}
           <div style={es.panelBtns}>
-            <button onClick={handleAddVariable} disabled={!varName.trim()} style={es.primaryBtn}>
-              Add Variable
+            <button onClick={handleSaveVariable} disabled={!varName.trim()} style={es.primaryBtn}>
+              {editingIndex !== null ? "Save Changes" : "Add Variable"}
             </button>
-            <button onClick={() => setActivePanel("none")} style={es.cancelBtn}>Cancel</button>
+            {editingIndex !== null && (
+              <button onClick={() => handleDeleteVariable(editingIndex)} style={es.dangerBtn}>
+                Delete
+              </button>
+            )}
+            <button onClick={closePanel} style={es.cancelBtn}>Cancel</button>
           </div>
         </div>
       )}
 
-      {/* Add Hypothesis Panel */}
+      {/* Add / Edit Hypothesis Panel */}
       {activePanel === "hypothesis" && (
         <div style={es.panel}>
-          <div style={es.panelHeader}>Add Hypothesis</div>
+          <div style={es.panelHeader}>{editingIndex !== null ? "Edit Hypothesis" : "Add Hypothesis"}</div>
           <div>
             <label style={es.label}>Label</label>
             <input
@@ -338,21 +523,26 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
           {hypError && <div style={es.error}>{hypError}</div>}
           <div style={es.panelBtns}>
             <button
-              onClick={handleAddHypothesis}
+              onClick={handleSaveHypothesis}
               disabled={!hypLabel.trim() || hypLoading || (hypMode === "formalize" && !hypText.trim())}
               style={es.primaryBtn}
             >
-              {hypLoading ? "Formalizing..." : "Add Hypothesis"}
+              {hypLoading ? "Formalizing..." : editingIndex !== null ? "Save Changes" : "Add Hypothesis"}
             </button>
-            <button onClick={() => setActivePanel("none")} style={es.cancelBtn}>Cancel</button>
+            {editingIndex !== null && (
+              <button onClick={() => handleDeleteHypothesis(editingIndex)} style={es.dangerBtn}>
+                Delete
+              </button>
+            )}
+            <button onClick={closePanel} style={es.cancelBtn}>Cancel</button>
           </div>
         </div>
       )}
 
-      {/* Add Goal Panel */}
+      {/* Add / Edit Goal Panel */}
       {activePanel === "goal" && (
         <div style={es.panel}>
-          <div style={es.panelHeader}>Add Goal</div>
+          <div style={es.panelHeader}>{editingIndex !== null ? "Edit Goal" : "Add Goal"}</div>
           <div>
             <label style={es.label}>Label</label>
             <input
@@ -397,13 +587,18 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
           {goalError && <div style={es.error}>{goalError}</div>}
           <div style={es.panelBtns}>
             <button
-              onClick={handleAddGoal}
+              onClick={handleSaveGoal}
               disabled={!goalLabel.trim() || goalLoading || (goalMode === "formalize" && !goalText.trim())}
               style={es.primaryBtn}
             >
-              {goalLoading ? "Formalizing..." : "Add Goal"}
+              {goalLoading ? "Formalizing..." : editingIndex !== null ? "Save Changes" : "Add Goal"}
             </button>
-            <button onClick={() => setActivePanel("none")} style={es.cancelBtn}>Cancel</button>
+            {editingIndex !== null && (
+              <button onClick={() => handleDeleteGoal(editingIndex)} style={es.dangerBtn}>
+                Delete
+              </button>
+            )}
+            <button onClick={closePanel} style={es.cancelBtn}>Cancel</button>
           </div>
         </div>
       )}
@@ -474,6 +669,69 @@ const es: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     transition: "all 0.15s",
   },
+  itemsList: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "4px",
+    marginBottom: "8px",
+  },
+  itemRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "6px 8px",
+    backgroundColor: "white",
+    borderRadius: "5px",
+    border: "1px solid #e2e8f0",
+    fontSize: "12px",
+  },
+  itemRowActive: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "6px 8px",
+    backgroundColor: "#ebf4ff",
+    borderRadius: "5px",
+    border: "1px solid #3182ce",
+    fontSize: "12px",
+  },
+  itemText: {
+    flex: 1,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
+    color: "#2d3748",
+  },
+  itemPreview: {
+    color: "#718096",
+    fontWeight: 400,
+  },
+  itemActions: {
+    display: "flex",
+    gap: "4px",
+    flexShrink: 0,
+  },
+  editBtn: {
+    padding: "2px 7px",
+    backgroundColor: "transparent",
+    color: "#3182ce",
+    border: "1px solid #bee3f8",
+    borderRadius: "4px",
+    fontSize: "13px",
+    cursor: "pointer",
+    lineHeight: 1,
+  },
+  deleteBtn: {
+    padding: "2px 7px",
+    backgroundColor: "transparent",
+    color: "#e53e3e",
+    border: "1px solid #fed7d7",
+    borderRadius: "4px",
+    fontSize: "14px",
+    fontWeight: 600,
+    cursor: "pointer",
+    lineHeight: 1,
+  },
   panel: {
     marginTop: "8px",
     padding: "16px",
@@ -536,6 +794,8 @@ const es: Record<string, React.CSSProperties> = {
     padding: "8px 12px",
     marginTop: "8px",
     fontSize: "12px",
+    whiteSpace: "pre-wrap" as const,
+    wordBreak: "break-word" as const,
   },
   panelBtns: {
     display: "flex",
@@ -552,6 +812,17 @@ const es: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     cursor: "pointer",
     transition: "background-color 0.15s",
+  },
+  dangerBtn: {
+    padding: "6px 16px",
+    backgroundColor: "transparent",
+    color: "#e53e3e",
+    border: "1px solid #fc8181",
+    borderRadius: "5px",
+    fontSize: "13px",
+    fontWeight: 500,
+    cursor: "pointer",
+    transition: "all 0.15s",
   },
   cancelBtn: {
     padding: "6px 16px",
