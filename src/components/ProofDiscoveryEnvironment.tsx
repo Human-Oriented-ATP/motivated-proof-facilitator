@@ -25,7 +25,7 @@ export function ProofDiscoveryEnvironment({
     proofDiscoveryStateReducer,
     initialProofDiscoveryState
   )
-  const [isGraphExpanded, setIsGraphExpanded] = useState(true)
+  const [isGraphPopped, setIsGraphPopped] = useState(false)
   const [isGraphFullscreen, setIsGraphFullscreen] = useState(false)
   const [isLibraryExpanded, setIsLibraryExpanded] = useState(false)
   const [isInformalizePopupOpen, setIsInformalizePopupOpen] = useState(false)
@@ -203,77 +203,6 @@ export function ProofDiscoveryEnvironment({
         </div>
       )}
 
-      {/* Top Action Panel */}
-      <div style={styles.actionPanel}>
-        <div style={styles.actionButtons}>
-          <button
-            onClick={handleCopyProofState}
-            style={styles.actionButton}
-            title="Copy current proof state to clipboard"
-          >
-            <svg style={styles.buttonIcon} viewBox="0 0 20 20" fill="currentColor">
-              <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-              <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-            </svg>
-            Copy Proof State
-          </button>
-
-          <button
-            onClick={handleClearCurrentSelections}
-            style={styles.actionButton}
-            title="Clear selections in current proof state"
-            disabled={selections.length === 0}
-          >
-            <svg style={styles.buttonIcon} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-            Clear Current
-          </button>
-
-          <button
-            onClick={handleClearAllSelections}
-            style={styles.actionButton}
-            title="Clear all selections across all proof states"
-            disabled={selections.length === 0}
-          >
-            <svg style={styles.buttonIcon} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            Clear All
-          </button>
-
-          <button
-            onClick={handleInformalize}
-            style={{...styles.actionButton, ...styles.informalizeButton}}
-            title="Convert current proof state to natural language"
-            disabled={isInformalizeLoading}
-          >
-            {isInformalizeLoading ? (
-              <>
-                <svg style={styles.buttonIcon} viewBox="0 0 24 24">
-                  <circle style={styles.spinnerCircle} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path style={styles.spinnerPath} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                Informalizing...
-              </>
-            ) : (
-              <>
-                <svg style={styles.buttonIcon} viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-                Informalize
-              </>
-            )}
-          </button>
-        </div>
-
-        {selections.length > 0 && (
-          <div style={styles.selectionCounter}>
-            {selections.length} selection{selections.length !== 1 ? 's' : ''}
-          </div>
-        )}
-      </div>
-
       <div style={styles.mainContent}>
         {/* Main Proof State Display */}
         <div style={styles.proofStateSection}>
@@ -307,38 +236,165 @@ export function ProofDiscoveryEnvironment({
           </div>
         </div>
 
-        {/* Right Side – Move Suggestions Panel */}
-        <div style={styles.movePanelSide}>
-          <ProofDiscoveryStateContext.Provider
-            value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}
-          >
-            <MovePanel />
-          </ProofDiscoveryStateContext.Provider>
+        {/* Right Column: Move Panel + Embedded Graph */}
+        <div style={styles.rightColumn}>
+          <div style={styles.movePanelSide}>
+            <ProofDiscoveryStateContext.Provider
+              value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}
+            >
+              <MovePanel />
+            </ProofDiscoveryStateContext.Provider>
+          </div>
+
+          {/* Embedded Proof Graph (or dock placeholder when popped out) */}
+          {!isGraphPopped ? (
+            <div style={styles.embeddedGraphPanel}>
+              <div style={styles.embeddedGraphHeader}>
+                <span style={styles.floatingGraphTitle}>Proof Graph</span>
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  <button
+                    onClick={() => setIsGraphFullscreen(true)}
+                    style={styles.floatingGraphButton}
+                    title="Fullscreen view"
+                  >
+                    <svg style={{ width: 13, height: 13 }} viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setIsGraphPopped(true)}
+                    style={styles.floatingGraphButton}
+                    title="Pop out to floating window"
+                  >
+                    <svg style={{ width: 13, height: 13 }} viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                      <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div style={styles.embeddedGraphBody}>
+                <ProofDiscoveryStateContext.Provider
+                  value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}
+                >
+                  <ProofDiscoveryStateVisualization
+                    proofDiscoveryState={proofDiscoveryState}
+                  />
+                </ProofDiscoveryStateContext.Provider>
+              </div>
+            </div>
+          ) : (
+            <div style={styles.graphDockPlaceholder}>
+              <button
+                onClick={() => setIsGraphPopped(false)}
+                style={styles.dockButton}
+                title="Dock graph back to corner"
+              >
+                <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h7a1 1 0 100-2H3zM3 11a1 1 0 100 2h4a1 1 0 100-2H3zM15 11a1 1 0 10-2 0v4.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 15.586V11z" />
+                </svg>
+                Dock Graph
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Floating Proof Discovery Graph */}
-      {isGraphExpanded && (
+      {/* Bottom Bar: full-width action panel */}
+      <div style={styles.bottomBar}>
+        <div style={styles.actionPanel}>
+          <div style={styles.actionButtons}>
+            <button
+              onClick={handleCopyProofState}
+              style={styles.actionButton}
+              title="Copy current proof state to clipboard"
+            >
+              <svg style={styles.buttonIcon} viewBox="0 0 20 20" fill="currentColor">
+                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+              </svg>
+              Copy Proof State
+            </button>
+
+            <button
+              onClick={handleClearCurrentSelections}
+              style={styles.actionButton}
+              title="Clear selections in current proof state"
+              disabled={selections.length === 0}
+            >
+              <svg style={styles.buttonIcon} viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+              Clear Current
+            </button>
+
+            <button
+              onClick={handleClearAllSelections}
+              style={styles.actionButton}
+              title="Clear all selections across all proof states"
+              disabled={selections.length === 0}
+            >
+              <svg style={styles.buttonIcon} viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              Clear All
+            </button>
+
+            <button
+              onClick={handleInformalize}
+              style={{...styles.actionButton, ...styles.informalizeButton}}
+              title="Convert current proof state to natural language"
+              disabled={isInformalizeLoading}
+            >
+              {isInformalizeLoading ? (
+                <>
+                  <svg style={styles.buttonIcon} viewBox="0 0 24 24">
+                    <circle style={styles.spinnerCircle} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path style={styles.spinnerPath} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Informalizing...
+                </>
+              ) : (
+                <>
+                  <svg style={styles.buttonIcon} viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  Informalize
+                </>
+              )}
+            </button>
+          </div>
+
+          {selections.length > 0 && (
+            <div style={styles.selectionCounter}>
+              {selections.length} selection{selections.length !== 1 ? 's' : ''}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Floating Proof Graph (when popped out) */}
+      {isGraphPopped && (
         <div
           ref={graphContainerRef}
           style={{ ...styles.floatingGraphContainer, right: graphPos.x, bottom: graphPos.y }}
         >
           <div style={styles.floatingGraphHeader} onMouseDown={handleGraphDragStart}>
             <span style={styles.floatingGraphTitle}>Proof Graph</span>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.25rem' }}>
               <button
                 onClick={() => setIsGraphFullscreen(true)}
                 style={styles.floatingGraphButton}
                 title="Fullscreen view"
               >
-                <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
+                <svg style={{ width: 13, height: 13 }} viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clipRule="evenodd" />
                 </svg>
               </button>
               <button
-                onClick={() => setIsGraphExpanded(false)}
+                onClick={() => setIsGraphPopped(false)}
                 style={styles.floatingGraphButton}
-                title="Close graph"
+                title="Dock back to corner"
               >
                 ✕
               </button>
@@ -348,28 +404,12 @@ export function ProofDiscoveryEnvironment({
             <ProofDiscoveryStateContext.Provider
               value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}
             >
-              <ProofDiscoveryStateVisualization 
-                proofDiscoveryState={proofDiscoveryState} 
+              <ProofDiscoveryStateVisualization
+                proofDiscoveryState={proofDiscoveryState}
               />
             </ProofDiscoveryStateContext.Provider>
           </div>
         </div>
-      )}
-
-      {/* Floating graph toggle button (when collapsed) */}
-      {!isGraphExpanded && (
-        <button
-          onClick={() => setIsGraphExpanded(true)}
-          style={styles.floatingGraphToggle}
-          title="Show proof graph"
-        >
-          <svg style={{ width: 20, height: 20 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="5" cy="12" r="2" />
-            <circle cx="19" cy="6" r="2" />
-            <circle cx="19" cy="18" r="2" />
-            <path d="M7 11l8-4M7 13l8 4" />
-          </svg>
-        </button>
       )}
 
       {/* Fullscreen Graph Overlay */}
@@ -429,27 +469,109 @@ const styles: { [key: string]: React.CSSProperties } = {
     height: '100%',
     background: '#f7fafc',
   },
-  actionPanel: {
+  mainContent: {
     display: 'flex',
+    flex: 1,
+    overflow: 'hidden',
+  },
+  // Library – amber/yellow theme
+  librarySection: {
+    background: '#fffbeb',
+    borderBottom: '2px solid #fbbf24',
+    padding: '0.625rem 1.5rem',
+  },
+  libraryToggle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    width: '100%',
+    padding: '0.375rem 0.5rem',
+    background: 'transparent',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    color: '#92400e',
+    transition: 'all 0.2s',
+    marginBottom: '0.5rem',
+  },
+  chevron: {
+    width: '16px',
+    height: '16px',
+    transition: 'transform 0.2s',
+    color: '#d97706',
+  },
+  libraryTitle: {
+    flex: 1,
+    textAlign: 'left',
+  },
+  libraryList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+    maxHeight: '180px',
+    overflowY: 'auto',
+  },
+  libraryItem: {
+    padding: '0.625rem 0.875rem',
+    background: 'white',
+    border: '1.5px solid #fde68a',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    textAlign: 'left',
+  },
+  libraryItemActive: {
+    background: '#fef9c3',
+    border: '2px solid #eab308',
+    boxShadow: '0 2px 8px rgba(234, 179, 8, 0.2)',
+  },
+  libraryItemLabel: {
+    fontSize: '0.75rem',
+    fontWeight: '700',
+    color: '#92400e',
+    marginBottom: '0.2rem',
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  },
+  libraryItemStatement: {
+    fontSize: '0.875rem',
+    color: '#78350f',
+    marginTop: '0.375rem',
+    textAlign: 'center',
+  },
+  // Bottom bar – spans only the proof-state column
+  bottomBar: {
+    display: 'flex',
+    flexShrink: 0,
+    borderTop: '2px solid #e2e8f0',
+    background: 'white',
+    marginRight: '340px',
+  },
+  actionPanel: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: '1rem 1.5rem',
-    background: 'white',
-    borderBottom: '2px solid #e2e8f0',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-    gap: '1.5rem',
+    padding: '0.625rem 1.5rem',
+    gap: '0.75rem',
   },
   actionButtons: {
     display: 'flex',
-    gap: '0.75rem',
+    gap: '0.625rem',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   actionButton: {
     display: 'flex',
     alignItems: 'center',
     gap: '0.5rem',
-    padding: '0.625rem 1rem',
-    fontSize: '0.875rem',
+    padding: '0.5rem 0.875rem',
+    fontSize: '0.85rem',
     fontWeight: '500',
     color: '#4a5568',
     background: 'white',
@@ -463,86 +585,63 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderColor: '#7c6ba3',
   },
   buttonIcon: {
-    width: '18px',
-    height: '18px',
+    width: '16px',
+    height: '16px',
+    flexShrink: 0,
   },
   selectionCounter: {
-    padding: '0.5rem 1rem',
-    fontSize: '0.875rem',
+    padding: '0.375rem 0.875rem',
+    fontSize: '0.8rem',
     fontWeight: '600',
     color: '#5a67d8',
     background: '#ebf4ff',
     border: '1px solid #5a67d8',
     borderRadius: '20px',
   },
-  mainContent: {
+  // Embedded graph panel – lives at the bottom of the right column
+  embeddedGraphPanel: {
+    height: '220px',
+    flexShrink: 0,
     display: 'flex',
-    flex: 1,
+    flexDirection: 'column',
+    borderTop: '2px solid #e2e8f0',
     overflow: 'hidden',
   },
-  librarySection: {
-    background: '#fffbeb',
-    borderBottom: '2px solid #fbbf24',
-    padding: '1rem 1.5rem',
+  embeddedGraphHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.4rem 0.75rem',
+    background: '#f8fafc',
+    borderBottom: '1.5px solid #e2e8f0',
+    flexShrink: 0,
   },
-  libraryToggle: {
+  embeddedGraphBody: {
+    flex: 1,
+    overflow: 'hidden',
+    background: '#f7fafc',
+  },
+  graphDockPlaceholder: {
+    height: '220px',
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderTop: '2px solid #e2e8f0',
+    background: '#f7fafc',
+  },
+  dockButton: {
     display: 'flex',
     alignItems: 'center',
     gap: '0.5rem',
-    width: '100%',
-    padding: '0.75rem',
+    padding: '0.5rem 0.875rem',
     background: 'white',
-    border: '2px solid #fbbf24',
+    border: '1.5px solid #667eea',
     borderRadius: '8px',
     cursor: 'pointer',
-    fontSize: '1rem',
-    fontWeight: '600',
-    color: '#92400e',
-    transition: 'all 0.2s',
-    marginBottom: '1rem',
-  },
-  chevron: {
-    width: '20px',
-    height: '20px',
-    transition: 'transform 0.2s',
-  },
-  libraryTitle: {
-    flex: 1,
-    textAlign: 'left',
-  },
-  libraryList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.75rem',
-    maxHeight: '200px',
-    overflowY: 'auto',
-  },
-  libraryItem: {
-    padding: '0.875rem',
-    background: 'white',
-    border: '2px solid #fde047',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    textAlign: 'left',
-  },
-  libraryItemActive: {
-    background: '#fef9c3',
-    border: '2px solid #eab308',
-    boxShadow: '0 2px 8px rgba(234, 179, 8, 0.2)',
-  },
-  libraryItemLabel: {
-    fontSize: '0.875rem',
-    fontWeight: '600',
-    color: '#92400e',
-    marginBottom: '0.25rem',
-    textAlign: 'center',
-  },
-  libraryItemStatement: {
-    fontSize: '0.875rem',
-    color: '#78350f',
-    marginTop: '0.5rem',
-    textAlign: 'center',
+    fontSize: '0.85rem',
+    fontWeight: '500',
+    color: '#667eea',
   },
   proofStateSection: {
     flex: 1,
@@ -581,17 +680,23 @@ const styles: { [key: string]: React.CSSProperties } = {
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
     overflow: 'auto',
   },
-  movePanelSide: {
+  rightColumn: {
     width: '340px',
     flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    borderLeft: '2px solid #e2e8f0',
+    overflow: 'hidden',
+  },
+  movePanelSide: {
+    flex: 1,
     overflow: 'auto',
-    padding: '1.5rem 1rem 1.5rem 0',
+    padding: '1.25rem 1rem',
     display: 'flex',
     flexDirection: 'column',
   },
   floatingGraphContainer: {
     position: 'fixed',
-    /* bottom / right set dynamically via graphPos */
     width: '380px',
     height: '300px',
     background: 'white',
@@ -609,14 +714,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '0.5rem 0.75rem',
-    background: '#667eea',
+    background: '#f8fafc',
+    borderBottom: '1.5px solid #e2e8f0',
     cursor: 'grab',
     flexShrink: 0,
   },
   floatingGraphTitle: {
     fontSize: '0.8rem',
-    fontWeight: 700,
-    color: 'white',
+    fontWeight: 600,
+    color: '#374151',
+    letterSpacing: '0.02em',
   },
   floatingGraphButton: {
     display: 'flex',
@@ -624,11 +731,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     justifyContent: 'center',
     width: '24px',
     height: '24px',
-    background: 'rgba(255,255,255,0.2)',
+    background: '#e2e8f0',
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer',
-    color: 'white',
+    color: '#4a5568',
     fontSize: '0.85rem',
     lineHeight: 1,
   },
@@ -636,24 +743,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     flex: 1,
     overflow: 'auto',
     background: '#f7fafc',
-  },
-  floatingGraphToggle: {
-    position: 'fixed',
-    bottom: '1.5rem',
-    right: '1.5rem',
-    width: '44px',
-    height: '44px',
-    background: '#667eea',
-    border: 'none',
-    borderRadius: '50%',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'white',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-    zIndex: 500,
-    transition: 'all 0.2s',
   },
   spinnerCircle: {
     opacity: 0.25,
