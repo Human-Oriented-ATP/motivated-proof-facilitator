@@ -16,6 +16,7 @@ import MoveVisualizer from "./MoveVisualizer"
 
 export default function Test(): JSX.Element {
     const [activeTest, setActiveTest] = useState<'expressions' | 'statements' | 'proofstates' | 'proofdiscoverystates' | 'proofdiscoveryenvironment' | 'formalizer' | 'movegenerator' | 'movevisualizer'>('proofstates')
+    const [generatorInitialMove, setGeneratorInitialMove] = useState<string | undefined>()
     
     return (
         <div>
@@ -157,8 +158,8 @@ export default function Test(): JSX.Element {
              activeTest === 'proofdiscoverystates' ? <RenderProofDiscoveryStates /> :
              activeTest === 'proofdiscoveryenvironment' ? <RenderProofDiscoveryEnvironment /> :
              activeTest === 'formalizer' ? <RenderFormalizer /> :
-             activeTest === 'movegenerator' ? <MoveGenerator /> :
-             <MoveVisualizer />}
+             activeTest === 'movegenerator' ? <MoveGenerator initialMoveJson={generatorInitialMove} /> :
+             <MoveVisualizer onOpenInGenerator={(moveJson) => { setGeneratorInitialMove(moveJson); setActiveTest('movegenerator') }} />}
         </div>
     )
 }

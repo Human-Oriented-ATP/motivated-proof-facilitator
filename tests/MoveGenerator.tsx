@@ -1,4 +1,4 @@
-import React, { useState, useReducer, JSX } from "react"
+import React, { useState, useReducer, useEffect, JSX } from "react"
 import { ProofState, ProofStateSchema, ProofStateWithLibraryResult as ProofStateWithLibraryResultType, LabelledStatementSchema, StatementSchema } from "../src/core/ProofStateZod"
 import { ProofDiscoveryMove, MoveKind, ProofDiscoveryMoveExample } from "../src/core/ProofDiscoveryMove"
 
@@ -15,7 +15,7 @@ type WorkflowState = "idle" | "formalizing" | "formalized" | "applying" | "appli
 /**
  * Move Generator UI - Allows users to interactively create ProofDiscoveryMove definitions
  */
-export default function MoveGenerator(): JSX.Element {
+export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: string } = {}): JSX.Element {
   // Basic move information
   const [moveName, setMoveName] = useState("")
   const [moveKind, setMoveKind] = useState<MoveKind>("strengthening")
@@ -49,6 +49,12 @@ export default function MoveGenerator(): JSX.Element {
 
   // Load move state
   const [loadError, setLoadError] = useState<string | null>(null)
+
+  // Pre-load from prop when provided
+  useEffect(() => {
+    if (initialMoveJson) handleLoadMove(initialMoveJson)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMoveJson])
 
   const handleLoadMove = (jsonString: string): void => {
     try {

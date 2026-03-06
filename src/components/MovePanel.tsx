@@ -209,7 +209,7 @@ function ensureKeyframe() {
   }
 }
 
-export function MovePanel(): JSX.Element {
+function MovePanelContent({ onShowAllMoves }: { onShowAllMoves: () => void }): JSX.Element {
   useEffect(ensureKeyframe, [])
 
   const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
@@ -373,6 +373,11 @@ export function MovePanel(): JSX.Element {
         <span style={S.headerTitle}>Applicable Moves</span>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={S.countBadge}>{applicableMoves.length}</span>
+          <button onClick={onShowAllMoves} style={S.headerIconBtn} title="Browse all moves">
+            <svg style={{ width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h7" />
+            </svg>
+          </button>
           <button onClick={() => void fetchMoves()} style={S.headerIconBtn} title="Refresh suggestions">
             <svg style={{ width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -627,4 +632,110 @@ const S: Record<string, React.CSSProperties> = {
     padding: "2rem 1rem", textAlign: "center",
     fontSize: "0.82rem", color: "#6b7280",
   },
+}
+
+// ─── All Moves Modal ───────────────────────────────────────────────────────────
+
+function AllMovesModal({ onClose }: { onClose: () => void }): JSX.Element {
+  const [selectedIdx, setSelectedIdx] = useState(0)
+  const [examplesOpen, setExamplesOpen] = useState(false)
+  const active = moves[selectedIdx]
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000,
+        display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: "white", borderRadius: 12, width: "90%", maxWidth: 1100,
+          height: "85vh", display: "flex", flexDirection: "column",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.3)", overflow: "hidden" }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Modal header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+          padding: "0.875rem 1.25rem", borderBottom: "1.5px solid #dcfce7",
+          background: "#f0fdf4", flexShrink: 0 }}>
+          <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "#166534" }}>All Moves</span>
+          <button onClick={onClose}
+            style={{ background: "none", border: "none", cursor: "pointer",
+              fontSize: "1.2rem", color: "#6b7280", lineHeight: 1, padding: "0 4px" }}>✕</button>
+        </div>
+
+        {/* Body: sidebar + detail */}
+        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+          {/* Sidebar */}
+          <div style={{ width: 230, flexShrink: 0, borderRight: "1.5px solid #e5e7eb",
+            overflowY: "auto", padding: "0.5rem 0" }}>
+            {moves.map((move, idx) => (
+              <button
+                key={idx}
+                onClick={() => { setSelectedIdx(idx); setExamplesOpen(false) }}
+                style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4,
+                  width: "100%", padding: "0.6rem 0.875rem", border: "none",
+                  borderLeft: `3px solid ${selectedIdx === idx ? "#16a34a" : "transparent"}`,
+                  background: selectedIdx === idx ? "#f0fdf4" : "transparent",
+                  cursor: "pointer", textAlign: "left" }}
+              >
+                <span style={{ fontSize: "0.82rem",
+                  fontWeight: selectedIdx === idx ? 700 : 500,
+                  color: selectedIdx === idx ? "#166534" : "#374151", lineHeight: 1.3 }}>
+                  {move.name}
+                </span>
+                <MoveKindBadge kind={move.kind} />
+              </button>
+            ))}
+          </div>
+
+          {/* Detail panel */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "1.25rem 1.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.875rem" }}>
+              <span style={{ fontWeight: 700, fontSize: "1rem", color: "#166534" }}>{active.name}</span>
+              <MoveKindBadge kind={active.kind} />
+            </div>
+            <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8,
+              padding: "0.875rem 1rem", marginBottom: "1rem", fontSize: "0.82rem", color: "#374151",
+              lineHeight: 1.6 }}>
+              <div style={{ marginBottom: "0.4rem" }}><strong>Trigger:</strong> {active.trigger}</div>
+              <div><strong>Action:</strong> {active.action}</div>
+            </div>
+
+            {active.examples.length > 0 && (
+              <>
+                <button
+                  onClick={() => setExamplesOpen(v => !v)}
+                  style={{ display: "flex", alignItems: "center", gap: 5, padding: 0,
+                    background: "none", border: "none", cursor: "pointer",
+                    fontSize: "0.8rem", fontWeight: 600, color: "#16a34a", marginBottom: "0.5rem" }}
+                >
+                  <svg style={{ width: 12, height: 12, transition: "transform 0.2s",
+                    transform: examplesOpen ? "rotate(90deg)" : "rotate(0deg)" }}
+                    viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                  Examples ({active.examples.length})
+                </button>
+                {examplesOpen && active.examples.map((ex, exIdx) => (
+                  <ExamplePreview key={exIdx} example={ex} idx={exIdx} />
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Public Move Panel (with "All Moves" modal) ────────────────────────────────
+
+export function MovePanel(): JSX.Element {
+  const [showAllMoves, setShowAllMoves] = useState(false)
+  return (
+    <>
+      <MovePanelContent onShowAllMoves={() => setShowAllMoves(true)} />
+      {showAllMoves && <AllMovesModal onClose={() => setShowAllMoves(false)} />}
+    </>
+  )
 }
