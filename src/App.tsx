@@ -1,44 +1,30 @@
-import React, { useState, useReducer, JSX } from "react"
-import { ProofDiscoveryState } from "./core/ProofDiscoveryState"
+import React, { useReducer, JSX } from "react"
 import { ProofDiscoveryEnvironment } from "./components/ProofDiscoveryEnvironment"
-import { ProofStateGenerator } from "./components/ProofStateGenerator"
 import { ProofStateSelectionContext, proofStateSelectionReducer } from "./core/ProofStateSelectionContext"
 import TypstContextProvider from "./components/TypstContext"
+import { sampleProofDiscoveryState } from "../tests/samples/ProofDiscoveryState"
 
 export default function App(): JSX.Element {
-  const [initialState, setInitialState] = useState<ProofDiscoveryState | null>(null)
   const [selections, selectionsDispatch] = useReducer(proofStateSelectionReducer, [])
 
-  if (initialState) {
-    return (
-      <ProofStateSelectionContext.Provider value={{ selections, dispatch: selectionsDispatch }}>
-        <TypstContextProvider>
-          <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-            <div style={styles.appHeader}>
-              <h1 style={styles.appTitle}>Motivated Proof Facilitator</h1>
-              <div style={styles.statementDisplay}>
-                <strong>Statement:</strong> {initialState.statement}
-              </div>
-              <button
-                style={styles.backButton}
-                onClick={() => {
-                  setInitialState(null)
-                  selectionsDispatch({ type: "CLEAR_ALL_SELECTIONS" })
-                }}
-              >
-                ← New Statement
-              </button>
-            </div>
-            <div style={{ flex: 1, overflow: "hidden" }}>
-              <ProofDiscoveryEnvironment initialProofDiscoveryState={initialState} />
+  return (
+    <ProofStateSelectionContext.Provider value={{ selections, dispatch: selectionsDispatch }}>
+      <TypstContextProvider>
+        <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+          <div style={styles.appHeader}>
+            <h1 style={styles.appTitle}>Motivated Proof Facilitator</h1>
+            <div style={styles.statementDisplay}>
+              <span style={styles.statementLabel}>Statement</span>
+              <span style={styles.statementText}>{sampleProofDiscoveryState.statement}</span>
             </div>
           </div>
-        </TypstContextProvider>
-      </ProofStateSelectionContext.Provider>
-    )
-  }
-
-  return <ProofStateGenerator onGenerated={setInitialState} />
+          <div style={{ flex: 1, overflow: "hidden" }}>
+            <ProofDiscoveryEnvironment initialProofDiscoveryState={sampleProofDiscoveryState} />
+          </div>
+        </div>
+      </TypstContextProvider>
+    </ProofStateSelectionContext.Provider>
+  )
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
@@ -60,21 +46,28 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   statementDisplay: {
     flex: 1,
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    overflow: "hidden",
+  },
+  statementLabel: {
+    flexShrink: 0,
+    fontSize: "0.7rem",
+    fontWeight: "700",
+    color: "#ffffff",
+    background: "#1a74d2",
+    padding: "0.2rem 0.55rem",
+    borderRadius: "4px",
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+  },
+  statementText: {
     fontSize: "0.95rem",
-    color: "#2d3748",
+    color: "#374151",
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
-  },
-  backButton: {
-    padding: "0.5rem 1.25rem",
-    fontSize: "0.9rem",
-    fontWeight: "500",
-    color: "#1a74d2",
-    background: "white",
-    border: "2px solid #1a74d2",
-    borderRadius: "8px",
-    cursor: "pointer",
-    whiteSpace: "nowrap",
+    fontStyle: "italic",
   },
 }
