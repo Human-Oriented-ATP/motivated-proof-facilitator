@@ -32,6 +32,11 @@ export async function queryMove(
     throw new Error(`HTTP error! status: ${response.status}`)
   }
 
+  console.log("Received move response:", response)
+
   const data: unknown = await response.json()
+
+  console.log("Received move response:", data)
+
   return MoveResponseSchema.parse(data)
 }
