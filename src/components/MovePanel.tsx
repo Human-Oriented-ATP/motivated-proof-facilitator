@@ -89,7 +89,7 @@ export async function applyMove(
   selections: ProofStateSelection[],
   move: ProofDiscoveryMove,
   dispatchProofDiscoveryAction: React.Dispatch<import("../core/ProofDiscoveryState").ProofDiscoveryAction>
-): Promise<void> {
+): Promise<string | undefined> {
   const { proofState: newProofState, reasoning } = await queryMove(getCurrentProofState(proofDiscoveryState), move, selections)
 
   dispatchProofDiscoveryAction({
@@ -101,6 +101,8 @@ export async function applyMove(
       reasoning
     }
   })
+
+  return reasoning
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -281,6 +283,8 @@ function MovePanelContent(): JSX.Element {
   const [infoIndex, setInfoIndex] = useState<number | null>(null)
   const [expandedExamples, setExpandedExamples] = useState<Set<number>>(new Set())
   const [showAllMovesModal, setShowAllMovesModal] = useState(false)
+  const [lastMoveReasoning, setLastMoveReasoning] = useState<string | null>(null)
+
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastFetchedSelectionsRef = useRef<string>("")
@@ -336,7 +340,8 @@ function MovePanelContent(): JSX.Element {
   const handleApply = async (am: ApplicableMove, idx: number) => {
     setApplyingIndex(idx)
     try {
-      await applyMove(proofDiscoveryState, selections, am.move, dispatchProofDiscoveryAction)
+      const reasoning = await applyMove(proofDiscoveryState, selections, am.move, dispatchProofDiscoveryAction)
+      setLastMoveReasoning(reasoning ?? null)
       setStatus("idle")
       setApplicableMoves([])
       lastFetchedSelectionsRef.current = ""
@@ -347,6 +352,7 @@ function MovePanelContent(): JSX.Element {
       setApplyingIndex(null)
     }
   }
+
 
   const toggleReasoning = (idx: number) => {
     setExpandedReasoning(prev => { const n = new Set(prev); n.has(idx) ? n.delete(idx) : n.add(idx); return n })
@@ -429,6 +435,14 @@ function MovePanelContent(): JSX.Element {
             <button onClick={() => void fetchMoves()} style={S.syncRefreshBtn}>Refresh</button>
           </div>
         )}
+        {/* Last move reasoning */}
+        {lastMoveReasoning && (
+          <div style={S.lastReasoningBox}>
+            <strong>Reasoning trace from last move:</strong>
+            <pre style={S.lastReasoningContent}>{lastMoveReasoning}</pre>
+          </div>
+        )}
+
         {/* Move list */}
         {applicableMoves.length === 0 ? (
           <div style={S.emptyMsg}>No applicable moves for the current selection.</div>
@@ -800,6 +814,21 @@ const S: Record<string, React.CSSProperties> = {
     padding: "8px 12px", whiteSpace: "pre-wrap",
     background: "#f9fafb", borderRadius: 8, marginTop: 4,
     borderLeft: "3px solid #2E7D32",
+  },
+  lastReasoningBox: {
+    background: "#f3f4f6",
+    border: "1px solid #d1d5db",
+    borderRadius: 8,
+    padding: "10px 12px",
+    margin: "8px",
+    fontSize: "0.85rem",
+    color: "#374151",
+  },
+  lastReasoningContent: {
+    whiteSpace: "pre-wrap",
+    marginTop: "6px",
+    fontSize: "0.82rem",
+    color: "#1f2937",
   },
   emptyMsg: {
     padding: "3rem 1.5rem", textAlign: "center",
