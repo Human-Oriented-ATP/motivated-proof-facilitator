@@ -13,7 +13,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" }
+                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -45,7 +45,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" },
+                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" },
                             { name: "$a$", kind: "meta", description: "$NN$" }
                         ],
                         hypotheses: [],
@@ -66,7 +66,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" }
+                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -94,7 +94,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" },
+                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" },
                             { name: "$a$", kind: "meta", description: "$NN$" }
                         ],
                         hypotheses: [],
@@ -118,7 +118,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                             { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
                             { name: "$B$", kind: "free", description: "$#text[Proposition]$" },
                             { name: "$C$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" }
+                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -161,7 +161,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                             { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
                             { name: "$B$", kind: "free", description: "$#text[Proposition]$" },
                             { name: "$C$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" },
+                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" },
                             { name: "$a$", kind: "meta", description: "$NN$" }
                         ],
                         hypotheses: [],
@@ -177,7 +177,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                             { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
                             { name: "$B$", kind: "free", description: "$#text[Proposition]$" },
                             { name: "$C$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" }
+                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -230,7 +230,7 @@ export const goalExistentialMove: ProofDiscoveryMove = {
                     {
                         variables: [
                             { name: "$a$", kind: "free", description: "$NN$" },
-                            { name: "$P$", kind: "free", description: "$NN -> \"proposition\"$" }
+                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" }
                         ],
                         hypotheses: [
                             {
