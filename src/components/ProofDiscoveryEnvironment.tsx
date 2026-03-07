@@ -7,6 +7,8 @@ import { ProofStateSelectionContext, ProofStateLocationContext } from '../core/P
 import { ProofStateIdContext, ProofDiscoveryStateContext } from '../core/ProofDiscoveryStateContext'
 import { MovePanel } from './MovePanel'
 import { ProofStateEditor } from './ProofStateEditor'
+import { StatementBuilder } from './StatementBuilder'
+import { Statement } from '../core/ProofStateZod'
 
 export type ProofDiscoveryEnvironmentProps = {
   initialProofDiscoveryState: ProofDiscoveryState
@@ -33,6 +35,9 @@ export function ProofDiscoveryEnvironment({
   const [informalizedText, setInformalizedText] = useState("")
   const [isInformalizeLoading, setIsInformalizeLoading] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isAddLibraryOpen, setIsAddLibraryOpen] = useState(false)
+  const [newLibraryLabel, setNewLibraryLabel] = useState('')
+  const [newLibraryStatement, setNewLibraryStatement] = useState<Statement>("")
   const { selections, dispatch: selectionsDispatch } = useContext(ProofStateSelectionContext)
 
   // ── Draggable graph state ───────────────────────────────────────────────
@@ -143,28 +148,69 @@ export function ProofDiscoveryEnvironment({
   return (
     <div style={styles.container}>
       {/* Library Statements at Top */}
-      {proofDiscoveryState.library.length > 0 && (
-        <div style={styles.librarySection}>
-          <button
-            onClick={() => setIsLibraryExpanded(!isLibraryExpanded)}
-            style={styles.libraryToggle}
-          >
-            <svg 
-              style={{
-                ...styles.chevron,
-                transform: isLibraryExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
-              }} 
-              viewBox="0 0 20 20" 
-              fill="currentColor"
+      <div style={styles.librarySection}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button
+              onClick={() => setIsLibraryExpanded(!isLibraryExpanded)}
+              style={styles.libraryToggle}
             >
-              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-            </svg>
-            <span style={styles.libraryTitle}>
-              LIBRARY STATEMENTS ({proofDiscoveryState.library.length})
-            </span>
-          </button>
+              <svg 
+                style={{
+                  ...styles.chevron,
+                  transform: isLibraryExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+                }} 
+                viewBox="0 0 20 20" 
+                fill="currentColor"
+              >
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+              <span style={styles.libraryTitle}>
+                LIBRARY STATEMENTS ({proofDiscoveryState.library.length})
+              </span>
+            </button>
+            <button
+              onClick={() => { setIsAddLibraryOpen(v => !v); setNewLibraryLabel(''); setNewLibraryStatement('') }}
+              style={{ ...styles.libraryAddButton, ...(isAddLibraryOpen ? styles.libraryAddButtonActive : {}) }}
+              title="Add a statement to the library"
+            >
+              +
+            </button>
+          </div>
 
-          {isLibraryExpanded && (
+          {isAddLibraryOpen && (
+            <div style={styles.libraryAddForm}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
+                <label style={styles.libraryAddLabel}>Label</label>
+                <input
+                  type="text"
+                  value={newLibraryLabel}
+                  onChange={(e) => setNewLibraryLabel(e.target.value)}
+                  placeholder="e.g. lemma_1"
+                  style={styles.libraryAddInput}
+                />
+              </div>
+              <StatementBuilder value={newLibraryStatement} onChange={setNewLibraryStatement} />
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                <button
+                  onClick={() => {
+                    if (!newLibraryLabel.trim()) return
+                    dispatchProofDiscoveryAction({ action: 'addToLibrary', statement: { label: newLibraryLabel.trim(), statement: newLibraryStatement } })
+                    setIsAddLibraryOpen(false)
+                    setNewLibraryLabel('')
+                    setNewLibraryStatement('')
+                    setIsLibraryExpanded(true)
+                  }}
+                  disabled={!newLibraryLabel.trim()}
+                  style={styles.libraryAddConfirm}
+                >
+                  Add to Library
+                </button>
+                <button onClick={() => setIsAddLibraryOpen(false)} style={styles.libraryAddCancel}>Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {isLibraryExpanded && proofDiscoveryState.library.length > 0 && (
             <div style={styles.libraryList}>
               {proofDiscoveryState.library.map((statement, idx) => (
                 <div
@@ -208,7 +254,6 @@ export function ProofDiscoveryEnvironment({
             </div>
           )}
         </div>
-      )}
 
       <div style={styles.mainContent}>
         {/* Main Proof State Display */}
@@ -568,6 +613,67 @@ const styles: { [key: string]: React.CSSProperties } = {
     transition: 'all 0.2s',
     textAlign: 'left',
     boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
+  },
+  libraryAddButton: {
+    padding: '2px 10px',
+    background: 'transparent',
+    border: '1.5px solid #d97706',
+    borderRadius: '6px',
+    color: '#92400e',
+    fontSize: '18px',
+    lineHeight: '1.2',
+    cursor: 'pointer',
+    fontWeight: 600,
+    flexShrink: 0,
+    transition: 'all 0.15s',
+  },
+  libraryAddButtonActive: {
+    background: '#fef9c3',
+    border: '1.5px solid #eab308',
+  },
+  libraryAddForm: {
+    background: 'white',
+    border: '1.5px solid #fde68a',
+    borderRadius: '10px',
+    padding: '14px 16px',
+    marginBottom: '0.5rem',
+    marginTop: '0.25rem',
+  },
+  libraryAddLabel: {
+    fontSize: '12px',
+    fontWeight: 600,
+    color: '#92400e',
+    flexShrink: 0,
+    letterSpacing: '0.05em',
+  },
+  libraryAddInput: {
+    flex: 1,
+    padding: '5px 10px',
+    border: '1px solid #fde68a',
+    borderRadius: '5px',
+    fontSize: '13px',
+    outline: 'none',
+  },
+  libraryAddConfirm: {
+    padding: '5px 14px',
+    background: '#a16207',
+    color: 'white',
+    border: 'none',
+    borderRadius: '5px',
+    fontSize: '12px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'background 0.15s',
+  },
+  libraryAddCancel: {
+    padding: '5px 14px',
+    background: 'transparent',
+    color: '#92400e',
+    border: '1px solid #fde68a',
+    borderRadius: '5px',
+    fontSize: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
   },
   libraryItemActive: {
     background: '#ecfccb',
