@@ -135,3 +135,77 @@ export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: P
 export function getCurrentProofState(proofDiscoveryState: ProofDiscoveryState): ProofState {
     return proofDiscoveryState.graph.getNodeAttribute(proofDiscoveryState.currentNodeId, 'proofState')
 }
+
+/**
+ * Checks whether the current proof state has no goals in any context,
+ * and is reachable from the original goal (node 0) through only
+ * strengthening and equivalence edges (no weakenings).
+ */
+export function isProofComplete(state: ProofDiscoveryState): boolean {
+    if (state.graph.order === 0) return false
+
+    // Check all contexts have no goals
+    const currentProofState = getCurrentProofState(state)
+    if (currentProofState.some(ctx => ctx.goals.length > 0)) return false
+
+    // Trivial case: we're already at the root
+    if (state.currentNodeId === 0) return true
+
+    // BFS from current node following only strengthening/equivalence edges toward node 0
+    const visited = new Set<string>()
+    const queue: string[] = [state.currentNodeId.toString()]
+    visited.add(state.currentNodeId.toString())
+
+    while (queue.length > 0) {
+        const nodeId = queue.shift()!
+
+        // Follow directed outgoing edges (strengthening: new -> old)
+        state.graph.forEachOutEdge(nodeId, (_edge, attrs, _source, target) => {
+            if (visited.has(target)) return
+            if (attrs.kind === 'strengthening') {
+                visited.add(target)
+                queue.push(target)
+            }
+        })
+
+        // Follow undirected edges (equivalences) in either direction
+        state.graph.forEachUndirectedEdge(nodeId, (_edge, attrs, source, target) => {
+            const other = source === nodeId ? target : source
+            if (visited.has(other)) return
+            if (attrs.kind === 'equivalence') {
+                visited.add(other)
+                queue.push(other)
+            }
+        })
+    }
+
+    return visited.has('0')
+}
+
+/**
+ * Serializes the proof discovery state to a JSON-friendly object.
+ */
+export function serializeProofDiscoveryState(state: ProofDiscoveryState) {
+    const nodes: { id: number; proofState: ProofState }[] = []
+    state.graph.forEachNode((nodeId, attrs) => {
+        nodes.push({ id: parseInt(nodeId), proofState: attrs.proofState })
+    })
+
+    const edges: { source: number; target: number; kind: MoveKind; description: string; undirected: boolean }[] = []
+    state.graph.forEachEdge((_edge, attrs, source, target, _sa, _ta, undirected) => {
+        edges.push({
+            source: parseInt(source),
+            target: parseInt(target),
+            kind: attrs.kind,
+            description: attrs.description,
+            undirected,
+        })
+    })
+
+    return {
+        statement: state.statement,
+        nodes,
+        edges,
+        currentNodeId: state.currentNodeId,
+    }
+}

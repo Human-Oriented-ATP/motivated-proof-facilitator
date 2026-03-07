@@ -1,5 +1,5 @@
 import React, { JSX, useState, useContext, useReducer, useRef, useEffect, useCallback } from 'react'
-import { ProofDiscoveryState, proofDiscoveryStateReducer } from '../core/ProofDiscoveryState'
+import { ProofDiscoveryState, proofDiscoveryStateReducer, isProofComplete, serializeProofDiscoveryState } from '../core/ProofDiscoveryState'
 import { ProofStateWithLibraryResult as ProofStateComponent } from './ProofState'
 import { ProofDiscoveryState as ProofDiscoveryStateVisualization } from './ProofDiscoveryState'
 import { MathStatement } from './MathStatement'
@@ -38,6 +38,8 @@ export function ProofDiscoveryEnvironment({
   const [isAddLibraryOpen, setIsAddLibraryOpen] = useState(false)
   const [newLibraryLabel, setNewLibraryLabel] = useState('')
   const [newLibraryStatement, setNewLibraryStatement] = useState<Statement>("")
+  const [isFinishScreenOpen, setIsFinishScreenOpen] = useState(false)
+  const [jsonCopied, setJsonCopied] = useState(false)
   const { selections, dispatch: selectionsDispatch } = useContext(ProofStateSelectionContext)
 
   // ── Draggable graph state ───────────────────────────────────────────────
@@ -71,6 +73,14 @@ export function ProofDiscoveryEnvironment({
     document.addEventListener('mouseup', onUp)
     return () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
   }, [])
+
+  // Auto-detect proof completion
+  useEffect(() => {
+    if (!proofDiscoveryState.isSolved && isProofComplete(proofDiscoveryState)) {
+      dispatchProofDiscoveryAction({ action: 'finish' })
+      setIsFinishScreenOpen(true)
+    }
+  }, [proofDiscoveryState])
 
   // Get current proof state from the current node
   const currentProofState = proofDiscoveryState.graph.getNodeAttribute(
@@ -545,6 +555,59 @@ export function ProofDiscoveryEnvironment({
           </div>
         </div>
       )}
+
+      {/* Finish Screen Overlay */}
+      {isFinishScreenOpen && proofDiscoveryState.isSolved && (
+        <div style={styles.finishOverlay} onClick={() => setIsFinishScreenOpen(false)}>
+          <div style={styles.finishContent} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.finishHeader}>
+              <div style={styles.finishBadge}>
+                <svg style={{ width: 32, height: 32 }} viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <h2 style={{ margin: 0, fontSize: '1.75rem' }}>Proof Complete!</h2>
+              </div>
+              <button style={styles.closeButton} onClick={() => setIsFinishScreenOpen(false)}>✕</button>
+            </div>
+            <div style={styles.finishStatement}>
+              {proofDiscoveryState.statement}
+            </div>
+            <div style={styles.finishGraphContainer}>
+              <ProofDiscoveryStateContext.Provider
+                value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}
+              >
+                <ProofDiscoveryStateVisualization
+                  proofDiscoveryState={proofDiscoveryState}
+                />
+              </ProofDiscoveryStateContext.Provider>
+            </div>
+            <div style={styles.finishActions}>
+              <button
+                onClick={() => {
+                  const json = JSON.stringify(serializeProofDiscoveryState(proofDiscoveryState), null, 2)
+                  navigator.clipboard.writeText(json).then(() => {
+                    setJsonCopied(true)
+                    setTimeout(() => setJsonCopied(false), 2000)
+                  })
+                }}
+                style={styles.finishCopyButton}
+              >
+                <svg style={{ width: 18, height: 18, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                  <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                </svg>
+                {jsonCopied ? 'Copied!' : 'Copy Proof JSON'}
+              </button>
+              <button
+                onClick={() => setIsFinishScreenOpen(false)}
+                style={styles.finishContinueButton}
+              >
+                Continue Exploring
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -982,5 +1045,93 @@ const styles: { [key: string]: React.CSSProperties } = {
     lineHeight: '1.6',
     color: '#2d3748',
     whiteSpace: 'pre-wrap',
+  },
+  // Finish screen styles
+  finishOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1002,
+    padding: '2rem',
+  },
+  finishContent: {
+    background: 'white',
+    borderRadius: '16px',
+    width: '95%',
+    height: '90%',
+    display: 'flex',
+    flexDirection: 'column',
+    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+    overflow: 'hidden',
+  },
+  finishHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '1.5rem 2rem',
+    background: 'linear-gradient(135deg, #d1fae5, #ecfdf5)',
+    borderBottom: '2px solid #10b981',
+    flexShrink: 0,
+  },
+  finishBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    color: '#065f46',
+  },
+  finishStatement: {
+    padding: '1rem 2rem',
+    background: '#f0fdf4',
+    borderBottom: '1px solid #bbf7d0',
+    fontSize: '1rem',
+    color: '#166534',
+    fontStyle: 'italic',
+    flexShrink: 0,
+  },
+  finishGraphContainer: {
+    flex: 1,
+    overflow: 'hidden',
+    padding: '1rem',
+    background: '#f7fafc',
+  },
+  finishActions: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '1rem',
+    padding: '1rem 2rem',
+    borderTop: '2px solid #e2e8f0',
+    background: 'white',
+    flexShrink: 0,
+  },
+  finishCopyButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    padding: '0.625rem 1.25rem',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    color: '#1e40af',
+    background: '#dbeafe',
+    border: '2px solid #3b82f6',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  finishContinueButton: {
+    padding: '0.625rem 1.25rem',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    color: '#065f46',
+    background: '#d1fae5',
+    border: '2px solid #10b981',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
   },
 }
