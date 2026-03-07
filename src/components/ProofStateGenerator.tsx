@@ -160,19 +160,19 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
           </div>
 
           <div style={styles.inputSection}>
-            <label htmlFor="statement-input" style={styles.label}>
-              Statement
-            </label>
-            <textarea
-              id="statement-input"
-              value={inputStatement}
-              onChange={(e) => setInputStatement(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder="Enter a mathematical statement..."
-              style={styles.textarea}
-              rows={3}
-              disabled={isLoading}
-            />
+            <div style={styles.statementBox}>
+              <div style={styles.statementLabel}>STATEMENT</div>
+              <textarea
+                id="statement-input"
+                value={inputStatement}
+                onChange={(e) => setInputStatement(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Enter a mathematical statement..."
+                style={styles.textarea}
+                rows={3}
+                disabled={isLoading}
+              />
+            </div>
             <div style={styles.hint}>
               Press <kbd style={styles.kbd}>Ctrl</kbd>+<kbd style={styles.kbd}>Enter</kbd> to submit
             </div>
@@ -193,6 +193,7 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
             </div>
           )}
 
+          <div style={styles.buttonRow}>
           <button
             onClick={handleFormalize}
             disabled={isLoading || !inputStatement.trim()}
@@ -218,7 +219,7 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   />
                 </svg>
-                Formalizing...
+                Generating proof state...
               </>
             ) : (
               <>
@@ -229,6 +230,7 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
               </>
             )}
           </button>
+          </div>
         </div>
         <div style={styles.links}>
           <a
@@ -259,22 +261,18 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
     minHeight: "100vh",
-    background: "linear-gradient(160deg, #eaf3fc 0%, #f4f8fd 50%, #e8f0fb 100%)",
-    padding: "4rem 3rem",
+    background: "white",
+    padding: "0 1.5rem",
     fontFamily:
       "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
     display: "flex",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "center",
   },
   inputCard: {
     width: "100%",
-    maxWidth: "960px",
-    background: "white",
-    borderRadius: "16px",
-    boxShadow: "0 4px 24px rgba(30, 144, 255, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06)",
-    padding: "3.5rem 4rem",
-    border: "1px solid #d6e6f7",
+    maxWidth: "780px",
+    paddingBottom: "8rem",
   },
   header: {
     textAlign: "center",
@@ -288,7 +286,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   title: {
     fontSize: "3.25rem",
     fontWeight: "700",
-    color: "#1a74d2",
+    color: "#1d4ed8",
     margin: "0 0 0.5rem 0",
     letterSpacing: "-0.02em",
   },
@@ -297,6 +295,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: "#5a7a9a",
     margin: 0,
     lineHeight: "1.6",
+    whiteSpace: "nowrap" as const,
   },
   code: {
     background: "#eef5ff",
@@ -309,29 +308,39 @@ const styles: { [key: string]: React.CSSProperties } = {
   inputSection: {
     marginBottom: "2rem",
   },
-  label: {
-    display: "block",
-    fontSize: "0.875rem",
+  statementBox: {
+    backgroundColor: "#eff6ff",
+    border: "2px solid #bfdbfe",
+    borderRadius: "12px",
+    padding: "20px",
+    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+    position: "relative" as const,
+  },
+  statementLabel: {
+    position: "absolute" as const,
+    top: "-12px",
+    left: "20px",
+    backgroundColor: "white",
+    padding: "0 8px",
+    fontSize: "14px",
     fontWeight: "600",
-    color: "#3a6a9a",
-    marginBottom: "0.5rem",
-    textTransform: "uppercase" as const,
-    letterSpacing: "0.05em",
+    color: "#1d4ed8",
+    letterSpacing: "0.1em",
   },
   textarea: {
     width: "100%",
-    padding: "1rem 1.25rem",
+    padding: "0.75rem 1rem",
     fontSize: "1.05rem",
     lineHeight: "1.6",
-    border: "2px solid #cddff0",
-    borderRadius: "10px",
+    border: "1px solid #bfdbfe",
+    borderRadius: "8px",
     fontFamily:
       "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
     resize: "vertical",
     transition: "border-color 0.2s, box-shadow 0.2s",
     outline: "none",
-    boxSizing: "border-box",
-    background: "#fafcff",
+    boxSizing: "border-box" as const,
+    background: "white",
   },
   hint: {
     marginTop: "0.5rem",
@@ -392,13 +401,17 @@ const styles: { [key: string]: React.CSSProperties } = {
     flexShrink: 0,
     color: "#ef4444",
   },
+  buttonRow: {
+    display: "flex",
+    justifyContent: "center",
+  },
   button: {
-    width: "100%",
-    padding: "1rem 2rem",
-    fontSize: "1.1rem",
+    width: "auto",
+    padding: "0.85rem 2.5rem",
+    fontSize: "1.05rem",
     fontWeight: "600",
     color: "white",
-    background: "linear-gradient(135deg, #1e90ff 0%, #1a74d2 100%)",
+    background: "linear-gradient(135deg, #1d4fd8a1 0%, #4664b4 100%)",
     border: "none",
     borderRadius: "10px",
     cursor: "pointer",
@@ -407,7 +420,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     alignItems: "center",
     justifyContent: "center",
     gap: "0.6rem",
-    boxShadow: "0 2px 8px rgba(30, 144, 255, 0.25)",
+    boxShadow: "0 2px 8px rgba(29, 78, 216, 0.3)",
     letterSpacing: "0.01em",
   },
   buttonDisabled: {
