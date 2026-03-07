@@ -13,6 +13,8 @@ import { goalContradictionMove } from "../prompts/goalContradiction"
 import { goalUniversalMove } from "../prompts/goalUniversal"
 import { hypothesisConjunctionMove } from "../prompts/hypothesisConjunction"
 import { hypothesisDisjunctionMove } from "../prompts/hypothesisDisjunction"
+import { hypothesisExistentialMove } from "../prompts/hypothesisExistential"
+import { rewritingMove } from "../prompts/rewriting"
 import { ProofDiscoveryStateContext, ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
 import { ProofStateWithLibraryResult as ProofStateComponent } from "./ProofState"
 import MoveGenerator from "../../tests/MoveGenerator"
@@ -26,7 +28,9 @@ const moves: ProofDiscoveryMove[] = [
     goalContradictionMove,
     goalUniversalMove,
     hypothesisConjunctionMove,
-    hypothesisDisjunctionMove
+    hypothesisDisjunctionMove,
+    hypothesisExistentialMove,
+    rewritingMove
 ]
 
 const FilterResponseSchema = z.object({
