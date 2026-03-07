@@ -158,7 +158,7 @@ export function ProofDiscoveryEnvironment({
               <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
             </svg>
             <span style={styles.libraryTitle}>
-              Library Statements ({proofDiscoveryState.library.length})
+              LIBRARY STATEMENTS ({proofDiscoveryState.library.length})
             </span>
           </button>
 
@@ -184,17 +184,22 @@ export function ProofDiscoveryEnvironment({
                       : {})
                   }}
                 >
-                  <div style={styles.libraryItemLabel}>
-                    {statement.label}
-                  </div>
-                  <div style={styles.libraryItemStatement}>
-                    <ProofStateLocationContext.Provider value={{ kind: 'library_statement', label: statement.label }}>
-                      <MathStatement
-                        address={[]}
-                        statement={statement.statement}
-                        polarity={null}
-                      />
-                    </ProofStateLocationContext.Provider>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ color: '#a16207', fontSize: '16px', fontWeight: 'bold', flexShrink: 0, userSelect: 'none' }}>★</span>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1 }}>
+                      <div style={{ flex: '1' }}>
+                        <ProofStateLocationContext.Provider value={{ kind: 'library_statement', label: statement.label }}>
+                          <MathStatement
+                            address={[]}
+                            statement={statement.statement}
+                            polarity={null}
+                          />
+                        </ProofStateLocationContext.Provider>
+                      </div>
+                      <span style={{ backgroundColor: '#fefce8', border: '1px solid #eab308', color: '#a16207', fontSize: '12px', fontWeight: '500', padding: '4px 8px', borderRadius: '6px', whiteSpace: 'nowrap', userSelect: 'none' }}>
+                        {statement.label}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -505,6 +510,10 @@ const styles: { [key: string]: React.CSSProperties } = {
   libraryTitle: {
     flex: 1,
     textAlign: 'left',
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#a16207',
+    letterSpacing: '0.1em',
   },
   libraryList: {
     display: 'flex',
@@ -514,33 +523,19 @@ const styles: { [key: string]: React.CSSProperties } = {
     overflowY: 'auto',
   },
   libraryItem: {
-    padding: '0.625rem 0.875rem',
-    background: 'white',
-    border: '1.5px solid #fde68a',
-    borderRadius: '8px',
+    padding: '12px 16px',
+    background: '#fefce8',
+    border: '2px solid #fde047',
+    borderRadius: '12px',
     cursor: 'pointer',
     transition: 'all 0.2s',
     textAlign: 'left',
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
   },
   libraryItemActive: {
-    background: '#fef9c3',
-    border: '2px solid #eab308',
-    boxShadow: '0 2px 8px rgba(234, 179, 8, 0.2)',
-  },
-  libraryItemLabel: {
-    fontSize: '0.75rem',
-    fontWeight: '700',
-    color: '#92400e',
-    marginBottom: '0.2rem',
-    textAlign: 'center',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-  },
-  libraryItemStatement: {
-    fontSize: '0.875rem',
-    color: '#78350f',
-    marginTop: '0.375rem',
-    textAlign: 'center',
+    background: '#ecfccb',
+    border: '2px solid #84cc16',
+    boxShadow: '0 4px 12px rgba(132, 204, 22, 0.3)',
   },
   // Bottom bar – spans only the proof-state column
   bottomBar: {
