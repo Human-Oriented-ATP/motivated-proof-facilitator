@@ -6,6 +6,7 @@ import { MathStatement } from './MathStatement'
 import { ProofStateSelectionContext, ProofStateLocationContext } from '../core/ProofStateSelectionContext'
 import { ProofStateIdContext, ProofDiscoveryStateContext } from '../core/ProofDiscoveryStateContext'
 import { MovePanel } from './MovePanel'
+import { ProofStateEditor } from './ProofStateEditor'
 
 export type ProofDiscoveryEnvironmentProps = {
   initialProofDiscoveryState: ProofDiscoveryState
@@ -31,6 +32,7 @@ export function ProofDiscoveryEnvironment({
   const [isInformalizePopupOpen, setIsInformalizePopupOpen] = useState(false)
   const [informalizedText, setInformalizedText] = useState("")
   const [isInformalizeLoading, setIsInformalizeLoading] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const { selections, dispatch: selectionsDispatch } = useContext(ProofStateSelectionContext)
 
   // ── Draggable graph state ───────────────────────────────────────────────
@@ -346,6 +348,17 @@ export function ProofDiscoveryEnvironment({
             </button>
 
             <button
+              onClick={() => setIsEditModalOpen(true)}
+              style={styles.actionButton}
+              title="Edit the current proof state"
+            >
+              <svg style={styles.buttonIcon} viewBox="0 0 20 20" fill="currentColor">
+                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+              </svg>
+              Edit
+            </button>
+
+            <button
               onClick={handleInformalize}
               style={{...styles.actionButton, ...styles.informalizeButton}}
               title="Convert current proof state to natural language"
@@ -439,6 +452,30 @@ export function ProofDiscoveryEnvironment({
                   proofDiscoveryState={proofDiscoveryState} 
                 />
               </ProofDiscoveryStateContext.Provider>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Proof State Modal */}
+      {isEditModalOpen && (
+        <div style={styles.modalOverlay} onClick={() => setIsEditModalOpen(false)}>
+          <div style={{ ...styles.modalContent, maxWidth: '700px', maxHeight: '85vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h3 style={styles.modalTitle}>Edit Proof State</h3>
+              <button style={styles.closeButton} onClick={() => setIsEditModalOpen(false)}>✕</button>
+            </div>
+            <div style={{ padding: '1rem' }}>
+              <ProofStateEditor
+                proofState={currentProofState}
+                onUpdate={(newState) => {
+                  dispatchProofDiscoveryAction({
+                    action: 'repair',
+                    nodeId: proofDiscoveryState.currentNodeId,
+                    newProofState: newState,
+                  })
+                }}
+              />
             </div>
           </div>
         </div>
