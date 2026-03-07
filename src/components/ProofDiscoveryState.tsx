@@ -1,4 +1,4 @@
-import React, { JSX, useContext, useEffect, useMemo } from 'react'
+import React, { JSX, useContext, useEffect, useMemo, useState } from 'react'
 import {
   ReactFlow,
   Node,
@@ -30,7 +30,23 @@ interface ProofNodeData extends Record<string, unknown> {
   isCurrentNode: boolean
   isSolved: boolean
 }
-
+// local styles
+const styles: Record<string, React.CSSProperties> = {
+  edgeTooltip: {
+    position: 'absolute' as const,
+    bottom: '10px',
+    left: '10px',
+    padding: '8px 12px',
+    background: 'rgba(0,0,0,0.75)',
+    color: 'white',
+    borderRadius: 6,
+    maxWidth: '300px',
+    fontSize: '0.85rem',
+    pointerEvents: 'none',
+    zIndex: 1000,
+    whiteSpace: 'pre-wrap' as const,
+  }
+}
 /** Props for the ProofDiscoveryGraphLoader component */
 export type ProofDiscoveryGraphLoaderProps = {
     /** The proof discovery state to visualize */
@@ -220,6 +236,7 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
         label: attributes.description,
         labelStyle: { fill: edgeStyle.stroke, fontWeight: 600, fontSize: 11 },
         labelBgStyle: { fill: '#ffffff', fillOpacity: 0.9 },
+        data: { reasoning: attributes.reasoning ?? '' },
       })
     })
     
@@ -228,6 +245,7 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
 
   const [nodes, setNodes, onNodesChange] = useNodesState(derivedNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(derivedEdges)
+  const [hoveredEdgeReasoning, setHoveredEdgeReasoning] = useState<string | null>(null)
 
   useEffect(() => {
     setNodes((currentNodes) => {
@@ -250,12 +268,22 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
 
   return (
     <div style={{ width: '100%', height: '800px', border: '2px solid #e5e7eb', borderRadius: '12px' }}>
+      {hoveredEdgeReasoning && (
+        <div style={styles.edgeTooltip}>
+          {hoveredEdgeReasoning}
+        </div>
+      )}
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onEdgeMouseEnter={(e, edge) => {
+          const reasoning = (edge.data as any)?.reasoning
+          setHoveredEdgeReasoning(reasoning || null)
+        }}
+        onEdgeMouseLeave={() => setHoveredEdgeReasoning(null)}
         fitView
         minZoom={0.1}
         maxZoom={1.5}
