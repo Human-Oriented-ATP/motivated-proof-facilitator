@@ -5,7 +5,8 @@ export type MoveKind = "strengthening" | "weakening" | "equivalence" | "other"
 
 export interface MoveDescription {
     kind: MoveKind
-    description: string
+    description: string,
+    reasoning?: string
 }
 
 export interface ProofNode {

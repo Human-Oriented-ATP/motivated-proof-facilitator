@@ -13,8 +13,11 @@ import { goalContradictionMove } from "../prompts/goalContradiction"
 import { goalUniversalMove } from "../prompts/goalUniversal"
 import { hypothesisConjunctionMove } from "../prompts/hypothesisConjunction"
 import { hypothesisDisjunctionMove } from "../prompts/hypothesisDisjunction"
+import { hypothesisExistentialMove } from "../prompts/hypothesisExistential"
+import { rewritingMove } from "../prompts/rewriting"
 import { ProofDiscoveryStateContext, ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
 import { ProofStateWithLibraryResult as ProofStateComponent } from "./ProofState"
+import { queryMove } from "../endpoints/Move"
 import MoveGenerator from "../../tests/MoveGenerator"
 
 const moves: ProofDiscoveryMove[] = [
@@ -26,7 +29,9 @@ const moves: ProofDiscoveryMove[] = [
     goalContradictionMove,
     goalUniversalMove,
     hypothesisConjunctionMove,
-    hypothesisDisjunctionMove
+    hypothesisDisjunctionMove,
+    hypothesisExistentialMove,
+    rewritingMove
 ]
 
 const FilterResponseSchema = z.object({
@@ -84,35 +89,20 @@ export async function applyMove(
   selections: ProofStateSelection[],
   move: ProofDiscoveryMove,
   dispatchProofDiscoveryAction: React.Dispatch<import("../core/ProofDiscoveryState").ProofDiscoveryAction>
-): Promise<void> {
-  const response = await fetch("https://atp-backend-rygt.onrender.com/move", {
-    method: "POST",
-    mode: "cors",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      proofState: getCurrentProofState(proofDiscoveryState),
-      move: JSON.stringify(move),
-      selections
-    }),
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
-  }
-
-  const data: unknown = await response.json()
-  const newProofState = ProofStateSchema.parse(data)
+): Promise<string | undefined> {
+  const { proofState: newProofState, reasoning } = await queryMove(getCurrentProofState(proofDiscoveryState), move, selections)
 
   dispatchProofDiscoveryAction({
     action: "transition",
     newProofState,
     move: {
       kind: move.kind,
-      description: move.name
+      description: move.name,
+      reasoning
     }
   })
+
+  return reasoning
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -122,7 +112,7 @@ type ApplicableMove = { move: ProofDiscoveryMove, filterResponse: FilterResponse
 
 function MoveKindBadge({ kind }: { kind: ProofDiscoveryMove["kind"] }): JSX.Element {
   const colors: Record<string, { bg: string, fg: string, border: string }> = {
-    strengthening: { bg: "#dcfce7", fg: "#166534", border: "#86efac" },
+    strengthening: { bg: "#E2F0E2", fg: "#0D2B11", border: "#A5D6A7" },
     weakening: { bg: "#fef9c3", fg: "#854d0e", border: "#fde047" },
     equivalence: { bg: "#dbeafe", fg: "#1e40af", border: "#93c5fd" },
   }
@@ -142,11 +132,11 @@ function MoveKindBadge({ kind }: { kind: ProofDiscoveryMove["kind"] }): JSX.Elem
 /** Inline preview of a single move example (compact). */
 function ExamplePreview({ example, idx }: { example: ProofDiscoveryMoveExample, idx: number }): JSX.Element {
   const isExample = example.kind === "example"
-  const accentColor = isExample ? "#16a34a" : "#dc2626"
-  const borderColor = isExample ? "#bbf7d0" : "#fecaca"
-  const bgColor = isExample ? "#f0fdf4" : "#fff5f5"
-  const labelBg = isExample ? "#dcfce7" : "#fee2e2"
-  const labelFg = isExample ? "#166534" : "#991b1b"
+  const accentColor = isExample ? "#1B5E20" : "#dc2626"
+  const borderColor = isExample ? "#A5D6A7" : "#fecaca"
+  const bgColor = isExample ? "#F1F8F1" : "#fff5f5"
+  const labelBg = isExample ? "#E2F0E2" : "#fee2e2"
+  const labelFg = isExample ? "#0D2B11" : "#991b1b"
 
   return (
     <div style={{
@@ -293,6 +283,8 @@ function MovePanelContent(): JSX.Element {
   const [infoIndex, setInfoIndex] = useState<number | null>(null)
   const [expandedExamples, setExpandedExamples] = useState<Set<number>>(new Set())
   const [showAllMovesModal, setShowAllMovesModal] = useState(false)
+  const [lastMoveReasoning, setLastMoveReasoning] = useState<string | null>(null)
+
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastFetchedSelectionsRef = useRef<string>("")
@@ -348,7 +340,8 @@ function MovePanelContent(): JSX.Element {
   const handleApply = async (am: ApplicableMove, idx: number) => {
     setApplyingIndex(idx)
     try {
-      await applyMove(proofDiscoveryState, selections, am.move, dispatchProofDiscoveryAction)
+      const reasoning = await applyMove(proofDiscoveryState, selections, am.move, dispatchProofDiscoveryAction)
+      setLastMoveReasoning(reasoning ?? null)
       setStatus("idle")
       setApplicableMoves([])
       lastFetchedSelectionsRef.current = ""
@@ -359,6 +352,7 @@ function MovePanelContent(): JSX.Element {
       setApplyingIndex(null)
     }
   }
+
 
   const toggleReasoning = (idx: number) => {
     setExpandedReasoning(prev => { const n = new Set(prev); n.has(idx) ? n.delete(idx) : n.add(idx); return n })
@@ -382,7 +376,7 @@ function MovePanelContent(): JSX.Element {
     if (selections.length === 0 && status !== "loaded") {
       return (
         <div style={S.placeholderInner}>
-          <svg style={{ width: 32, height: 32, color: "#86efac" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg style={{ width: 32, height: 32, color: "#A5D6A7" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
           </svg>
           <span style={S.placeholderTitle}>Select expressions in the proof state</span>
@@ -395,7 +389,7 @@ function MovePanelContent(): JSX.Element {
     if (status === "idle") {
       return (
         <div style={{ ...S.placeholderInner, minHeight: 120 }}>
-          <svg style={{ width: 32, height: 32, color: "#16a34a" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg style={{ width: 32, height: 32, color: "#1B5E20" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
           <span style={S.placeholderTitle}>Hover here to generate move suggestions</span>
@@ -409,7 +403,7 @@ function MovePanelContent(): JSX.Element {
       return (
         <div style={{ ...S.placeholderInner, minHeight: 120 }}>
           <div style={S.spinner} />
-          <span style={{ color: "#166534", fontSize: "0.85rem", fontWeight: 500 }}>Checking applicable moves…</span>
+          <span style={{ color: "#0D2B11", fontSize: "0.85rem", fontWeight: 500 }}>Checking applicable moves…</span>
         </div>
       )
     }
@@ -441,6 +435,14 @@ function MovePanelContent(): JSX.Element {
             <button onClick={() => void fetchMoves()} style={S.syncRefreshBtn}>Refresh</button>
           </div>
         )}
+        {/* Last move reasoning */}
+        {lastMoveReasoning && (
+          <div style={S.lastReasoningBox}>
+            <strong>Reasoning trace from last move:</strong>
+            <pre style={S.lastReasoningContent}>{lastMoveReasoning}</pre>
+          </div>
+        )}
+
         {/* Move list */}
         {applicableMoves.length === 0 ? (
           <div style={S.emptyMsg}>No applicable moves for the current selection.</div>
@@ -459,7 +461,7 @@ function MovePanelContent(): JSX.Element {
                   {applyingIndex === idx ? (
                     <div style={{ ...S.spinner, width: 14, height: 14, borderWidth: "2px" }} />
                   ) : (
-                    <svg style={{ width: 14, height: 14, flexShrink: 0, color: "#16a34a" }} viewBox="0 0 20 20" fill="currentColor">
+                    <svg style={{ width: 14, height: 14, flexShrink: 0, color: "#1B5E20" }} viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                     </svg>
                   )}
@@ -662,7 +664,7 @@ function CustomMoveSection(): JSX.Element {
 }
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
-// Designed to match the proof state card (white bg, rounded, shadow) with green accent
+// Designed to match the proof state card (white bg, rounded, shadow) with true fern/forest green accent
 
 const S: Record<string, React.CSSProperties> = {
   // Card wrapper — mirrors proofStateContent
@@ -692,7 +694,7 @@ const S: Record<string, React.CSSProperties> = {
   placeholderTitle: {
     fontSize: "0.95rem",
     fontWeight: 600,
-    color: "#065f46",
+    color: "#0D2B11",
   },
   placeholderSub: {
     fontSize: "0.8rem",
@@ -702,8 +704,8 @@ const S: Record<string, React.CSSProperties> = {
   },
   spinner: {
     width: 24, height: 24,
-    border: "3px solid #d1fae5",
-    borderTopColor: "#059669",
+    border: "3px solid #E2F0E2",
+    borderTopColor: "#1B5E20",
     borderRadius: "50%",
     animation: "move-panel-spin 0.8s linear infinite",
   },
@@ -717,22 +719,22 @@ const S: Record<string, React.CSSProperties> = {
   header: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
     padding: "0.85rem 1rem",
-    background: "#f0fdf4",
-    borderBottom: "1px solid #dcfce7",
+    background: "#F1F8F1",
+    borderBottom: "1px solid #E2F0E2",
   },
   headerTitle: {
-    fontSize: "0.85rem", fontWeight: 700, color: "#065f46",
+    fontSize: "0.85rem", fontWeight: 700, color: "#0D2B11",
   },
   countBadge: {
-    fontSize: "0.75rem", fontWeight: 700, color: "#059669",
-    background: "#d1fae5", border: "1px solid #6ee7b7",
+    fontSize: "0.75rem", fontWeight: 700, color: "#1B5E20",
+    background: "#E2F0E2", border: "1px solid #A5D6A7",
     borderRadius: 9999, padding: "0 8px", lineHeight: "1.6",
   },
   headerIconBtn: {
     display: "flex", alignItems: "center", justifyContent: "center",
     width: 28, height: 28, background: "white",
-    border: "1px solid #dcfce7", borderRadius: 8,
-    cursor: "pointer", color: "#059669", transition: "all 0.15s",
+    border: "1px solid #E2F0E2", borderRadius: 8,
+    cursor: "pointer", color: "#1B5E20", transition: "all 0.15s",
   },
 
   // Sync warning
@@ -757,7 +759,7 @@ const S: Record<string, React.CSSProperties> = {
   moveCard: {
     display: "flex", flexDirection: "column",
     background: "white",
-    border: "1px solid #ecfdf5",
+    border: "1px solid #F1F8F1",
     borderRadius: 12,
     padding: "8px",
     transition: "transform 0.1s, box-shadow 0.1s",
@@ -768,16 +770,16 @@ const S: Record<string, React.CSSProperties> = {
   moveBtn: {
     flex: 1, display: "flex", alignItems: "center", gap: 8,
     padding: "10px 12px", fontSize: "0.85rem", fontWeight: 600,
-    color: "#065f46", background: "#f0fdf4",
-    border: "1.5px solid #bbf7d0", borderRadius: 10,
+    color: "#0D2B11", background: "#F1F8F1",
+    border: "1.5px solid #A5D6A7", borderRadius: 10,
     cursor: "pointer", transition: "all 0.15s",
     boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
   },
   infoBtn: {
     display: "flex", alignItems: "center", justifyContent: "center",
     width: 32, height: 32, borderRadius: 10,
-    background: "white", border: "1.5px solid #bbf7d0",
-    cursor: "pointer", color: "#059669", flexShrink: 0,
+    background: "white", border: "1.5px solid #A5D6A7",
+    cursor: "pointer", color: "#1B5E20", flexShrink: 0,
     transition: "all 0.15s",
   },
 
@@ -788,7 +790,7 @@ const S: Record<string, React.CSSProperties> = {
     borderRadius: 10, fontSize: "0.78rem", color: "#374151",
   },
   infoPanelHeader: {
-    fontWeight: 700, fontSize: "0.82rem", color: "#065f46", marginBottom: 8,
+    fontWeight: 700, fontSize: "0.82rem", color: "#0D2B11", marginBottom: 8,
     borderBottom: "1px solid #e5e7eb", paddingBottom: "4px",
   },
   infoRow: {
@@ -796,8 +798,8 @@ const S: Record<string, React.CSSProperties> = {
   },
   examplesToggle: {
     display: "flex", alignItems: "center", gap: 4,
-    marginTop: 8, padding: "4px 8px", background: "#ecfdf5", border: "1px solid #bbf7d0",
-    borderRadius: 6, cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, color: "#065f46",
+    marginTop: 8, padding: "4px 8px", background: "#F1F8F1", border: "1px solid #A5D6A7",
+    borderRadius: 6, cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, color: "#0D2B11",
   },
 
   // Reasoning
@@ -811,7 +813,22 @@ const S: Record<string, React.CSSProperties> = {
     fontSize: "0.78rem", color: "#4b5563", lineHeight: 1.5,
     padding: "8px 12px", whiteSpace: "pre-wrap",
     background: "#f9fafb", borderRadius: 8, marginTop: 4,
-    borderLeft: "3px solid #10b981",
+    borderLeft: "3px solid #2E7D32",
+  },
+  lastReasoningBox: {
+    background: "#f3f4f6",
+    border: "1px solid #d1d5db",
+    borderRadius: 8,
+    padding: "10px 12px",
+    margin: "8px",
+    fontSize: "0.85rem",
+    color: "#374151",
+  },
+  lastReasoningContent: {
+    whiteSpace: "pre-wrap",
+    marginTop: "6px",
+    fontSize: "0.82rem",
+    color: "#1f2937",
   },
   emptyMsg: {
     padding: "3rem 1.5rem", textAlign: "center",
@@ -821,8 +838,8 @@ const S: Record<string, React.CSSProperties> = {
     position: "relative" as const,
     margin: "12px 10px 10px",
     padding: "10px",
-    background: "#f0fdf4",
-    border: "1.5px solid #bbf7d0",
+    background: "#F1F8F1",
+    border: "1.5px solid #A5D6A7",
     borderRadius: 12,
   },
   customHeader: {
@@ -834,21 +851,21 @@ const S: Record<string, React.CSSProperties> = {
   customTitle: {
     fontSize: "0.72rem",
     fontWeight: 800,
-    color: "#065f46",
+    color: "#0D2B11",
     letterSpacing: "0.05em",
     textTransform: "uppercase",
   },
   customTextarea: {
     width: "100%", fontSize: "0.78rem", color: "#374151",
-    border: "1.5px solid #86efac", borderRadius: 8,
+    border: "1.5px solid #A5D6A7", borderRadius: 8,
     padding: "6px 8px", resize: "vertical" as const,
     fontFamily: "inherit", boxSizing: "border-box" as const,
     outline: "none", background: "white", lineHeight: 1.4,
     boxShadow: "inset 0 1px 2px rgba(0,0,0,0.03)",
   },
   customSelect: {
-    flex: 1, fontSize: "0.72rem", color: "#065f46",
-    border: "1.5px solid #86efac", borderRadius: 8,
+    flex: 1, fontSize: "0.72rem", color: "#0D2B11",
+    border: "1.5px solid #A5D6A7", borderRadius: 8,
     padding: "4px 8px", background: "white",
     cursor: "pointer", outline: "none",
     fontWeight: 600,
@@ -856,9 +873,9 @@ const S: Record<string, React.CSSProperties> = {
   customApplyBtn: {
     display: "flex", alignItems: "center", gap: 6,
     padding: "4px 12px", fontSize: "0.75rem", fontWeight: 700,
-    color: "white", background: "#10b981",
+    color: "white", background: "#2E7D32",
     border: "none", borderRadius: 8, cursor: "pointer",
-    flexShrink: 0 as const, boxShadow: "0 2px 4px rgba(16,185,129,0.2)",
+    flexShrink: 0 as const, boxShadow: "0 2px 4px rgba(46,125,50,0.2)",
   },
   customError: {
     marginTop: 6, fontSize: "0.7rem", color: "#991b1b",
@@ -916,8 +933,8 @@ function AllMovesList(): JSX.Element {
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             width: "100%", padding: "10px", borderRadius: 10,
-            background: "#10b981", color: "white", border: "none", cursor: "pointer",
-            fontSize: "0.85rem", fontWeight: 700, boxShadow: "0 2px 4px rgba(16,185,129,0.2)",
+            background: "#2E7D32", color: "white", border: "none", cursor: "pointer",
+            fontSize: "0.85rem", fontWeight: 700, boxShadow: "0 2px 4px rgba(46,125,50,0.2)",
           }}
         >
           <svg style={{ width: 16, height: 16 }} viewBox="0 0 20 20" fill="currentColor">
@@ -935,7 +952,7 @@ function AllMovesList(): JSX.Element {
               style={{
                 display: "flex", alignItems: "center", gap: 7,
                 width: "100%", padding: "12px 14px", border: "none",
-                background: selectedIdx === idx ? "#f0fdf4" : "transparent",
+                background: selectedIdx === idx ? "#F1F8F1" : "transparent",
                 cursor: "pointer", textAlign: "left",
               }}
             >
@@ -943,7 +960,7 @@ function AllMovesList(): JSX.Element {
                 <div style={{ 
                   fontSize: "0.85rem", 
                   fontWeight: selectedIdx === idx ? 700 : 600,
-                  color: selectedIdx === idx ? "#065f46" : "#374151" 
+                  color: selectedIdx === idx ? "#0D2B11" : "#374151" 
                 }}>
                   {move.name}
                 </div>
@@ -969,8 +986,8 @@ function AllMovesList(): JSX.Element {
                   <>
                     <button onClick={() => setExamplesOpen(v => !v)} style={{
                       display: "flex", alignItems: "center", gap: 4, marginTop: 10,
-                      padding: "6px 10px", background: "#f0fdf4", border: "1px solid #dcfce7",
-                      borderRadius: 6, cursor: "pointer", fontSize: "0.75rem", fontWeight: 700, color: "#059669",
+                      padding: "6px 10px", background: "#F1F8F1", border: "1px solid #E2F0E2",
+                      borderRadius: 6, cursor: "pointer", fontSize: "0.75rem", fontWeight: 700, color: "#1B5E20",
                     }}>
                       <svg style={{
                         width: 12, height: 12, transition: "transform 0.2s",

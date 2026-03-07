@@ -1,6 +1,6 @@
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove";
 
-const rewritingPrompt: ProofDiscoveryMove = {
+export const rewritingMove: ProofDiscoveryMove = {
   "name": "Rewrite using equality result",
   "kind": "strengthening",
   "trigger": "This move is relevant when the proof state has exactly two selections, one of which is a hypothesis or library result whose conclusion is an equality, and the second selection is a term.",

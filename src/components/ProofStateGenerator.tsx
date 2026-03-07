@@ -116,7 +116,7 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
       }
 
       const data: unknown = await response.json()
-      const proofState = ProofStateSchema.parse([data])
+      const proofState = ProofStateSchema.parse(data)
 
       const graph = new Graph<ProofNode, MoveDescription>()
       graph.addNode(0, { proofState })
