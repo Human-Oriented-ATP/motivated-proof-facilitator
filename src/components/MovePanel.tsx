@@ -17,6 +17,7 @@ import { hypothesisExistentialMove } from "../prompts/hypothesisExistential"
 import { rewritingMove } from "../prompts/rewriting"
 import { ProofDiscoveryStateContext, ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
 import { ProofStateWithLibraryResult as ProofStateComponent } from "./ProofState"
+import { queryMove } from "../endpoints/Move"
 import MoveGenerator from "../../tests/MoveGenerator"
 
 const moves: ProofDiscoveryMove[] = [
@@ -89,32 +90,15 @@ export async function applyMove(
   move: ProofDiscoveryMove,
   dispatchProofDiscoveryAction: React.Dispatch<import("../core/ProofDiscoveryState").ProofDiscoveryAction>
 ): Promise<void> {
-  const response = await fetch("https://atp-backend-rygt.onrender.com/move", {
-    method: "POST",
-    mode: "cors",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      proofState: getCurrentProofState(proofDiscoveryState),
-      move: JSON.stringify(move),
-      selections
-    }),
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
-  }
-
-  const data: unknown = await response.json()
-  const newProofState = ProofStateSchema.parse(data)
+  const { proofState: newProofState, reasoning } = await queryMove(getCurrentProofState(proofDiscoveryState), move, selections)
 
   dispatchProofDiscoveryAction({
     action: "transition",
     newProofState,
     move: {
       kind: move.kind,
-      description: move.name
+      description: move.name,
+      reasoning
     }
   })
 }

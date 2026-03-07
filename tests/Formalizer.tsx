@@ -18,9 +18,6 @@ export default function RenderFormalizer(): JSX.Element {
     nullProofDiscoveryState
   )
   const [hasProofState, setHasProofState] = useState<boolean>(false)
-  const [moveInstruction, setMoveInstruction] = useState("")
-  const [isMoveLoading, setIsMoveLoading] = useState(false)
-  const [moveError, setMoveError] = useState<string | null>(null)
   const [isInformalizePopupOpen, setIsInformalizePopupOpen] = useState(false)
   const [informalizedText, setInformalizedText] = useState("")
   const [isInformalizeLoading, setIsInformalizeLoading] = useState(false)
@@ -54,7 +51,7 @@ export default function RenderFormalizer(): JSX.Element {
 
       console.log("Data: ", data)
 
-      const proofState = ProofStateSchema.parse([data])
+      const proofState = ProofStateSchema.parse(data)
 
       // Initialize the proof discovery state with the received proof state
       dispatch({
@@ -82,59 +79,6 @@ export default function RenderFormalizer(): JSX.Element {
     }
   }
 
-  const handleMove = async (): Promise<void> => {
-    if (!moveInstruction.trim()) {
-      setMoveError("Please enter move instructions")
-      return
-    }
-
-    setIsMoveLoading(true)
-    setMoveError(null)
-
-    try {
-      const currentProofState = getCurrentProofState(proofDiscoveryState)
-
-      const response = await fetch("https://atp-backend-rygt.onrender.com/move", {
-        method: "POST",
-        mode: "cors",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          proofState: currentProofState,
-          move: moveInstruction,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data: unknown = await response.json()
-      // TODO: This is a temporary measure; in general, we may receive multiple proof states
-      const newProofState = ProofStateSchema.parse([data])
-
-      // Update the proof discovery state with the new proof state
-      dispatch({
-        action: "transition",
-        move: {
-          description: moveInstruction,
-          kind: "strengthening"
-        },
-        newProofState: newProofState
-      })
-
-      setMoveInstruction("")
-    } catch (err) {
-      if (err instanceof Error) {
-        setMoveError(`Failed to apply move: ${err.message}`)
-      } else {
-        setMoveError("An unknown error occurred")
-      }
-    } finally {
-      setIsMoveLoading(false)
-    }
-  }
 
   const handleInformalize = async (): Promise<void> => {
     setIsInformalizeLoading(true)
@@ -333,62 +277,6 @@ export default function RenderFormalizer(): JSX.Element {
             }
           </ProofStateContextProvider>
 
-          <div style={styles.moveSection}>
-            <h3 style={styles.moveTitle}>Apply a Move</h3>
-            <textarea
-              value={moveInstruction}
-              onChange={(e) => setMoveInstruction(e.target.value)}
-              placeholder="Enter instructions on how to modify the proof state..."
-              style={styles.moveTextarea}
-              rows={3}
-              disabled={isMoveLoading}
-            />
-            
-            {moveError && (
-              <div style={styles.errorBox}>
-                <svg style={styles.errorIcon} viewBox="0 0 20 20" fill="currentColor">
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span>{moveError}</span>
-              </div>
-            )}
-
-            <button
-              onClick={handleMove}
-              disabled={isMoveLoading || !moveInstruction.trim()}
-              style={{
-                ...styles.moveButton,
-                ...(isMoveLoading || !moveInstruction.trim() ? styles.buttonDisabled : {}),
-              }}
-            >
-              {isMoveLoading ? (
-                <>
-                  <svg style={styles.spinner} viewBox="0 0 24 24">
-                    <circle
-                      style={styles.spinnerCircle}
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      style={styles.spinnerPath}
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Applying Move...
-                </>
-              ) : (
-                "Apply Move"
-              )}
-            </button>
-          </div>
 
           {isInformalizePopupOpen && (
             <div style={styles.modalOverlay} onClick={() => setIsInformalizePopupOpen(false)}>
