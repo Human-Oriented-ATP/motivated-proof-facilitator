@@ -307,53 +307,47 @@ function MovePanelContent({ onShowAllMoves }: { onShowAllMoves: () => void }): J
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  // No selections
-  if (selections.length === 0 && status !== "loaded") {
-    return (
-      <div style={S.card}>
+  const renderMoveSuggestions = () => {
+    // No selections
+    if (selections.length === 0 && status !== "loaded") {
+      return (
         <div style={S.placeholderInner}>
           <svg style={{ width: 32, height: 32, color: "#86efac" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
           </svg>
           <span style={S.placeholderTitle}>Select expressions in the proof state</span>
-          <span style={S.placeholderSub}>Click on hypotheses, goals, or sub-expressions to generate suggestions for modifying the proof state</span>
+          <span style={S.placeholderSub}>Click on hypotheses, goals, or sub-expressions to generate suggestions</span>
         </div>
-      </div>
-    )
-  }
+      )
+    }
 
-  // Idle — has selections, waiting for hover
-  if (status === "idle") {
-    return (
-      <div style={S.card} onMouseEnter={handleMouseEnter} onMouseLeave={() => setIsHovering(false)}>
-        <div style={{ ...S.placeholderInner, minHeight: 200 }}>
+    // Idle — has selections, waiting for hover
+    if (status === "idle") {
+      return (
+        <div style={{ ...S.placeholderInner, minHeight: 120 }}>
           <svg style={{ width: 32, height: 32, color: "#16a34a" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
           <span style={S.placeholderTitle}>Hover here to generate move suggestions</span>
           <span style={S.placeholderSub}>Suggestions auto-generate 1 second after your last selection change</span>
         </div>
-      </div>
-    )
-  }
+      )
+    }
 
-  // Loading
-  if (status === "loading") {
-    return (
-      <div style={S.card}>
-        <div style={{ ...S.placeholderInner, minHeight: 200 }}>
+    // Loading
+    if (status === "loading") {
+      return (
+        <div style={{ ...S.placeholderInner, minHeight: 120 }}>
           <div style={S.spinner} />
           <span style={{ color: "#166534", fontSize: "0.85rem", fontWeight: 500 }}>Checking applicable moves…</span>
         </div>
-      </div>
-    )
-  }
+      )
+    }
 
-  // Error
-  if (status === "error") {
-    return (
-      <div style={{ ...S.card, borderColor: "#fecaca" }}>
-        <div style={{ ...S.placeholderInner, minHeight: 140 }}>
+    // Error
+    if (status === "error") {
+      return (
+        <div style={{ ...S.placeholderInner, minHeight: 100, borderColor: "#fecaca" }}>
           <svg style={{ width: 28, height: 28, color: "#dc2626" }} viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
@@ -361,48 +355,28 @@ function MovePanelContent({ onShowAllMoves }: { onShowAllMoves: () => void }): J
           <span style={{ fontSize: "0.78rem", color: "#991b1b" }}>{errorMessage}</span>
           <button onClick={() => void fetchMoves()} style={S.retryButton}>Retry</button>
         </div>
-      </div>
-    )
-  }
+      )
+    }
 
-  // ── Loaded ──────────────────────────────────────────────────────────────
-  return (
-    <div style={S.card} onMouseEnter={handleMouseEnter} onMouseLeave={() => setIsHovering(false)}>
-      {/* Header */}
-      <div style={S.header}>
-        <span style={S.headerTitle}>Applicable Moves</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={S.countBadge}>{applicableMoves.length}</span>
-          <button onClick={onShowAllMoves} style={S.headerIconBtn} title="Browse all moves">
-            <svg style={{ width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h7" />
+    // Loaded
+    return (
+      <>
+        {/* Out-of-sync warning */}
+        {isOutOfSync && (
+          <div style={S.syncWarning}>
+            <svg style={{ width: 14, height: 14, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
-          </button>
-          <button onClick={() => void fetchMoves()} style={S.headerIconBtn} title="Refresh suggestions">
-            <svg style={{ width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* Out-of-sync warning */}
-      {isOutOfSync && (
-        <div style={S.syncWarning}>
-          <svg style={{ width: 14, height: 14, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-          </svg>
-          <span>Selections have changed since these suggestions were generated.</span>
-          <button onClick={() => void fetchMoves()} style={S.syncRefreshBtn}>Refresh</button>
-        </div>
-      )}
-
-      {/* Move list */}
-      {applicableMoves.length === 0 ? (
-        <div style={S.emptyMsg}>No applicable moves for the current selection.</div>
-      ) : (
-        <div style={S.moveList}>
-          {applicableMoves.map((am, idx) => (
+            <span>Selections have changed since these suggestions were generated.</span>
+            <button onClick={() => void fetchMoves()} style={S.syncRefreshBtn}>Refresh</button>
+          </div>
+        )}
+        {/* Move list */}
+        {applicableMoves.length === 0 ? (
+          <div style={S.emptyMsg}>No applicable moves for the current selection.</div>
+        ) : (
+          <div style={S.moveList}>
+            {applicableMoves.map((am, idx) => (
             <div key={idx} style={S.moveCard}>
               {/* Move row */}
               <div style={S.moveRow}>
@@ -484,6 +458,106 @@ function MovePanelContent({ onShowAllMoves }: { onShowAllMoves: () => void }): J
           ))}
         </div>
       )}
+      </>
+    )
+  }
+
+  return (
+    <div style={S.card} onMouseEnter={handleMouseEnter} onMouseLeave={() => setIsHovering(false)}>
+      {/* Header — only shown when loaded */}
+      {status === "loaded" && (
+        <div style={S.header}>
+          <span style={S.headerTitle}>Applicable Moves</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={S.countBadge}>{applicableMoves.length}</span>
+            <button onClick={onShowAllMoves} style={S.headerIconBtn} title="Browse all moves">
+              <svg style={{ width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h7" />
+              </svg>
+            </button>
+            <button onClick={() => void fetchMoves()} style={S.headerIconBtn} title="Refresh suggestions">
+              <svg style={{ width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+      {renderMoveSuggestions()}
+      <CustomMoveSection />
+    </div>
+  )
+}
+
+// ─── Custom Move Section ──────────────────────────────────────────────────────
+
+function CustomMoveSection(): JSX.Element {
+  const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
+  const { selections } = useContext(ProofStateSelectionContext)
+  const [description, setDescription] = useState("")
+  const [kind, setKind] = useState<import("../core/ProofDiscoveryMove").MoveKind>("strengthening")
+  const [applying, setApplying] = useState(false)
+  const [error, setError] = useState("")
+
+  const handleApply = async () => {
+    if (!description.trim()) return
+    const customMove: ProofDiscoveryMove = {
+      name: description.trim(),
+      kind,
+      trigger: "",
+      action: description.trim(),
+      examples: [],
+    }
+    setApplying(true)
+    setError("")
+    try {
+      await applyMove(proofDiscoveryState, selections, customMove, dispatchProofDiscoveryAction)
+      setDescription("")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to apply move")
+    } finally {
+      setApplying(false)
+    }
+  }
+
+  return (
+    <div style={S.customSection}>
+      <div style={S.customHeader}>Custom Move</div>
+      {selections.length === 0 && (
+        <div style={S.customWarning}>
+          <svg style={{ width: 13, height: 13, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          No expressions selected — select hypotheses or goals first.
+        </div>
+      )}
+      <textarea
+        value={description}
+        onChange={e => setDescription(e.target.value)}
+        placeholder="Describe a move to apply to the proof state"
+        style={S.customTextarea}
+        rows={3}
+      />
+      <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6 }}>
+        <select
+          value={kind}
+          onChange={e => setKind(e.target.value as import("../core/ProofDiscoveryMove").MoveKind)}
+          style={S.customSelect}
+        >
+          <option value="strengthening">strengthening</option>
+          <option value="weakening">weakening</option>
+          <option value="equivalence">equivalence</option>
+        </select>
+        <button
+          onClick={() => void handleApply()}
+          disabled={applying || !description.trim()}
+          style={{ ...S.customApplyBtn, opacity: applying || !description.trim() ? 0.5 : 1 }}
+        >
+          {applying ? <div style={{ ...S.spinner, width: 12, height: 12, borderWidth: "2px" }} /> : null}
+          Apply
+        </button>
+      </div>
+      {error && <div style={S.customError}>{error}</div>}
     </div>
   )
 }
@@ -631,6 +705,44 @@ const S: Record<string, React.CSSProperties> = {
   emptyMsg: {
     padding: "2rem 1rem", textAlign: "center",
     fontSize: "0.82rem", color: "#6b7280",
+  },
+  customSection: {
+    padding: "10px 12px",
+    borderTop: "1.5px solid #dcfce7",
+    background: "#f9fafb",
+  },
+  customHeader: {
+    fontSize: "0.75rem", fontWeight: 700, color: "#166534", marginBottom: 6,
+  },
+  customTextarea: {
+    width: "100%", fontSize: "0.78rem", color: "#374151",
+    border: "1px solid #d1d5db", borderRadius: 6,
+    padding: "6px 8px", resize: "vertical" as const,
+    fontFamily: "inherit", boxSizing: "border-box" as const,
+    outline: "none",
+  },
+  customSelect: {
+    flex: 1, fontSize: "0.78rem", color: "#374151",
+    border: "1px solid #d1d5db", borderRadius: 6,
+    padding: "5px 8px", background: "white",
+    cursor: "pointer",
+  },
+  customApplyBtn: {
+    display: "flex", alignItems: "center", gap: 4,
+    padding: "5px 14px", fontSize: "0.78rem", fontWeight: 700,
+    color: "white", background: "#16a34a",
+    border: "none", borderRadius: 6, cursor: "pointer",
+    flexShrink: 0 as const,
+  },
+  customError: {
+    marginTop: 5, fontSize: "0.73rem", color: "#991b1b",
+  },
+  customWarning: {
+    display: "flex", alignItems: "center", gap: 5,
+    marginBottom: 7, padding: "5px 8px", borderRadius: 6,
+    fontSize: "0.72rem", fontWeight: 500,
+    color: "#92400e", background: "#fefce8",
+    border: "1px solid #fde68a",
   },
 }
 
