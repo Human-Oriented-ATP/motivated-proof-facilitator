@@ -16,8 +16,20 @@ import {
 // @ts-ignore
 import '@xyflow/react/dist/style.css'
 import { ProofDiscoveryState, MoveKind } from '../core/ProofDiscoveryState'
+import { ProofState } from '../core/ProofStateZod'
 import { ProofState as ProofStateComponent } from './ProofState'
 import { ProofDiscoveryStateContext, ProofStateIdContext } from '../core/ProofDiscoveryStateContext'
+
+// alias for prop typing
+export type ProofDiscoveryStateType = ProofDiscoveryState
+
+// data attached to each React Flow node
+interface ProofNodeData extends Record<string, unknown> {
+  proofNodeId: number
+  proofState: ProofState
+  isCurrentNode: boolean
+  isSolved: boolean
+}
 
 /** Props for the ProofDiscoveryGraphLoader component */
 export type ProofDiscoveryGraphLoaderProps = {
