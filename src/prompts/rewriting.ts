@@ -140,7 +140,7 @@ const rewritingPrompt: ProofDiscoveryMove = {
               {
                 "kind": "free",
                 "name": "$P$",
-                "description": "$alpha -> #text[proposition]$"
+                "description": "$alpha -> #text[Proposition]$"
               },
               {
                 "kind": "free",
@@ -238,7 +238,7 @@ const rewritingPrompt: ProofDiscoveryMove = {
               {
                 "kind": "free",
                 "name": "$P$",
-                "description": "$alpha -> #text[proposition]$"
+                "description": "$alpha -> #text[Proposition]$"
               },
               {
                 "kind": "free",
