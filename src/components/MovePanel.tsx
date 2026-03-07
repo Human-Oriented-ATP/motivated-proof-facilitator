@@ -15,6 +15,7 @@ import { hypothesisConjunctionMove } from "../prompts/hypothesisConjunction"
 import { hypothesisDisjunctionMove } from "../prompts/hypothesisDisjunction"
 import { ProofDiscoveryStateContext, ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
 import { ProofStateWithLibraryResult as ProofStateComponent } from "./ProofState"
+import MoveGenerator from "../../tests/MoveGenerator"
 
 const moves: ProofDiscoveryMove[] = [
     goalConjunctionMove,
@@ -141,34 +142,78 @@ function MoveKindBadge({ kind }: { kind: ProofDiscoveryMove["kind"] }): JSX.Elem
 /** Inline preview of a single move example (compact). */
 function ExamplePreview({ example, idx }: { example: ProofDiscoveryMoveExample, idx: number }): JSX.Element {
   const isExample = example.kind === "example"
+  const accentColor = isExample ? "#16a34a" : "#dc2626"
+  const borderColor = isExample ? "#bbf7d0" : "#fecaca"
+  const bgColor = isExample ? "#f0fdf4" : "#fff5f5"
+  const labelBg = isExample ? "#dcfce7" : "#fee2e2"
+  const labelFg = isExample ? "#166534" : "#991b1b"
+
   return (
     <div style={{
-      padding: "8px 10px", borderRadius: 8, marginBottom: 6,
-      border: `1px solid ${isExample ? "#86efac" : "#fca5a5"}`,
-      background: isExample ? "#f0fdf4" : "#fef2f2",
+      borderRadius: 10,
+      marginBottom: 8,
+      border: `1.5px solid ${borderColor}`,
+      background: bgColor,
+      overflow: "hidden",
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-        <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#374151" }}>
-          Example {idx + 1}
-        </span>
+      {/* Header strip */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 7,
+        padding: "6px 10px",
+        borderBottom: `1px solid ${borderColor}`,
+        background: labelBg,
+      }}>
         <span style={{
-          fontSize: "0.6rem", fontWeight: 700, padding: "0px 5px", borderRadius: 9999,
-          background: isExample ? "#dcfce7" : "#fee2e2",
-          color: isExample ? "#166534" : "#991b1b",
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          width: 18, height: 18, borderRadius: "50%",
+          background: accentColor, color: "white",
+          fontSize: "0.65rem", fontWeight: 800, flexShrink: 0,
         }}>
           {isExample ? "✓" : "✗"}
         </span>
+        <span style={{ fontSize: "0.73rem", fontWeight: 700, color: labelFg, flex: 1 }}>
+          Example {idx + 1}
+        </span>
+        <span style={{
+          fontSize: "0.65rem", fontWeight: 600, color: labelFg, opacity: 0.75,
+          textTransform: "capitalize",
+        }}>
+          {example.kind.replace("-", " ")}
+        </span>
       </div>
-      <div style={{ fontSize: "0.72rem", color: "#4b5563" }}>{example.description}</div>
-      {example.comment && (
-        <div style={{ fontSize: "0.68rem", color: "#6b7280", fontStyle: "italic", marginTop: 2 }}>
-          {example.comment}
+
+      <div style={{ padding: "8px 10px" }}>
+        {/* Description */}
+        <div style={{ fontSize: "0.73rem", color: "#374151", lineHeight: 1.45, marginBottom: 6 }}>
+          {example.description}
         </div>
-      )}
-      <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 45%", minWidth: 0 }}>
-          <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "#6b7280", marginBottom: 2 }}>Input</div>
-          <div style={{ background: "white", borderRadius: 6, padding: 6, border: "1px solid #e5e7eb", overflow: "auto", maxHeight: 180 }}>
+        {example.comment && (
+          <div style={{
+            display: "flex", alignItems: "flex-start", gap: 5,
+            fontSize: "0.68rem", color: "#6b7280", fontStyle: "italic",
+            marginBottom: 7, lineHeight: 1.4,
+          }}>
+            <span style={{ flexShrink: 0, marginTop: 1 }}>💬</span>
+            <span>{example.comment}</span>
+          </div>
+        )}
+
+        {/* Input block */}
+        <div style={{ marginBottom: 6 }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 5, marginBottom: 4,
+          }}>
+            <span style={{
+              fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.06em",
+              textTransform: "uppercase", color: "#6b7280",
+            }}>Before</span>
+            <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
+          </div>
+          <div style={{
+            background: "white", borderRadius: 7, padding: "6px 8px",
+            border: "1px solid #e5e7eb", overflow: "auto", maxHeight: 200,
+            boxShadow: "inset 0 1px 2px rgba(0,0,0,0.04)",
+          }}>
             <ProofStateIdContext.Provider value={{ proofNodeId: 0, proofContextId: -1 }}>
               <ProofStateSelectionContext.Provider value={{ selections: example.selections, dispatch: () => {} }}>
                 <ProofStateComponent
@@ -179,16 +224,40 @@ function ExamplePreview({ example, idx }: { example: ProofDiscoveryMoveExample, 
             </ProofStateIdContext.Provider>
           </div>
         </div>
-        <div style={{ flex: "1 1 45%", minWidth: 0 }}>
-          <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "#6b7280", marginBottom: 2 }}>Output</div>
-          <div style={{ background: "white", borderRadius: 6, padding: 6, border: "1px solid #e5e7eb", overflow: "auto", maxHeight: 180 }}>
+
+        {/* Arrow divider */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "center",
+          marginBottom: 6,
+        }}>
+          <svg style={{ width: 20, height: 20, color: accentColor, opacity: 0.7 }} viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v9.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 13.586V4a1 1 0 011-1z" clipRule="evenodd" />
+          </svg>
+        </div>
+
+        {/* Output block */}
+        <div>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 5, marginBottom: 4,
+          }}>
+            <span style={{
+              fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.06em",
+              textTransform: "uppercase", color: "#6b7280",
+            }}>After</span>
+            <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
+          </div>
+          <div style={{
+            background: "white", borderRadius: 7, padding: "6px 8px",
+            border: "1px solid #e5e7eb", overflow: "auto", maxHeight: 200,
+            boxShadow: "inset 0 1px 2px rgba(0,0,0,0.04)",
+          }}>
             {example.outputState ? (
               <ProofStateComponent
                 proofState={example.outputState.proofState}
                 libraryResult={example.outputState.libraryResult ?? undefined}
               />
             ) : (
-              <span style={{ fontSize: "0.7rem", color: "#9ca3af" }}>No output state</span>
+              <span style={{ fontSize: "0.7rem", color: "#9ca3af", fontStyle: "italic" }}>No output state</span>
             )}
           </div>
         </div>
@@ -209,7 +278,7 @@ function ensureKeyframe() {
   }
 }
 
-function MovePanelContent({ onShowAllMoves }: { onShowAllMoves: () => void }): JSX.Element {
+function MovePanelContent(): JSX.Element {
   useEffect(ensureKeyframe, [])
 
   const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
@@ -223,6 +292,7 @@ function MovePanelContent({ onShowAllMoves }: { onShowAllMoves: () => void }): J
   const [isHovering, setIsHovering] = useState(false)
   const [infoIndex, setInfoIndex] = useState<number | null>(null)
   const [expandedExamples, setExpandedExamples] = useState<Set<number>>(new Set())
+  const [showAllMovesModal, setShowAllMovesModal] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastFetchedSelectionsRef = useRef<string>("")
@@ -464,27 +534,53 @@ function MovePanelContent({ onShowAllMoves }: { onShowAllMoves: () => void }): J
 
   return (
     <div style={S.card} onMouseEnter={handleMouseEnter} onMouseLeave={() => setIsHovering(false)}>
-      {/* Header — only shown when loaded */}
-      {status === "loaded" && (
-        <div style={S.header}>
-          <span style={S.headerTitle}>Applicable Moves</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={S.countBadge}>{applicableMoves.length}</span>
-            <button onClick={onShowAllMoves} style={S.headerIconBtn} title="Browse all moves">
-              <svg style={{ width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h7" />
-              </svg>
-            </button>
-            <button onClick={() => void fetchMoves()} style={S.headerIconBtn} title="Refresh suggestions">
-              <svg style={{ width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
+      <div style={S.header}>
+        <span style={S.headerTitle}>
+          {status === "loaded" 
+            ? `${applicableMoves.length} Applicable Move${applicableMoves.length !== 1 ? "s" : ""}`
+            : "Move Suggestions"}
+        </span>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button 
+            onClick={() => setShowAllMovesModal(true)} 
+            style={S.headerIconBtn} 
+            title="View all available moves"
+          >
+            <svg style={{ width: 15, height: 15 }} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+            </svg>
+          </button>
+          <button onClick={() => void fetchMoves()} style={S.headerIconBtn} title="Refresh suggestions">
+            <svg style={{ width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {renderMoveSuggestions()}
+      </div>
+
+      <div style={{ borderTop: "1px solid #e2e8f0" }} />
+      <CustomMoveSection />
+
+      {showAllMovesModal && (
+        <div 
+          style={S.modalOverlay} 
+          onClick={() => setShowAllMovesModal(false)}
+        >
+          <div style={S.modalContent} onClick={e => e.stopPropagation()}>
+            <div style={S.modalHeader}>
+              <span style={S.modalTitle}>Library of Moves</span>
+              <button onClick={() => setShowAllMovesModal(false)} style={S.modalCloseBtn}>✕</button>
+            </div>
+            <div style={S.modalBody}>
+              <AllMovesList />
+            </div>
           </div>
         </div>
       )}
-      {renderMoveSuggestions()}
-      <CustomMoveSection />
     </div>
   )
 }
@@ -521,24 +617,27 @@ function CustomMoveSection(): JSX.Element {
   }
 
   return (
-    <div style={S.customSection}>
-      <div style={S.customHeader}>Custom Move</div>
-      {selections.length === 0 && (
-        <div style={S.customWarning}>
-          <svg style={{ width: 13, height: 13, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-          </svg>
-          No expressions selected — select hypotheses or goals first.
-        </div>
-      )}
+    <div style={S.customWrapper}>
+      <div style={S.customHeader}>
+        <span style={S.customTitle}>Apply Custom Move</span>
+        {selections.length === 0 && (
+          <div style={S.customWarning}>
+            <svg style={{ width: 12, height: 12 }} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <span style={{ fontSize: "0.7rem" }}>No selection</span>
+          </div>
+        )}
+      </div>
+
       <textarea
         value={description}
         onChange={e => setDescription(e.target.value)}
-        placeholder="Describe a move to apply to the proof state"
+        placeholder="Describe a move to apply..."
         style={S.customTextarea}
-        rows={3}
+        rows={2}
       />
-      <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6 }}>
+      <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 8 }}>
         <select
           value={kind}
           onChange={e => setKind(e.target.value as import("../core/ProofDiscoveryMove").MoveKind)}
@@ -569,285 +668,374 @@ const S: Record<string, React.CSSProperties> = {
   // Card wrapper — mirrors proofStateContent
   card: {
     background: "white",
-    borderRadius: 12,
-    boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
-    border: "1.5px solid #bbf7d0",
-    overflow: "hidden",
+    borderRadius: 16,
+    boxShadow: "0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)",
+    border: "1px solid #e2e8f0",
     display: "flex",
     flexDirection: "column",
     flex: 1,
+    padding: "0",
+    overflow: "hidden",
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   },
   placeholderInner: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
-    padding: "2.5rem 1.5rem",
+    gap: 12,
+    padding: "3rem 1.5rem",
     textAlign: "center",
-    minHeight: 160,
+    minHeight: 180,
     flex: 1,
   },
   placeholderTitle: {
-    fontSize: "0.88rem",
+    fontSize: "0.95rem",
     fontWeight: 600,
-    color: "#166534",
+    color: "#065f46",
   },
   placeholderSub: {
-    fontSize: "0.75rem",
+    fontSize: "0.8rem",
     color: "#6b7280",
-    maxWidth: 260,
-    lineHeight: 1.45,
+    maxWidth: 280,
+    lineHeight: 1.5,
   },
   spinner: {
     width: 24, height: 24,
-    border: "3px solid #bbf7d0",
-    borderTopColor: "#16a34a",
+    border: "3px solid #d1fae5",
+    borderTopColor: "#059669",
     borderRadius: "50%",
     animation: "move-panel-spin 0.8s linear infinite",
   },
   retryButton: {
-    marginTop: 4, padding: "5px 14px", fontSize: "0.78rem", fontWeight: 600,
-    color: "#991b1b", background: "white", border: "1.5px solid #fca5a5",
-    borderRadius: 6, cursor: "pointer",
+    marginTop: 8, padding: "6px 16px", fontSize: "0.8rem", fontWeight: 600,
+    color: "#991b1b", background: "white", border: "1.5px solid #fecaca",
+    borderRadius: 8, cursor: "pointer", transition: "all 0.15s",
   },
 
   // Header
   header: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
-    padding: "0.65rem 0.85rem",
+    padding: "0.85rem 1rem",
     background: "#f0fdf4",
     borderBottom: "1px solid #dcfce7",
   },
   headerTitle: {
-    fontSize: "0.82rem", fontWeight: 700, color: "#166534",
+    fontSize: "0.85rem", fontWeight: 700, color: "#065f46",
   },
   countBadge: {
-    fontSize: "0.7rem", fontWeight: 700, color: "#166534",
-    background: "#dcfce7", border: "1px solid #86efac",
-    borderRadius: 9999, padding: "0 7px", lineHeight: "1.6",
+    fontSize: "0.75rem", fontWeight: 700, color: "#059669",
+    background: "#d1fae5", border: "1px solid #6ee7b7",
+    borderRadius: 9999, padding: "0 8px", lineHeight: "1.6",
   },
   headerIconBtn: {
     display: "flex", alignItems: "center", justifyContent: "center",
-    width: 26, height: 26, background: "white",
-    border: "1px solid #86efac", borderRadius: 6,
-    cursor: "pointer", color: "#16a34a",
+    width: 28, height: 28, background: "white",
+    border: "1px solid #dcfce7", borderRadius: 8,
+    cursor: "pointer", color: "#059669", transition: "all 0.15s",
   },
 
   // Sync warning
   syncWarning: {
-    display: "flex", alignItems: "center", gap: 6,
-    padding: "6px 12px", fontSize: "0.73rem", fontWeight: 500,
-    color: "#92400e", background: "#fefce8",
-    borderBottom: "1px solid #fde68a",
+    display: "flex", alignItems: "center", gap: 8,
+    padding: "8px 12px", fontSize: "0.75rem", fontWeight: 500,
+    color: "#92400e", background: "#fffbeb",
+    borderBottom: "1px solid #fef3c7",
   },
   syncRefreshBtn: {
-    marginLeft: "auto", padding: "2px 10px", fontSize: "0.7rem", fontWeight: 700,
-    color: "#92400e", background: "white", border: "1px solid #fbbf24",
-    borderRadius: 4, cursor: "pointer", flexShrink: 0,
+    marginLeft: "auto", padding: "3px 10px", fontSize: "0.72rem", fontWeight: 700,
+    color: "#92400e", background: "white", border: "1.5px solid #fcd34d",
+    borderRadius: 6, cursor: "pointer", flexShrink: 0,
   },
 
   // Move list
   moveList: {
     display: "flex", flexDirection: "column",
+    padding: "8px",
+    gap: "8px",
   },
   moveCard: {
     display: "flex", flexDirection: "column",
-    borderBottom: "1px solid #f0fdf4",
-    padding: "8px 10px",
+    background: "white",
+    border: "1px solid #ecfdf5",
+    borderRadius: 12,
+    padding: "8px",
+    transition: "transform 0.1s, box-shadow 0.1s",
   },
   moveRow: {
-    display: "flex", alignItems: "center", gap: 5,
+    display: "flex", alignItems: "center", gap: 6,
   },
   moveBtn: {
-    flex: 1, display: "flex", alignItems: "center", gap: 7,
-    padding: "7px 10px", fontSize: "0.82rem", fontWeight: 600,
-    color: "#166534", background: "#f0fdf4",
-    border: "1.5px solid #86efac", borderRadius: 8,
+    flex: 1, display: "flex", alignItems: "center", gap: 8,
+    padding: "10px 12px", fontSize: "0.85rem", fontWeight: 600,
+    color: "#065f46", background: "#f0fdf4",
+    border: "1.5px solid #bbf7d0", borderRadius: 10,
     cursor: "pointer", transition: "all 0.15s",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
   },
   infoBtn: {
     display: "flex", alignItems: "center", justifyContent: "center",
-    width: 28, height: 28, borderRadius: 6,
-    background: "#f0fdf4", border: "1px solid #86efac",
-    cursor: "pointer", color: "#16a34a", flexShrink: 0,
-    transition: "background 0.15s",
+    width: 32, height: 32, borderRadius: 10,
+    background: "white", border: "1.5px solid #bbf7d0",
+    cursor: "pointer", color: "#059669", flexShrink: 0,
+    transition: "all 0.15s",
   },
 
   // Info panel
   infoPanel: {
-    marginTop: 6, padding: "10px 12px",
-    background: "#f9fafb", border: "1px solid #e5e7eb",
-    borderRadius: 8, fontSize: "0.75rem", color: "#374151",
+    marginTop: 8, padding: "12px",
+    background: "#f9fafb", border: "1.5px solid #f3f4f6",
+    borderRadius: 10, fontSize: "0.78rem", color: "#374151",
   },
   infoPanelHeader: {
-    fontWeight: 700, fontSize: "0.8rem", color: "#166534", marginBottom: 6,
+    fontWeight: 700, fontSize: "0.82rem", color: "#065f46", marginBottom: 8,
+    borderBottom: "1px solid #e5e7eb", paddingBottom: "4px",
   },
   infoRow: {
-    marginBottom: 4, lineHeight: 1.5, wordBreak: "break-word",
+    marginBottom: 6, lineHeight: 1.5, wordBreak: "break-word",
   },
   examplesToggle: {
     display: "flex", alignItems: "center", gap: 4,
-    marginTop: 6, padding: 0, background: "none", border: "none",
-    cursor: "pointer", fontSize: "0.73rem", fontWeight: 600, color: "#16a34a",
+    marginTop: 8, padding: "4px 8px", background: "#ecfdf5", border: "1px solid #bbf7d0",
+    borderRadius: 6, cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, color: "#065f46",
   },
 
   // Reasoning
   reasoningToggle: {
-    display: "flex", alignItems: "center", gap: 4,
-    padding: "3px 0 0 0", background: "none", border: "none",
-    cursor: "pointer", fontSize: "0.72rem", fontWeight: 500, color: "#6b7280",
+    display: "flex", alignItems: "center", gap: 6,
+    padding: "6px 8px", background: "transparent", border: "none",
+    cursor: "pointer", fontSize: "0.75rem", fontWeight: 500, color: "#6b7280",
+    borderRadius: 6, marginTop: 4, transition: "background 0.15s",
   },
   reasoningContent: {
-    fontSize: "0.75rem", color: "#4b5563", lineHeight: 1.5,
-    padding: "4px 0 2px 16px", whiteSpace: "pre-wrap",
+    fontSize: "0.78rem", color: "#4b5563", lineHeight: 1.5,
+    padding: "8px 12px", whiteSpace: "pre-wrap",
+    background: "#f9fafb", borderRadius: 8, marginTop: 4,
+    borderLeft: "3px solid #10b981",
   },
   emptyMsg: {
-    padding: "2rem 1rem", textAlign: "center",
-    fontSize: "0.82rem", color: "#6b7280",
+    padding: "3rem 1.5rem", textAlign: "center",
+    fontSize: "0.85rem", color: "#6b7280", fontStyle: "italic",
   },
-  customSection: {
-    padding: "10px 12px",
-    borderTop: "1.5px solid #dcfce7",
-    background: "#f9fafb",
+  customWrapper: {
+    position: "relative" as const,
+    margin: "12px 10px 10px",
+    padding: "10px",
+    background: "#f0fdf4",
+    border: "1.5px solid #bbf7d0",
+    borderRadius: 12,
   },
   customHeader: {
-    fontSize: "0.75rem", fontWeight: 700, color: "#166534", marginBottom: 6,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  customTitle: {
+    fontSize: "0.72rem",
+    fontWeight: 800,
+    color: "#065f46",
+    letterSpacing: "0.05em",
+    textTransform: "uppercase",
   },
   customTextarea: {
     width: "100%", fontSize: "0.78rem", color: "#374151",
-    border: "1px solid #d1d5db", borderRadius: 6,
+    border: "1.5px solid #86efac", borderRadius: 8,
     padding: "6px 8px", resize: "vertical" as const,
     fontFamily: "inherit", boxSizing: "border-box" as const,
-    outline: "none",
+    outline: "none", background: "white", lineHeight: 1.4,
+    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.03)",
   },
   customSelect: {
-    flex: 1, fontSize: "0.78rem", color: "#374151",
-    border: "1px solid #d1d5db", borderRadius: 6,
-    padding: "5px 8px", background: "white",
-    cursor: "pointer",
+    flex: 1, fontSize: "0.72rem", color: "#065f46",
+    border: "1.5px solid #86efac", borderRadius: 8,
+    padding: "4px 8px", background: "white",
+    cursor: "pointer", outline: "none",
+    fontWeight: 600,
   },
   customApplyBtn: {
-    display: "flex", alignItems: "center", gap: 4,
-    padding: "5px 14px", fontSize: "0.78rem", fontWeight: 700,
-    color: "white", background: "#16a34a",
-    border: "none", borderRadius: 6, cursor: "pointer",
-    flexShrink: 0 as const,
+    display: "flex", alignItems: "center", gap: 6,
+    padding: "4px 12px", fontSize: "0.75rem", fontWeight: 700,
+    color: "white", background: "#10b981",
+    border: "none", borderRadius: 8, cursor: "pointer",
+    flexShrink: 0 as const, boxShadow: "0 2px 4px rgba(16,185,129,0.2)",
   },
   customError: {
-    marginTop: 5, fontSize: "0.73rem", color: "#991b1b",
+    marginTop: 6, fontSize: "0.7rem", color: "#991b1b",
+    padding: "4px 8px", background: "#fff1f2",
+    border: "1px solid #fecaca", borderRadius: 6,
   },
   customWarning: {
-    display: "flex", alignItems: "center", gap: 5,
-    marginBottom: 7, padding: "5px 8px", borderRadius: 6,
-    fontSize: "0.72rem", fontWeight: 500,
-    color: "#92400e", background: "#fefce8",
-    border: "1px solid #fde68a",
+    display: "flex", alignItems: "center", gap: 4,
+    fontSize: "0.65rem", fontWeight: 700,
+    color: "#92400e", background: "#fffbeb",
+    border: "1px solid #fde68a", padding: "2px 6px", borderRadius: 6,
+  },
+  modalOverlay: {
+    position: "fixed" as const, inset: 0, background: "rgba(0,0,0,0.4)", 
+    zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem",
+    backdropFilter: "blur(2px)",
+  },
+  modalContent: {
+    background: "white", borderRadius: 20, width: "100%", maxWidth: 600,
+    maxHeight: "85vh", display: "flex", flexDirection: "column",
+    boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", overflow: "hidden",
+    border: "1px solid #e2e8f0",
+  },
+  modalHeader: {
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+    padding: "1.25rem 1.5rem", borderBottom: "1px solid #f1f5f9",
+  },
+  modalTitle: {
+    fontSize: "1.1rem", fontWeight: 800, color: "#0f172a", letterSpacing: "-0.01em",
+  },
+  modalCloseBtn: {
+    background: "#f1f5f9", border: "none", cursor: "pointer",
+    width: 28, height: 28, borderRadius: "50%",
+    fontSize: "0.8rem", color: "#64748b", display: "flex", alignItems: "center", justifyContent: "center",
+  },
+  modalBody: {
+    overflowY: "auto" as const, flex: 1, padding: "1rem 0",
   },
 }
 
-// ─── All Moves Modal ───────────────────────────────────────────────────────────
+// ─── All Moves List ────────────────────────────────────────────────────────
 
-function AllMovesModal({ onClose }: { onClose: () => void }): JSX.Element {
-  const [selectedIdx, setSelectedIdx] = useState(0)
+function AllMovesList(): JSX.Element {
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
   const [examplesOpen, setExamplesOpen] = useState(false)
-  const active = moves[selectedIdx]
+  const [showGenerator, setShowGenerator] = useState(false)
+
+  const selected = selectedIdx !== null ? moves[selectedIdx] : null
 
   return (
-    <div
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000,
-        display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}
-      onClick={onClose}
-    >
-      <div
-        style={{ background: "white", borderRadius: 12, width: "90%", maxWidth: 1100,
-          height: "85vh", display: "flex", flexDirection: "column",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.3)", overflow: "hidden" }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Modal header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
-          padding: "0.875rem 1.25rem", borderBottom: "1.5px solid #dcfce7",
-          background: "#f0fdf4", flexShrink: 0 }}>
-          <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "#166534" }}>All Moves</span>
-          <button onClick={onClose}
-            style={{ background: "none", border: "none", cursor: "pointer",
-              fontSize: "1.2rem", color: "#6b7280", lineHeight: 1, padding: "0 4px" }}>✕</button>
-        </div>
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "0 12px 12px 12px" }}>
+        <button
+          onClick={() => setShowGenerator(true)}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            width: "100%", padding: "10px", borderRadius: 10,
+            background: "#10b981", color: "white", border: "none", cursor: "pointer",
+            fontSize: "0.85rem", fontWeight: 700, boxShadow: "0 2px 4px rgba(16,185,129,0.2)",
+          }}
+        >
+          <svg style={{ width: 16, height: 16 }} viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+          </svg>
+          Create New Move Definition
+        </button>
+      </div>
 
-        {/* Body: sidebar + detail */}
-        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-          {/* Sidebar */}
-          <div style={{ width: 230, flexShrink: 0, borderRight: "1.5px solid #e5e7eb",
-            overflowY: "auto", padding: "0.5rem 0" }}>
-            {moves.map((move, idx) => (
-              <button
-                key={idx}
-                onClick={() => { setSelectedIdx(idx); setExamplesOpen(false) }}
-                style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4,
-                  width: "100%", padding: "0.6rem 0.875rem", border: "none",
-                  borderLeft: `3px solid ${selectedIdx === idx ? "#16a34a" : "transparent"}`,
-                  background: selectedIdx === idx ? "#f0fdf4" : "transparent",
-                  cursor: "pointer", textAlign: "left" }}
-              >
-                <span style={{ fontSize: "0.82rem",
-                  fontWeight: selectedIdx === idx ? 700 : 500,
-                  color: selectedIdx === idx ? "#166534" : "#374151", lineHeight: 1.3 }}>
+      <div style={{ borderTop: "1px solid #f3f4f6" }}>
+        {moves.map((move, idx) => (
+          <div key={idx} style={{ borderBottom: "1px solid #f3f4f6" }}>
+            <button
+              onClick={() => { setSelectedIdx(selectedIdx === idx ? null : idx); setExamplesOpen(false) }}
+              style={{
+                display: "flex", alignItems: "center", gap: 7,
+                width: "100%", padding: "12px 14px", border: "none",
+                background: selectedIdx === idx ? "#f0fdf4" : "transparent",
+                cursor: "pointer", textAlign: "left",
+              }}
+            >
+              <div style={{ flex: 1 }}>
+                <div style={{ 
+                  fontSize: "0.85rem", 
+                  fontWeight: selectedIdx === idx ? 700 : 600,
+                  color: selectedIdx === idx ? "#065f46" : "#374151" 
+                }}>
                   {move.name}
-                </span>
-                <MoveKindBadge kind={move.kind} />
-              </button>
-            ))}
-          </div>
-
-          {/* Detail panel */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "1.25rem 1.5rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.875rem" }}>
-              <span style={{ fontWeight: 700, fontSize: "1rem", color: "#166534" }}>{active.name}</span>
-              <MoveKindBadge kind={active.kind} />
-            </div>
-            <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8,
-              padding: "0.875rem 1rem", marginBottom: "1rem", fontSize: "0.82rem", color: "#374151",
-              lineHeight: 1.6 }}>
-              <div style={{ marginBottom: "0.4rem" }}><strong>Trigger:</strong> {active.trigger}</div>
-              <div><strong>Action:</strong> {active.action}</div>
-            </div>
-
-            {active.examples.length > 0 && (
-              <>
-                <button
-                  onClick={() => setExamplesOpen(v => !v)}
-                  style={{ display: "flex", alignItems: "center", gap: 5, padding: 0,
-                    background: "none", border: "none", cursor: "pointer",
-                    fontSize: "0.8rem", fontWeight: 600, color: "#16a34a", marginBottom: "0.5rem" }}
-                >
-                  <svg style={{ width: 12, height: 12, transition: "transform 0.2s",
-                    transform: examplesOpen ? "rotate(90deg)" : "rotate(0deg)" }}
-                    viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Examples ({active.examples.length})
-                </button>
-                {examplesOpen && active.examples.map((ex, exIdx) => (
-                  <ExamplePreview key={exIdx} example={ex} idx={exIdx} />
-                ))}
-              </>
+                </div>
+              </div>
+              <MoveKindBadge kind={move.kind} />
+              <svg style={{
+                width: 14, height: 14, flexShrink: 0, color: "#9ca3af",
+                transition: "transform 0.2s",
+                transform: selectedIdx === idx ? "rotate(90deg)" : "rotate(0deg)",
+              }} viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
+            {selectedIdx === idx && selected && (
+              <div style={{
+                padding: "12px 16px",
+                background: "#f9fafb",
+                fontSize: "0.8rem", color: "#374151", lineHeight: 1.5,
+              }}>
+                <div style={{ marginBottom: 6, wordBreak: "break-word" }}><strong>Trigger:</strong> {selected.trigger || <em style={{ color: "#9ca3af" }}>none</em>}</div>
+                <div style={{ wordBreak: "break-word" }}><strong>Action:</strong> {selected.action}</div>
+                {selected.examples.length > 0 && (
+                  <>
+                    <button onClick={() => setExamplesOpen(v => !v)} style={{
+                      display: "flex", alignItems: "center", gap: 4, marginTop: 10,
+                      padding: "6px 10px", background: "#f0fdf4", border: "1px solid #dcfce7",
+                      borderRadius: 6, cursor: "pointer", fontSize: "0.75rem", fontWeight: 700, color: "#059669",
+                    }}>
+                      <svg style={{
+                        width: 12, height: 12, transition: "transform 0.2s",
+                        transform: examplesOpen ? "rotate(90deg)" : "rotate(0deg)",
+                      }} viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Examples ({selected.examples.length})
+                    </button>
+                    {examplesOpen && (
+                      <div style={{ marginTop: 12 }}>
+                        {selected.examples.map((ex, exIdx) => (
+                          <ExamplePreview key={exIdx} example={ex} idx={exIdx} />
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             )}
           </div>
-        </div>
+        ))}
       </div>
+
+      {showGenerator && (
+        <div
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1100,
+            display: "flex", alignItems: "stretch", justifyContent: "center", padding: "1.5rem",
+          }}
+          onClick={() => setShowGenerator(false)}
+        >
+          <div
+            style={{
+              background: "white", borderRadius: 16, width: "100%", maxWidth: 1200,
+              display: "flex", flexDirection: "column",
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)", overflow: "hidden",
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "1rem 1.5rem", borderBottom: "1.5px solid #e2e8f0",
+              background: "white", flexShrink: 0,
+            }}>
+              <span style={{ fontWeight: 800, fontSize: "1rem", color: "#0f172a", letterSpacing: "-0.01em" }}>Live Move Generator</span>
+              <button
+                onClick={() => setShowGenerator(false)}
+                style={{ background: "#f1f5f9", border: "none", cursor: "pointer",
+                  width: 32, height: 32, borderRadius: "50%",
+                  fontSize: "0.9rem", color: "#64748b", display: "flex", alignItems: "center", justifyContent: "center" }}
+              >✕</button>
+            </div>
+            <div style={{ overflowY: "auto", flex: 1, padding: "1.5rem", background: "#f8fafc" }}>
+              <MoveGenerator />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-// ─── Public Move Panel (with "All Moves" modal) ────────────────────────────────
+// ─── Public Move Panel ────────────────────────────────────────────────────────
 
 export function MovePanel(): JSX.Element {
-  const [showAllMoves, setShowAllMoves] = useState(false)
-  return (
-    <>
-      <MovePanelContent onShowAllMoves={() => setShowAllMoves(true)} />
-      {showAllMoves && <AllMovesModal onClose={() => setShowAllMoves(false)} />}
-    </>
-  )
+  return <MovePanelContent />
 }
