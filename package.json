@@ -12,6 +12,9 @@
     "vite": "^7.1.12"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/material": "^7.3.9",
     "@react-sigma/core": "^5.0.4",
     "@xyflow/react": "^12.10.0",
     "axios": "^1.13.1",
