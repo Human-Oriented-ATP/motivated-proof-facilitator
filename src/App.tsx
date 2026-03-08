@@ -5,9 +5,10 @@ import { ProofStateGenerator } from "./components/ProofStateGenerator"
 import { ProofStateSelectionContext, proofStateSelectionReducer } from "./core/ProofStateSelectionContext"
 import TypstContextProvider from "./components/TypstContext"
 import { Box, Button, Chip, Typography } from "@mui/material"
+import { sampleProofDiscoveryState } from "../tests/samples/ProofDiscoveryState"
 
 export default function App(): JSX.Element {
-  const [initialState, setInitialState] = useState<ProofDiscoveryState | null>(null)
+  const [initialState, setInitialState] = useState<ProofDiscoveryState | null>(sampleProofDiscoveryState)
   const [selections, selectionsDispatch] = useReducer(proofStateSelectionReducer, [])
 
   if (initialState) {
