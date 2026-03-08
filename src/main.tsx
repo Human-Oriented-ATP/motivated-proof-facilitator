@@ -1,15 +1,17 @@
-import React from "react";
-import { createRoot } from "react-dom/client";
-import App from "./App";
+import React from "react"
+import { createRoot } from "react-dom/client"
+import { ThemeProvider, CssBaseline } from "@mui/material"
+import { theme } from "./theme"
+import App from "./App"
 
-// If you use global CSS, import it here (optional):
-// import "./index.css";
-
-const root = document.getElementById("root");
-if (!root) throw new Error("No element with id 'root' found. Make sure index.html contains <div id=\"root\"></div>");
+const root = document.getElementById("root")
+if (!root) throw new Error("No element with id 'root' found.")
 
 createRoot(root).render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <App />
+    </ThemeProvider>
   </React.StrictMode>
-);
+)

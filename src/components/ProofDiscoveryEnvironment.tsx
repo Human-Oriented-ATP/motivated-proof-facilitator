@@ -1,4 +1,4 @@
-import React, { JSX, useState, useContext, useReducer, useRef, useEffect, useCallback } from 'react'
+import { JSX, useState, useContext, useReducer, useEffect } from 'react'
 import { ProofDiscoveryState, proofDiscoveryStateReducer, isProofComplete, serializeProofDiscoveryState } from '../core/ProofDiscoveryState'
 import { ProofStateWithLibraryResult as ProofStateComponent } from './ProofState'
 import { ProofDiscoveryState as ProofDiscoveryStateVisualization } from './ProofDiscoveryState'
@@ -91,15 +91,6 @@ const actionBtnSx = {
 }
 
 /** Sx for the small icon buttons in the floating graph header */
-const graphBtnSx = {
-  width: 22,
-  height: 22,
-  background: 'rgba(255,255,255,0.5)',
-  border: '1px solid rgba(180,200,220,0.6)',
-  borderRadius: '4px',
-  color: '#3a5070',
-  '&:hover': { background: 'rgba(255,255,255,0.9)', borderColor: '#8aabcc' },
-}
 
 /** Sx for Dialog paper in MUI v7 (via slotProps) */
 const modalPaperSx = { borderRadius: '14px', border: '1px solid #b8ccda' }
@@ -133,7 +124,7 @@ export function ProofDiscoveryEnvironment({
     proofDiscoveryStateReducer,
     initialProofDiscoveryState
   )
-  const [isGraphExpanded, setIsGraphExpanded] = useState(true)
+  const [isGraphExpanded, setIsGraphExpanded] = useState(false)
   const [isGraphFullscreen, setIsGraphFullscreen] = useState(false)
   const [isLibraryExpanded, setIsLibraryExpanded] = useState(false)
   const [isInformalizePopupOpen, setIsInformalizePopupOpen] = useState(false)
@@ -146,36 +137,6 @@ export function ProofDiscoveryEnvironment({
   const [isFinishScreenOpen, setIsFinishScreenOpen] = useState(false)
   const [jsonCopied, setJsonCopied] = useState(false)
   const { selections, dispatch: selectionsDispatch } = useContext(ProofStateSelectionContext)
-
-  // Draggable floating graph
-  const [graphPos, setGraphPos] = useState<{ x: number; y: number }>({ x: 400, y: 24 })
-  const isDraggingGraph = useRef(false)
-  const dragOffset = useRef({ x: 0, y: 0 })
-  const graphContainerRef = useRef<HTMLDivElement | null>(null)
-
-  const handleGraphDragStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    isDraggingGraph.current = true
-    const rect = graphContainerRef.current?.getBoundingClientRect()
-    if (rect) {
-      dragOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
-    }
-  }, [])
-
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      if (!isDraggingGraph.current || !graphContainerRef.current) return
-      const rect = graphContainerRef.current.getBoundingClientRect()
-      setGraphPos({
-        x: Math.max(0, Math.min(window.innerWidth - e.clientX - (rect.width - dragOffset.current.x), window.innerWidth - rect.width)),
-        y: Math.max(0, Math.min(window.innerHeight - e.clientY - (rect.height - dragOffset.current.y), window.innerHeight - rect.height)),
-      })
-    }
-    const onUp = () => { isDraggingGraph.current = false }
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-    return () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
-  }, [])
 
   useEffect(() => {
     if (!proofDiscoveryState.isSolved && isProofComplete(proofDiscoveryState)) {
@@ -218,7 +179,10 @@ export function ProofDiscoveryEnvironment({
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#ffffff' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'row', height: '100%', background: '#ffffff' }}>
+
+      {/* ════════════════════ LEFT COLUMN (library + proof state) ════════════════════ */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
 
       {/* ════════════════════ LIBRARY BAR ════════════════════ */}
       <Box sx={{
@@ -228,7 +192,7 @@ export function ProofDiscoveryEnvironment({
         boxShadow: '0 2px 6px rgba(180,120,0,0.08)',
       }}>
         {/* Header row */}
-        <Box sx={{ display: 'flex', alignItems: 'center', px: 2, py: 0.75, gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', px: 2, height: 44, py: 0, gap: 1 }}>
           {/* Star icon + label */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: '#92400e' }}>
             <Box component="span" sx={{ fontSize: '13px', lineHeight: 1, color: '#d97706' }}>★</Box>
@@ -355,9 +319,6 @@ export function ProofDiscoveryEnvironment({
         )}
       </Box>
 
-      {/* ════════════════════ MAIN CONTENT ════════════════════ */}
-      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-
         {/* Proof State — scrollable, with floating pill at bottom */}
         <Box sx={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
@@ -463,96 +424,78 @@ export function ProofDiscoveryEnvironment({
           </Paper>
         </Box>
 
-        {/* ── Right column: Move Panel (full height) ── */}
-        <Box sx={{
-          width: '400px', flexShrink: 0,
-          display: 'flex', flexDirection: 'column',
-          borderLeft: '1px solid #b8ccda',
-          background: 'linear-gradient(180deg, #f0f4f8 0%, #e8eef5 100%)',
-          overflow: 'hidden',
-        }}>
-          <Box sx={{ flex: 1, overflow: 'auto', p: 1.5 }}>
-            <ProofDiscoveryStateContext.Provider value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}>
-              <MovePanel />
-            </ProofDiscoveryStateContext.Provider>
-          </Box>
-        </Box>
-      </Box>
+      </Box>{/* end left column */}
 
-      {/* ════════════════════ FLOATING GRAPH WINDOW ════════════════════ */}
-      <Paper
-        ref={graphContainerRef}
-        elevation={10}
-        sx={{
-          position: 'fixed',
-          right: graphPos.x,
-          bottom: graphPos.y,
-          width: isGraphExpanded ? '340px' : '200px',
-          height: isGraphExpanded ? '280px' : 'auto',
-          borderRadius: '12px',
-          display: 'flex', flexDirection: 'column',
-          overflow: 'hidden',
-          zIndex: 500,
-          resize: isGraphExpanded ? 'both' : 'none',
-          border: '1px solid #a0b8cc',
-          background: 'linear-gradient(180deg, #edf2f8 0%, #e4ecf5 100%)',
-          boxShadow: '0 12px 40px rgba(20,50,100,0.22), 0 3px 8px rgba(20,50,100,0.12), inset 0 1px 0 rgba(255,255,255,0.7)',
-          transition: 'width 0.2s ease, height 0.2s ease',
-        }}
-      >
-        {/* Drag handle / header */}
-        <Box
-          onMouseDown={handleGraphDragStart}
-          sx={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            px: 1.25, py: 0.625,
-            background: 'linear-gradient(180deg, #e8f0f8 0%, #dce8f2 100%)',
-            borderBottom: isGraphExpanded ? '1px solid #b0c8dc' : 'none',
-            cursor: 'grab', userSelect: 'none', flexShrink: 0,
-            '&:active': { cursor: 'grabbing' },
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-            <Box sx={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-              {['#f6c97a', '#79d07a', '#7ab8f6'].map((c, i) => (
-                <Box key={i} sx={{ width: 8, height: 8, borderRadius: '50%', background: c, boxShadow: `0 1px 2px rgba(0,0,0,0.15)` }} />
+      {/* ── Right column: Move Panel + Proof Graph ── */}
+      <Box sx={{
+        width: '400px', flexShrink: 0,
+        display: 'flex', flexDirection: 'column',
+        borderLeft: '1px solid #e2e8f0',
+        overflow: 'hidden',
+        background: '#f8fafc',
+      }}>
+        {/* Move panel fills remaining height */}
+        <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+          <ProofDiscoveryStateContext.Provider value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}>
+            <MovePanel />
+          </ProofDiscoveryStateContext.Provider>
+        </Box>
+
+        {/* ── Proof Graph panel (collapsible, dark theme) ── */}
+        <Box sx={{ flexShrink: 0, borderTop: '2px solid #0f172a' }}>
+          {/* Header — click to expand/collapse */}
+          <Box
+            onClick={() => setIsGraphExpanded(v => !v)}
+            sx={{
+              display: 'flex', alignItems: 'center', gap: 1,
+              px: 1.5, height: 40,
+              background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
+              cursor: 'pointer', userSelect: 'none',
+              '&:hover': { background: 'linear-gradient(180deg, #263548 0%, #1a2535 100%)' },
+            }}
+          >
+            {/* macOS traffic dots */}
+            <Box sx={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+              {['#ef4444', '#f59e0b', '#22c55e'].map((c, i) => (
+                <Box key={i} sx={{ width: 8, height: 8, borderRadius: '50%', background: c, boxShadow: `0 0 4px ${c}60` }} />
               ))}
             </Box>
-            <Typography sx={{ fontSize: '0.67rem', fontWeight: 800, color: '#2e4a68', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.14em', textTransform: 'uppercase', flex: 1 }}>
               Proof Graph
             </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 0.4 }}>
-            <Tooltip title={isGraphExpanded ? 'Collapse' : 'Expand graph'}>
-              <IconButton size="small" onClick={() => setIsGraphExpanded(v => !v)} sx={graphBtnSx}>
-                <IconChevron rotated={isGraphExpanded} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Fullscreen">
-              <IconButton size="small" onClick={() => setIsGraphFullscreen(true)} sx={graphBtnSx}>
+            <Chip
+              label={`${proofDiscoveryState.graph.order}`}
+              size="small"
+              sx={{ height: 16, fontSize: '10px', fontWeight: 700, background: 'rgba(255,255,255,0.08)', color: '#64748b', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '5px', '& .MuiChip-label': { px: '5px' } }}
+            />
+            <Tooltip title="Fullscreen" arrow>
+              <IconButton size="small" onClick={(e) => { e.stopPropagation(); setIsGraphFullscreen(true) }}
+                sx={{ width: 22, height: 22, color: '#475569', ml: 0.25, '&:hover': { color: '#94a3b8', background: 'rgba(255,255,255,0.08)' } }}>
                 <IconFullscreen />
               </IconButton>
             </Tooltip>
+            <Box sx={{ color: '#475569', display: 'flex', ml: 0.25, transition: 'transform 0.2s', transform: isGraphExpanded ? 'rotate(0deg)' : 'rotate(-90deg)' }}>
+              <IconChevron rotated={false} />
+            </Box>
           </Box>
+          {/* Graph body */}
+          {isGraphExpanded && (
+            <Box sx={{ height: 240, background: '#0f172a', overflow: 'hidden' }}>
+              <ProofDiscoveryStateContext.Provider value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}>
+                <ProofDiscoveryStateVisualization proofDiscoveryState={proofDiscoveryState} />
+              </ProofDiscoveryStateContext.Provider>
+            </Box>
+          )}
         </Box>
-
-        {/* Graph body */}
-        {isGraphExpanded && (
-          <Box sx={{ flex: 1, overflow: 'hidden', background: '#f2f6fa' }}>
-            <ProofDiscoveryStateContext.Provider value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}>
-              <ProofDiscoveryStateVisualization proofDiscoveryState={proofDiscoveryState} />
-            </ProofDiscoveryStateContext.Provider>
-          </Box>
-        )}
-      </Paper>
+      </Box>
 
       {/* ════════════════════ DIALOGS ════════════════════ */}
 
       {/* Fullscreen graph */}
       <Dialog open={isGraphFullscreen} onClose={() => setIsGraphFullscreen(false)} maxWidth={false}
-        slotProps={{ paper: { sx: { width: '95vw', height: '95vh', maxWidth: '95vw', maxHeight: '95vh', borderRadius: '14px', border: '1px solid #b8ccda', background: '#f2f6fa', display: 'flex', flexDirection: 'column', overflow: 'hidden' } } }}>
+        slotProps={{ paper: { sx: { width: '95vw', height: '95vh', maxWidth: '95vw', maxHeight: '95vh', borderRadius: '14px', border: '1px solid #b8ccda', background: '#0f172a', display: 'flex', flexDirection: 'column', overflow: 'hidden' } } }}>
         <DialogHeader title="Proof Discovery Graph" onClose={() => setIsGraphFullscreen(false)} />
-        <DialogContent sx={{ p: 1.5, flex: 1, overflow: 'hidden' }}>
+        <DialogContent sx={{ p: 1.5, flex: 1, overflow: 'hidden', background: '#0f172a' }}>
           <ProofDiscoveryStateContext.Provider value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}>
             <ProofDiscoveryStateVisualization proofDiscoveryState={proofDiscoveryState} />
           </ProofDiscoveryStateContext.Provider>

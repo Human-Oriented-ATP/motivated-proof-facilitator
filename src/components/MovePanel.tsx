@@ -618,7 +618,7 @@ function MovePanelContent(): JSX.Element {
       {/* Header */}
       <Box sx={{
         display: 'flex', alignItems: 'center',
-        px: 1.5, py: 0.875,
+        px: 1.5, height: 44,
         background: G.bg,
         borderBottom: `1px solid ${G.border}`,
         flexShrink: 0,
