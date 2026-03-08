@@ -84,10 +84,18 @@ export async function getApplicableMoves(
 }
 
 /** Apply a move to the current proof state. */
-export async function applyMove( move: ProofDiscoveryMove): Promise<string | undefined> {
-  const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
-  const { selections, dispatch: dispatchSelections } = useContext(ProofStateSelectionContext)
-  const { proofState: newProofState, reasoning } = await queryMove(getCurrentProofState(proofDiscoveryState), move, selections)
+export async function applyMove(
+  proofDiscoveryState: ProofDiscoveryState,
+  selections: ProofStateSelection[],
+  move: ProofDiscoveryMove,
+  dispatchProofDiscoveryAction: React.Dispatch<ProofDiscoveryAction>,
+  dispatchSelections: React.Dispatch<any>
+): Promise<string | undefined> {
+  const { proofState: newProofState, reasoning } = await queryMove(
+    getCurrentProofState(proofDiscoveryState),
+    move,
+    selections
+  )
 
   dispatchProofDiscoveryAction({
     action: "transition",
@@ -95,10 +103,10 @@ export async function applyMove( move: ProofDiscoveryMove): Promise<string | und
     move: {
       kind: move.kind,
       description: move.name,
-      reasoning
-    }
+      reasoning,
+    },
   })
-  dispatchSelections({ type: 'CLEAR_ALL_SELECTIONS'})
+  dispatchSelections({ type: 'CLEAR_ALL_SELECTIONS' })
 
   return reasoning
 }
@@ -270,7 +278,7 @@ function MovePanelContent(): JSX.Element {
   useEffect(ensureKeyframe, [])
 
   const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
-  const { selections } = useContext(ProofStateSelectionContext)
+  const { selections, dispatch: dispatchSelections } = useContext(ProofStateSelectionContext)
 
   const [status, setStatus] = useState<MovePanelStatus>("idle")
   const [applicableMoves, setApplicableMoves] = useState<ApplicableMove[]>([])
@@ -338,7 +346,13 @@ function MovePanelContent(): JSX.Element {
   const handleApply = async (am: ApplicableMove, idx: number) => {
     setApplyingIndex(idx)
     try {
-      const reasoning = await applyMove(am.move)
+      const reasoning = await applyMove(
+        proofDiscoveryState,
+        selections,
+        am.move,
+        dispatchProofDiscoveryAction,
+        dispatchSelections
+      )
       setLastMoveReasoning(reasoning ?? null)
       setStatus("idle")
       setApplicableMoves([])
@@ -589,7 +603,7 @@ function MovePanelContent(): JSX.Element {
 
 function CustomMoveSection(): JSX.Element {
   const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
-  const { selections } = useContext(ProofStateSelectionContext)
+  const { selections, dispatch: dispatchSelections } = useContext(ProofStateSelectionContext)
   const [description, setDescription] = useState("")
   const [kind, setKind] = useState<import("../core/ProofDiscoveryMove").MoveKind>("strengthening")
   const [applying, setApplying] = useState(false)
@@ -607,7 +621,13 @@ function CustomMoveSection(): JSX.Element {
     setApplying(true)
     setError("")
     try {
-      await applyMove(customMove)
+      await applyMove(
+        proofDiscoveryState,
+        selections,
+        customMove,
+        dispatchProofDiscoveryAction,
+        dispatchSelections
+      )
       setDescription("")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to apply move")
