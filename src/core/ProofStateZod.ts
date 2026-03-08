@@ -33,7 +33,7 @@ export const VariableSchema = z.object({
   name: z.string().describe("The name of the variable. This should be a single letter or a short word surrounded by dollar quotes."),
   description: AtomicStatementSchema.describe(`The type information of the variable. 
   For type variables, use "$#text[Type]", and for propositions, use "$#text[Proposition]$".
-  Avoid phrases such as "element of" in the type signature; they are understood.
+  Avoid phrases such as "element of" or "belongs to" in the type signature; they are understood.
   Avoid making the types too complicated. It is always better to introduce extra hypotheses rather than having a complicated type.
   Surround text in $#text[...]$ and use [Typst](https://typst.app/) syntax within dollar quotes ($ ... $).`)
 }).describe(`Some examples are:
@@ -130,8 +130,8 @@ export type LabelledStatement = z.infer<typeof LabelledStatementSchema>
  */
 export const ProofStateContextSchema = z.object({
   variables: z.array(ContextVariableSchema).describe("The variables involved in the proof context. The order in which they appear signifies their dependency order."),
-  hypotheses: z.array(LabelledStatementSchema).describe("Facts about the variables involved in the proof context."),
-  goals: z.array(LabelledStatementSchema).describe("Statements that need to be proved.")
+  hypotheses: z.array(LabelledStatementSchema).describe("Facts about the variables involved in the proof context. Hypothesis statements should ideally avoid expressing information that is already implicit in the type signatures of the variables (for example, \"$n$ is an integer\" is an unncessary hypothesis if the variable $n$ has type $ZZ$)."),
+  goals: z.array(LabelledStatementSchema).describe("Statements that need to be proved. Goal statements should ideally avoid expressing information that is already implicit in the type signatures of the variables (for example, \"$n$ is an integer\" is an unncessary goal if the variable $n$ has type $ZZ$).")
 }).describe(`A proof state context consists of a list of variables involved in the proof, hypotheses concerning them and goals to be proved. 
 There may be multiple proof contexts in one proof state.`)
 export type ProofStateContext = z.infer<typeof ProofStateContextSchema>
