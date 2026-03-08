@@ -1,6 +1,7 @@
 import React, { useState, useReducer, useEffect, JSX } from "react"
 import { ProofState, ProofStateSchema, ProofStateWithLibraryResult as ProofStateWithLibraryResultType, LabelledStatementSchema, StatementSchema } from "../src/core/ProofStateZod"
 import { ProofDiscoveryMove, MoveKind, ProofDiscoveryMoveExample } from "../src/core/ProofDiscoveryMove"
+import { queryMove } from "../src/endpoints/Move"
 
 type UIExample = ProofDiscoveryMoveExample & { id: string }
 import { proofDiscoveryStateReducer, nullProofDiscoveryState } from "../src/core/ProofDiscoveryState"
@@ -34,6 +35,7 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
   const [currentInputState, setCurrentInputState] = useState<ProofStateWithLibraryResultType | null>(null)
   const [currentOutputState, setCurrentOutputState] = useState<ProofStateWithLibraryResultType | null>(null)
   const [exampleComment, setExampleComment] = useState("")
+  const [reasoningTrace, setReasoningTrace] = useState<string | null>(null)
 
   // Proof discovery state for interactive selection
   const [proofDiscoveryState, dispatch] = useReducer(
@@ -211,31 +213,22 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
     setWorkflowState("applying")
 
     try {
-      const response = await fetch("https://atp-backend-rygt.onrender.com/move", {
-        method: "POST",
-        mode: "cors",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          proofState: currentInputState.proofState,
-          move: action,
-          selections: selections,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data: unknown = await response.json()
-      const newProofState = ProofStateSchema.parse([data])
+      const { proofState: newProofState, reasoning } = await queryMove(
+        currentInputState.proofState, {
+          name: moveName,
+          action: action,
+          kind: moveKind,
+          trigger: trigger,
+          examples: []
+        }, selections
+      )
 
       // Keep the library result from the input state in the output state
       setCurrentOutputState({
         proofState: newProofState,
         libraryResult: currentInputState.libraryResult
       })
+      setReasoningTrace(reasoning)
       setWorkflowState("applied")
     } catch (err) {
       if (err instanceof Error) {
@@ -243,6 +236,7 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
       } else {
         setError("An unknown error occurred")
       }
+      setReasoningTrace(null)
       setWorkflowState("formalized")
     } finally {
       setIsLoading(false)
@@ -274,6 +268,7 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
     setExampleComment("")
     setWorkflowState("idle")
     setError(null)
+    setReasoningTrace(null)
     
     selectionsDispatch({ type: 'CLEAR_ALL_SELECTIONS' })
     
@@ -548,6 +543,17 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
 
         {workflowState === "applied" && currentOutputState && (
           <div>
+            {reasoningTrace && (
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Reasoning Trace</label>
+                <textarea
+                  readOnly
+                  value={reasoningTrace}
+                  style={styles.textarea}
+                  rows={6}
+                />
+              </div>
+            )}
             <div style={styles.proofStateSection}>
               <h3 style={styles.sectionHeading}>Output State</h3>
               <ProofStateContextProvider>

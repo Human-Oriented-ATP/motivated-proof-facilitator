@@ -5,11 +5,20 @@ import { z } from 'zod'
  *  enclosed within dollar quotes ($ ... $).
  * 
  * Examples are:
- * - "The function $f$ is injective"
- * - "The group $G$ is abelian"
+ * - "$f$ is injective"
+ * - "$G$ is abelian"
  * - "$x^2 + 1$ is an irreducible polynomial over $RR$"
  */
-export const AtomicStatementSchema = z.string()
+export const AtomicStatementSchema = z.string().describe(`A basic statement within the proof state written in natural language interspersed with [Typst](https://typst.app/) formulas enclosed within dollar quotes ($ ... $). 
+Some examples are:
+- "$f$ is injective"
+- "$G$ is abelian"
+- "$x^2 + 1$ is an irreducible polynomial over $RR$
+
+When expressions contain infix operators, it becomes difficult for Typst to recognize sequences of symbols that form a single mathematical expression. In such cases, it is recommended to use parentheses to group the expression together, for example, $x = (a + b + c)$ instead of $x = a + b + c$.
+"
+
+Atomic statements usually express a single fact, with a preference for a higher-level description over a lower level one.`)
 export type AtomicStatement = z.infer<typeof AtomicStatementSchema>
 
 /** A variable in the proof state.
@@ -17,26 +26,34 @@ export type AtomicStatement = z.infer<typeof AtomicStatementSchema>
  * 
  * Examples are:
  * - { name: "n", description: "$NN$" }
- * - { name: "G", description: "Group" }
+ * - { name: "G", description: "$#text[Group]$" }
  * - { name: "f", description: "$A -> B$" }
  */
 export const VariableSchema = z.object({
-  name: z.string(),
-  description: AtomicStatementSchema
-})
+  name: z.string().describe("The name of the variable. This should be a single letter or a short word surrounded by dollar quotes."),
+  description: AtomicStatementSchema.describe(`The type information of the variable. 
+  For type variables, use "$#text[Type]", and for propositions, use "$#text[Proposition]$".
+  Avoid phrases such as "element of" in the type signature; they are understood.
+  Avoid making the types too complicated. It is always better to introduce extra hypotheses rather than having a complicated type.
+  Surround text in $#text[...]$ and use [Typst](https://typst.app/) syntax within dollar quotes ($ ... $).`)
+}).describe(`Some examples are:
+ - { name: "n", description: "$NN$" }
+ - { name: "G", description: "$#text[Group]$" }
+ - { name: "f", description: "$A -> B$" }
+ `)
 export type Variable = z.infer<typeof VariableSchema>
 
 /**
  * A variable in a proof context can either be a
  * - *free variable*: a variable that is assumed to be arbitrary but fixed
  * - *meta variable*: a variable that is to be instantiated later
- * - *let variable*: a variable that is defined to be equal to a specific value
+ * - *let variable*: a variable that is defined to be a specific value
  */
 export const ContextVariableSchema = z.intersection(
   z.discriminatedUnion("kind", [
-    z.object({ kind: z.literal("free") }),
-    z.object({ kind: z.literal("meta") }),
-    z.object({ kind: z.literal("let"), value: AtomicStatementSchema })
+    z.object({ kind: z.literal("free") }).describe("A free variable is a variable that is assumed to be arbitrary but fixed."),
+    z.object({ kind: z.literal("meta") }).describe("A meta variable is a variable that is to be instantiated later."),
+    z.object({ kind: z.literal("let"), value: AtomicStatementSchema }).describe("A let variable is a variable that is defined to be a specific value.")
   ]),
   VariableSchema
 )
@@ -91,13 +108,17 @@ export const StatementSchema: z.ZodType<Statement> = z.lazy(() => z.union([
   z.object({
     kind: z.literal("highlight"),
     statement: StatementSchema
-  })
-]))
+  }).describe(`This is an obsolete field, do not use it.`)
+])).describe(`Combinations of atomic statements using logical connectives. 
+It is always preferable to use a higher-level description of a statement (like "$f$ is injective") over a lower-level one (like 
+\`{ kind: "universal", variable: { name: "x", description: "$A$" }, statement: 
+  { kind: "universal", variable: { name: "y", description: "$A$" }, statement:
+  { kind: "implication", antecedent: "$f(x) = f(y)$", consequent: "$x = y$" }}}\'.`)
 
 export const LabelledStatementSchema = z.object({
-  label: z.string(),
+  label: z.string().describe("A label for the statement. This should be a short string written in snake case that uniquely identifies the statement."),
   statement: StatementSchema
-})
+}).describe(`A statement with a label.`)
 export type LabelledStatement = z.infer<typeof LabelledStatementSchema>
 
 /**
@@ -108,10 +129,11 @@ export type LabelledStatement = z.infer<typeof LabelledStatementSchema>
  * There may be multiple proof contexts in one proof state.
  */
 export const ProofStateContextSchema = z.object({
-  variables: z.array(ContextVariableSchema),
-  hypotheses: z.array(LabelledStatementSchema),
-  goals: z.array(LabelledStatementSchema)
-})
+  variables: z.array(ContextVariableSchema).describe("The variables involved in the proof context. The order in which they appear signifies their dependency order."),
+  hypotheses: z.array(LabelledStatementSchema).describe("Facts about the variables involved in the proof context."),
+  goals: z.array(LabelledStatementSchema).describe("Statements that need to be proved.")
+}).describe(`A proof state context consists of a list of variables involved in the proof, hypotheses concerning them and goals to be proved. 
+There may be multiple proof contexts in one proof state.`)
 export type ProofStateContext = z.infer<typeof ProofStateContextSchema>
 
 /**
@@ -120,7 +142,7 @@ export type ProofStateContext = z.infer<typeof ProofStateContextSchema>
  * a list of variables involved in the proof, hypotheses concerning them
  * and goals to be proved.
  */
-export const ProofStateSchema = z.array(ProofStateContextSchema)
+export const ProofStateSchema = z.array(ProofStateContextSchema).describe(`A proof state is the main datastructure that the user interacts with when building a proof. It is made up of one or more proof contexts, each consisting of a list of variables involved in the proof, hypotheses concerning them and goals to be proved.`)
 export type ProofState = z.infer<typeof ProofStateSchema>
 
 /**
@@ -129,6 +151,6 @@ export type ProofState = z.infer<typeof ProofStateSchema>
  */
 export const ProofStateWithLibraryResultSchema = z.object({
   proofState: ProofStateSchema,
-  libraryResult: LabelledStatementSchema.optional()
-})
+  libraryResult: LabelledStatementSchema.optional().describe(`In addition to the proof state, the user can also reference one library statement that is highlighted for them.`) 
+}).describe(`A proof state bundled together with an optional highlighted library statement that the user can reference.`)
 export type ProofStateWithLibraryResult = z.infer<typeof ProofStateWithLibraryResultSchema>
