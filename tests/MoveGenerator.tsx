@@ -9,7 +9,7 @@ import { ProofStateWithLibraryResult as ProofStateWithLibraryResultComponent } f
 import ProofStateContextProvider from "./ProofStateContext"
 import { ProofStateSelection, ProofStateSelectionContext, proofStateSelectionReducer } from "../src/core/ProofStateSelectionContext"
 import TypstContextProvider from "../src/components/TypstContext"
-import { ProofStateEditor } from "./ProofStateEditor"
+import { ProofStateEditor } from "../src/components/ProofStateEditor"
 
 type WorkflowState = "idle" | "formalizing" | "formalized" | "applying" | "applied"
 
