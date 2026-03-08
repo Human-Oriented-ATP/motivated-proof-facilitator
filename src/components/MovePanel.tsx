@@ -1,7 +1,12 @@
 import React, { JSX, useContext, useState, useEffect, useRef, useCallback } from "react"
 import { z } from "zod"
+import {
+  Box, Typography, Button, IconButton, Chip, Paper,
+  Accordion, AccordionSummary, AccordionDetails,
+  Select, MenuItem, Dialog, DialogContent, Tooltip,
+} from "@mui/material"
 import { ProofStateSelection, ProofStateSelectionContext } from "../core/ProofStateSelectionContext"
-import { ProofState, ProofStateSchema } from "../core/ProofStateZod"
+import { ProofState } from "../core/ProofStateZod"
 import { getCurrentProofState, ProofDiscoveryAction, ProofDiscoveryState } from "../core/ProofDiscoveryState"
 import { ProofDiscoveryMove, ProofDiscoveryMoveExample } from "../core/ProofDiscoveryMove"
 import { ProofDiscoveryStateContext, ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
@@ -87,105 +92,152 @@ export async function applyMove(
   return reasoning
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Design tokens ──────────────────────────────────────────────────────────
+
+const G = {
+  dark:   '#1B5E20',  // deep forest
+  med:    '#2E7D32',  // forest
+  bright: '#43A047',  // bright glade
+  light:  '#81C784',  // leaf
+  bg:     '#F1F8E9',  // morning dew
+  border: '#C8E6C9',  // pale leaf
+  text:   '#1B5E20',  // forest text
+}
+
+// ─── Inline SVG icons ────────────────────────────────────────────────────────
+
+const ChevronIcon = ({ rotated = false }: { rotated?: boolean }) => (
+  <svg style={{ width: 14, height: 14, transition: 'transform 0.2s', transform: rotated ? 'rotate(180deg)' : 'rotate(0deg)', display: 'block' }} viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+  </svg>
+)
+
+const PlayIcon = () => (
+  <svg style={{ width: 14, height: 14, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+  </svg>
+)
+
+const InfoIcon = () => (
+  <svg style={{ width: 15, height: 15 }} viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+  </svg>
+)
+
+const ListIcon = () => (
+  <svg style={{ width: 15, height: 15 }} viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+  </svg>
+)
+
+const RefreshIcon = () => (
+  <svg style={{ width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+  </svg>
+)
+
+const SpinnerBox = ({ size = 20 }: { size?: number }) => {
+  useEffect(() => {
+    const id = "move-panel-spin"
+    if (!document.getElementById(id)) {
+      const s = document.createElement("style")
+      s.id = id
+      s.textContent = `@keyframes move-panel-spin { to { transform: rotate(360deg); } }`
+      document.head.appendChild(s)
+    }
+  }, [])
+  return (
+    <Box sx={{
+      width: size, height: size, flexShrink: 0,
+      border: `2.5px solid ${G.border}`,
+      borderTopColor: G.bright,
+      borderRadius: '50%',
+      animation: 'move-panel-spin 0.8s linear infinite',
+    }} />
+  )
+}
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
 
 type MovePanelStatus = "idle" | "loading" | "loaded" | "error"
 type ApplicableMove = { move: ProofDiscoveryMove, filterResponse: FilterResponse }
 
 function MoveKindBadge({ kind }: { kind: ProofDiscoveryMove["kind"] }): JSX.Element {
   const colors: Record<string, { bg: string, fg: string, border: string }> = {
-    strengthening: { bg: "#E2F0E2", fg: "#0D2B11", border: "#A5D6A7" },
-    weakening: { bg: "#fef9c3", fg: "#854d0e", border: "#fde047" },
-    equivalence: { bg: "#dbeafe", fg: "#1e40af", border: "#93c5fd" },
+    strengthening: { bg: G.bg,     fg: G.dark,    border: G.border  },
+    weakening:     { bg: '#FFF9C4', fg: '#E65100', border: '#FFE082' },
+    equivalence:   { bg: '#E3F2FD', fg: '#1565C0', border: '#BBDEFB' },
   }
-  const c = colors[kind] ?? { bg: "#f3f4f6", fg: "#374151", border: "#d1d5db" }
+  const c = colors[kind] ?? { bg: '#F5F5F5', fg: '#424242', border: '#E0E0E0' }
   return (
-    <span style={{
-      display: "inline-block", fontSize: "0.65rem", fontWeight: 700,
-      padding: "1px 7px", borderRadius: "9999px",
-      background: c.bg, color: c.fg, border: `1px solid ${c.border}`,
-      textTransform: "capitalize", lineHeight: 1.5, letterSpacing: "0.02em",
-    }}>
-      {kind}
-    </span>
+    <Chip
+      label={kind}
+      size="small"
+      sx={{
+        height: 18, fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.03em',
+        background: c.bg, color: c.fg, border: `1px solid ${c.border}`,
+        borderRadius: '9px', textTransform: 'capitalize',
+        '& .MuiChip-label': { px: '7px' },
+      }}
+    />
   )
 }
 
 /** Inline preview of a single move example (compact). */
 function ExamplePreview({ example, idx }: { example: ProofDiscoveryMoveExample, idx: number }): JSX.Element {
   const isExample = example.kind === "example"
-  const accentColor = isExample ? "#1B5E20" : "#dc2626"
-  const borderColor = isExample ? "#A5D6A7" : "#fecaca"
-  const bgColor = isExample ? "#F1F8F1" : "#fff5f5"
-  const labelBg = isExample ? "#E2F0E2" : "#fee2e2"
-  const labelFg = isExample ? "#0D2B11" : "#991b1b"
+  const accentColor = isExample ? G.bright : "#E53935"
+  const borderColor = isExample ? G.border : "#FFCDD2"
+  const bgColor     = isExample ? G.bg     : "#FFF5F5"
+  const labelBg     = isExample ? '#DCEDC8' : '#FFEBEE'
+  const labelFg     = isExample ? G.dark    : '#B71C1C'
 
   return (
-    <div style={{
-      borderRadius: 10,
-      marginBottom: 8,
+    <Paper elevation={0} sx={{
+      borderRadius: '10px', mb: 1,
       border: `1.5px solid ${borderColor}`,
-      background: bgColor,
-      overflow: "hidden",
+      background: bgColor, overflow: 'hidden',
     }}>
-      {/* Header strip */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 7,
-        padding: "6px 10px",
+      <Box sx={{
+        display: 'flex', alignItems: 'center', gap: '7px',
+        px: 1.25, py: 0.75,
         borderBottom: `1px solid ${borderColor}`,
         background: labelBg,
       }}>
-        <span style={{
-          display: "inline-flex", alignItems: "center", justifyContent: "center",
-          width: 18, height: 18, borderRadius: "50%",
-          background: accentColor, color: "white",
-          fontSize: "0.65rem", fontWeight: 800, flexShrink: 0,
+        <Box sx={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 18, height: 18, borderRadius: '50%',
+          background: accentColor, color: 'white',
+          fontSize: '0.65rem', fontWeight: 800, flexShrink: 0,
         }}>
-          {isExample ? "✓" : "✗"}
-        </span>
-        <span style={{ fontSize: "0.73rem", fontWeight: 700, color: labelFg, flex: 1 }}>
+          {isExample ? '✓' : '✗'}
+        </Box>
+        <Typography sx={{ fontSize: '0.73rem', fontWeight: 700, color: labelFg, flex: 1 }}>
           Example {idx + 1}
-        </span>
-        <span style={{
-          fontSize: "0.65rem", fontWeight: 600, color: labelFg, opacity: 0.75,
-          textTransform: "capitalize",
-        }}>
-          {example.kind.replace("-", " ")}
-        </span>
-      </div>
+        </Typography>
+        <Typography sx={{ fontSize: '0.65rem', fontWeight: 600, color: labelFg, opacity: 0.75, textTransform: 'capitalize' }}>
+          {example.kind.replace('-', ' ')}
+        </Typography>
+      </Box>
 
-      <div style={{ padding: "8px 10px" }}>
-        {/* Description */}
-        <div style={{ fontSize: "0.73rem", color: "#374151", lineHeight: 1.45, marginBottom: 6 }}>
+      <Box sx={{ p: '8px 10px' }}>
+        <Typography sx={{ fontSize: '0.73rem', color: '#374151', lineHeight: 1.45, mb: 0.75 }}>
           {example.description}
-        </div>
+        </Typography>
         {example.comment && (
-          <div style={{
-            display: "flex", alignItems: "flex-start", gap: 5,
-            fontSize: "0.68rem", color: "#6b7280", fontStyle: "italic",
-            marginBottom: 7, lineHeight: 1.4,
-          }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: '5px', fontSize: '0.68rem', color: '#6b7280', fontStyle: 'italic', mb: 0.875, lineHeight: 1.4 }}>
             <span style={{ flexShrink: 0, marginTop: 1 }}>💬</span>
             <span>{example.comment}</span>
-          </div>
+          </Box>
         )}
 
-        {/* Input block */}
-        <div style={{ marginBottom: 6 }}>
-          <div style={{
-            display: "flex", alignItems: "center", gap: 5, marginBottom: 4,
-          }}>
-            <span style={{
-              fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.06em",
-              textTransform: "uppercase", color: "#6b7280",
-            }}>Before</span>
-            <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
-          </div>
-          <div style={{
-            background: "white", borderRadius: 7, padding: "6px 8px",
-            border: "1px solid #e5e7eb", overflow: "auto", maxHeight: 200,
-            boxShadow: "inset 0 1px 2px rgba(0,0,0,0.04)",
-          }}>
+        {/* Before */}
+        <Box sx={{ mb: 0.75 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px', mb: 0.5 }}>
+            <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#9E9E9E' }}>Before</Typography>
+            <Box sx={{ flex: 1, height: '1px', background: '#E0E0E0' }} />
+          </Box>
+          <Box sx={{ background: 'white', borderRadius: '7px', p: '6px 8px', border: '1px solid #EEEEEE', overflow: 'auto', maxHeight: 200, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)' }}>
             <ProofStateIdContext.Provider value={{ proofNodeId: 0, proofContextId: -1 }}>
               <ProofStateSelectionContext.Provider value={{ selections: example.selections, dispatch: () => {} }}>
                 <ProofStateComponent
@@ -194,65 +246,40 @@ function ExamplePreview({ example, idx }: { example: ProofDiscoveryMoveExample, 
                 />
               </ProofStateSelectionContext.Provider>
             </ProofStateIdContext.Provider>
-          </div>
-        </div>
+          </Box>
+        </Box>
 
-        {/* Arrow divider */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "center",
-          marginBottom: 6,
-        }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 0.75 }}>
           <svg style={{ width: 20, height: 20, color: accentColor, opacity: 0.7 }} viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 3a1 1 0 011 1v9.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 13.586V4a1 1 0 011-1z" clipRule="evenodd" />
           </svg>
-        </div>
+        </Box>
 
-        {/* Output block */}
-        <div>
-          <div style={{
-            display: "flex", alignItems: "center", gap: 5, marginBottom: 4,
-          }}>
-            <span style={{
-              fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.06em",
-              textTransform: "uppercase", color: "#6b7280",
-            }}>After</span>
-            <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
-          </div>
-          <div style={{
-            background: "white", borderRadius: 7, padding: "6px 8px",
-            border: "1px solid #e5e7eb", overflow: "auto", maxHeight: 200,
-            boxShadow: "inset 0 1px 2px rgba(0,0,0,0.04)",
-          }}>
+        {/* After */}
+        <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px', mb: 0.5 }}>
+            <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#9E9E9E' }}>After</Typography>
+            <Box sx={{ flex: 1, height: '1px', background: '#E0E0E0' }} />
+          </Box>
+          <Box sx={{ background: 'white', borderRadius: '7px', p: '6px 8px', border: '1px solid #EEEEEE', overflow: 'auto', maxHeight: 200, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)' }}>
             {example.outputState ? (
               <ProofStateComponent
                 proofState={example.outputState.proofState}
                 libraryResult={example.outputState.libraryResult ?? undefined}
               />
             ) : (
-              <span style={{ fontSize: "0.7rem", color: "#9ca3af", fontStyle: "italic" }}>No output state</span>
+              <Typography sx={{ fontSize: '0.7rem', color: '#9E9E9E', fontStyle: 'italic' }}>No output state</Typography>
             )}
-          </div>
-        </div>
-      </div>
-    </div>
+          </Box>
+        </Box>
+      </Box>
+    </Paper>
   )
 }
 
 // ─── Move Panel Component ─────────────────────────────────────────────────────
 
-const KEYFRAME_ID = "move-panel-spin-keyframe"
-function ensureKeyframe() {
-  if (typeof document !== "undefined" && !document.getElementById(KEYFRAME_ID)) {
-    const style = document.createElement("style")
-    style.id = KEYFRAME_ID
-    style.textContent = `@keyframes move-panel-spin { to { transform: rotate(360deg); } }`
-    document.head.appendChild(style)
-  }
-}
-
 function MovePanelContent(): JSX.Element {
-  useEffect(ensureKeyframe, [])
-
   const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
   const { selections, dispatch: dispatchSelections } = useContext(ProofStateSelectionContext)
 
@@ -266,8 +293,6 @@ function MovePanelContent(): JSX.Element {
   const [expandedExamples, setExpandedExamples] = useState<Set<number>>(new Set())
   const [showAllMovesModal, setShowAllMovesModal] = useState(false)
   const [lastMoveReasoning, setLastMoveReasoning] = useState<string | null>(null)
-  const [expandedLastReasoning, setExpandedLastReasoning] = useState(false)
-
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastFetchedSelectionsRef = useRef<string>("")
@@ -342,7 +367,6 @@ function MovePanelContent(): JSX.Element {
     }
   }
 
-
   const toggleReasoning = (idx: number) => {
     setExpandedReasoning(prev => { const n = new Set(prev); n.has(idx) ? n.delete(idx) : n.add(idx); return n })
   }
@@ -358,56 +382,59 @@ function MovePanelContent(): JSX.Element {
     }
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Render suggestions ──────────────────────────────────────────────────────
 
   const renderMoveSuggestions = () => {
-    // No selections
     if (selections.length === 0 && status !== "loaded") {
       return (
-        <div style={S.placeholderInner}>
-          <svg style={{ width: 32, height: 32, color: "#A5D6A7" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, p: '2.5rem 1.5rem', textAlign: 'center', flex: 1 }}>
+          <svg style={{ width: 32, height: 32, color: G.light }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
           </svg>
-          <span style={S.placeholderTitle}>Select expressions in the proof state</span>
-          <span style={S.placeholderSub}>Click on hypotheses, goals, or sub-expressions to generate suggestions</span>
-        </div>
+          <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, color: G.dark }}>Select expressions</Typography>
+          <Typography sx={{ fontSize: '0.78rem', color: '#78909C', maxWidth: 260, lineHeight: 1.5 }}>
+            Click on hypotheses, goals, or sub-expressions to generate suggestions
+          </Typography>
+        </Box>
       )
     }
 
-    // Idle — has selections, waiting for hover
     if (status === "idle") {
       return (
-        <div style={{ ...S.placeholderInner, minHeight: 120 }}>
-          <svg style={{ width: 32, height: 32, color: "#1B5E20" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, p: '2rem 1.5rem', textAlign: 'center', flex: 1 }}>
+          <svg style={{ width: 28, height: 28, color: G.bright }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
-          <span style={S.placeholderTitle}>Hover here to generate move suggestions</span>
-          <span style={S.placeholderSub}>Suggestions auto-generate 1 second after your last selection change</span>
-        </div>
+          <Typography sx={{ fontSize: '0.88rem', fontWeight: 600, color: G.dark }}>Hover to generate suggestions</Typography>
+          <Typography sx={{ fontSize: '0.75rem', color: '#78909C', maxWidth: 260, lineHeight: 1.5 }}>
+            Suggestions auto-generate 1 second after your last selection change
+          </Typography>
+        </Box>
       )
     }
 
-    // Loading
     if (status === "loading") {
       return (
-        <div style={{ ...S.placeholderInner, minHeight: 120 }}>
-          <div style={S.spinner} />
-          <span style={{ color: "#0D2B11", fontSize: "0.85rem", fontWeight: 500 }}>Checking applicable moves…</span>
-        </div>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, p: '2rem 1.5rem', flex: 1 }}>
+          <SpinnerBox size={24} />
+          <Typography sx={{ color: G.dark, fontSize: '0.85rem', fontWeight: 500 }}>Checking applicable moves…</Typography>
+        </Box>
       )
     }
 
-    // Error
     if (status === "error") {
       return (
-        <div style={{ ...S.placeholderInner, minHeight: 100, borderColor: "#fecaca" }}>
-          <svg style={{ width: 28, height: 28, color: "#dc2626" }} viewBox="0 0 20 20" fill="currentColor">
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, p: '2rem 1.5rem', flex: 1 }}>
+          <svg style={{ width: 28, height: 28, color: '#E53935' }} viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
-          <span style={{ fontSize: "0.85rem", color: "#991b1b", fontWeight: 600 }}>Error</span>
-          <span style={{ fontSize: "0.78rem", color: "#991b1b" }}>{errorMessage}</span>
-          <button onClick={() => void fetchMoves()} style={S.retryButton}>Retry</button>
-        </div>
+          <Typography sx={{ fontSize: '0.85rem', color: '#C62828', fontWeight: 600 }}>Error</Typography>
+          <Typography sx={{ fontSize: '0.78rem', color: '#C62828', textAlign: 'center' }}>{errorMessage}</Typography>
+          <Button size="small" variant="outlined" onClick={() => void fetchMoves()}
+            sx={{ color: '#C62828', borderColor: '#FFCDD2', fontSize: '0.78rem', fontWeight: 600, textTransform: 'none', borderRadius: '8px', '&:hover': { background: '#FFF5F5', borderColor: '#E53935' } }}>
+            Retry
+          </Button>
+        </Box>
       )
     }
 
@@ -416,174 +443,245 @@ function MovePanelContent(): JSX.Element {
       <>
         {/* Out-of-sync warning */}
         {isOutOfSync && (
-          <div style={S.syncWarning}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.875, fontSize: '0.75rem', fontWeight: 500, color: '#E65100', background: '#FFF8E1', borderBottom: '1px solid #FFE0B2' }}>
             <svg style={{ width: 14, height: 14, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
-            <span>Selections have changed since these suggestions were generated.</span>
-            <button onClick={() => void fetchMoves()} style={S.syncRefreshBtn}>Refresh</button>
-          </div>
+            <Typography sx={{ fontSize: '0.75rem', flex: 1 }}>Selections changed since last fetch</Typography>
+            <Button size="small" onClick={() => void fetchMoves()}
+              sx={{ color: '#E65100', background: 'white', border: '1px solid #FFCC80', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'none', minHeight: 0, py: 0.25, px: 1, '&:hover': { background: '#FFF3E0' } }}>
+              Refresh
+            </Button>
+          </Box>
         )}
-        {/* Last move reasoning (collapsed by default) */}
+
+        {/* Last move reasoning — collapsed Accordion */}
         {lastMoveReasoning && (
-          <div style={S.lastReasoningBox}>
-            <div style={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
-              <strong>Reasoning trace from last move:</strong>
-              <button
-                onClick={() => setExpandedLastReasoning(v => !v)}
-                style={S.lastReasoningToggle}
-                title={expandedLastReasoning ? "Hide reasoning" : "Show reasoning"}
-              >
-                {expandedLastReasoning ? "▲" : "▼"}
-              </button>
-            </div>
-            {expandedLastReasoning && (
-              <pre style={S.lastReasoningContent}>{lastMoveReasoning}</pre>
-            )}
-          </div>
+          <Accordion disableGutters elevation={0} sx={{
+            mx: 1, mt: 1, borderRadius: '8px !important',
+            background: '#F9FBF2',
+            border: `1px solid ${G.border}`,
+            '&:before': { display: 'none' },
+          }}>
+            <AccordionSummary
+              expandIcon={<Box sx={{ color: G.med, display: 'flex' }}><ChevronIcon /></Box>}
+              sx={{ minHeight: 36, px: 1.5, py: 0, '& .MuiAccordionSummary-content': { my: 0.625 } }}
+            >
+              <Typography sx={{ fontSize: '0.78rem', fontWeight: 600, color: G.med }}>
+                Reasoning from last move
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ px: 1.5, pb: 1.25, pt: 0 }}>
+              <Box component="pre" sx={{
+                fontSize: '0.75rem', color: G.dark, whiteSpace: 'pre-wrap',
+                m: 0, p: 1.25, background: 'white', borderRadius: '6px',
+                border: `1px solid ${G.border}`, lineHeight: 1.55,
+                fontFamily: 'inherit',
+              }}>
+                {lastMoveReasoning}
+              </Box>
+            </AccordionDetails>
+          </Accordion>
         )}
 
         {/* Move list */}
         {applicableMoves.length === 0 ? (
-          <div style={S.emptyMsg}>No applicable moves for the current selection.</div>
+          <Typography sx={{ p: '2.5rem 1.5rem', textAlign: 'center', fontSize: '0.85rem', color: '#78909C', fontStyle: 'italic' }}>
+            No applicable moves for the current selection.
+          </Typography>
         ) : (
-          <div style={S.moveList}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', p: 1, gap: 0.75 }}>
             {applicableMoves.map((am, idx) => (
-            <div key={idx} style={S.moveCard}>
-              {/* Move row */}
-              <div style={S.moveRow}>
-                <button
-                  onClick={() => void handleApply(am, idx)}
-                  disabled={applyingIndex !== null}
-                  style={{ ...S.moveBtn, opacity: applyingIndex !== null && applyingIndex !== idx ? 0.45 : 1 }}
-                  title={`Apply "${am.move.name}"`}
-                >
-                  {applyingIndex === idx ? (
-                    <div style={{ ...S.spinner, width: 14, height: 14, borderWidth: "2px" }} />
-                  ) : (
-                    <svg style={{ width: 14, height: 14, flexShrink: 0, color: "#1B5E20" }} viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                    </svg>
+              <Paper key={idx} elevation={0} sx={{
+                display: 'flex', flexDirection: 'column',
+                background: 'white', border: `1px solid ${G.border}`,
+                borderRadius: '10px', overflow: 'hidden',
+                transition: 'box-shadow 0.15s',
+                '&:hover': { boxShadow: `0 2px 8px rgba(67,160,71,0.12)` },
+              }}>
+                {/* Move row */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, p: '6px 6px 6px 8px' }}>
+                  <Button
+                    onClick={() => void handleApply(am, idx)}
+                    disabled={applyingIndex !== null}
+                    sx={{
+                      flex: 1, display: 'flex', alignItems: 'center', gap: 1,
+                      p: '7px 10px', fontSize: '0.83rem', fontWeight: 600,
+                      color: applyingIndex !== null && applyingIndex !== idx ? '#B0BEC5' : G.dark,
+                      background: G.bg, border: `1.5px solid ${G.border}`,
+                      borderRadius: '8px', cursor: 'pointer', textTransform: 'none',
+                      justifyContent: 'flex-start',
+                      '&:hover': { background: '#DCEDC8', borderColor: G.light },
+                      '&:disabled': { background: '#F5F5F5', borderColor: '#E0E0E0' },
+                    }}
+                  >
+                    {applyingIndex === idx
+                      ? <SpinnerBox size={14} />
+                      : <Box sx={{ color: G.bright, display: 'flex', flexShrink: 0 }}><PlayIcon /></Box>
+                    }
+                    <Box sx={{ flex: 1, textAlign: 'left' }}>{am.move.name}</Box>
+                    <MoveKindBadge kind={am.move.kind} />
+                  </Button>
+
+                  <Tooltip title="View move details">
+                    <IconButton
+                      size="small"
+                      onClick={() => setInfoIndex(infoIndex === idx ? null : idx)}
+                      sx={{
+                        width: 30, height: 30, borderRadius: '8px',
+                        background: infoIndex === idx ? G.bg : 'white',
+                        border: `1.5px solid ${infoIndex === idx ? G.light : G.border}`,
+                        color: G.med, flexShrink: 0,
+                        '&:hover': { background: G.bg, borderColor: G.light },
+                      }}
+                    >
+                      <InfoIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+
+                {/* Info panel */}
+                {infoIndex === idx && (
+                  <Box sx={{ px: 1.5, pb: 1.25, pt: 0.5, background: '#FAFAFA', borderTop: `1px solid ${G.border}` }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: '0.82rem', color: G.dark, mb: 0.75, pb: 0.5, borderBottom: '1px solid #EEEEEE' }}>{am.move.name}</Typography>
+                    <Typography sx={{ fontSize: '0.78rem', mb: 0.5 }}><strong>Kind:</strong> <MoveKindBadge kind={am.move.kind} /></Typography>
+                    <Typography sx={{ fontSize: '0.78rem', mb: 0.5, lineHeight: 1.5, wordBreak: 'break-word' }}><strong>Trigger:</strong> {am.move.trigger}</Typography>
+                    <Typography sx={{ fontSize: '0.78rem', mb: 0.5, lineHeight: 1.5, wordBreak: 'break-word' }}><strong>Action:</strong> {am.move.action}</Typography>
+
+                    {am.move.examples.length > 0 && (
+                      <>
+                        <Button
+                          size="small"
+                          onClick={() => toggleExamples(idx)}
+                          endIcon={<Box sx={{ display: 'flex', transition: 'transform 0.2s', transform: expandedExamples.has(idx) ? 'rotate(180deg)' : 'rotate(0deg)' }}><ChevronIcon /></Box>}
+                          sx={{
+                            mt: 0.75, color: G.med, background: G.bg, border: `1px solid ${G.border}`,
+                            borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, textTransform: 'none',
+                            '&:hover': { background: '#DCEDC8' },
+                          }}
+                        >
+                          Examples ({am.move.examples.length})
+                        </Button>
+                        {expandedExamples.has(idx) && (
+                          <Box sx={{ mt: 0.75 }}>
+                            {am.move.examples.map((ex, exIdx) => (
+                              <ExamplePreview key={exIdx} example={ex} idx={exIdx} />
+                            ))}
+                          </Box>
+                        )}
+                      </>
+                    )}
+                  </Box>
+                )}
+
+                {/* Collapsible reasoning */}
+                <Box sx={{ borderTop: `1px solid ${G.border}` }}>
+                  <Button
+                    size="small"
+                    onClick={() => toggleReasoning(idx)}
+                    endIcon={<Box sx={{ display: 'flex', transition: 'transform 0.2s', transform: expandedReasoning.has(idx) ? 'rotate(180deg)' : 'rotate(0deg)' }}><ChevronIcon /></Box>}
+                    sx={{
+                      width: '100%', justifyContent: 'flex-start', color: '#78909C',
+                      fontSize: '0.73rem', fontWeight: 500, textTransform: 'none',
+                      px: 1.5, py: 0.5, borderRadius: 0,
+                      '&:hover': { background: G.bg, color: G.med },
+                    }}
+                  >
+                    Reasoning
+                  </Button>
+                  {expandedReasoning.has(idx) && (
+                    <Box sx={{ px: 1.5, pb: 1.25, pt: 0 }}>
+                      <Typography sx={{
+                        fontSize: '0.75rem', color: '#546E7A', lineHeight: 1.55,
+                        p: 1.25, whiteSpace: 'pre-wrap', background: '#F9FBF2',
+                        borderRadius: '6px', borderLeft: `3px solid ${G.bright}`,
+                      }}>
+                        {am.filterResponse.reasoning}
+                      </Typography>
+                    </Box>
                   )}
-                  <span style={{ flex: 1, textAlign: "left" }}>{am.move.name}</span>
-                  <MoveKindBadge kind={am.move.kind} />
-                </button>
-
-                {/* Info icon */}
-                <button
-                  style={S.infoBtn}
-                  onClick={() => setInfoIndex(infoIndex === idx ? null : idx)}
-                  title="View move details"
-                >
-                  <svg style={{ width: 15, height: 15 }} viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Info panel (expanded inline) */}
-              {infoIndex === idx && (
-                <div style={S.infoPanel}>
-                  <div style={S.infoPanelHeader}>{am.move.name}</div>
-                  <div style={S.infoRow}><strong>Kind:</strong> <MoveKindBadge kind={am.move.kind} /></div>
-                  <div style={S.infoRow}><strong>Trigger:</strong> <span>{am.move.trigger}</span></div>
-                  <div style={S.infoRow}><strong>Action:</strong> <span>{am.move.action}</span></div>
-
-                  {/* Expandable examples */}
-                  {am.move.examples.length > 0 && (
-                    <>
-                      <button onClick={() => toggleExamples(idx)} style={S.examplesToggle}>
-                        <svg style={{
-                          width: 12, height: 12, transition: "transform 0.2s",
-                          transform: expandedExamples.has(idx) ? "rotate(90deg)" : "rotate(0deg)",
-                        }} viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span>Examples ({am.move.examples.length})</span>
-                      </button>
-                      {expandedExamples.has(idx) && (
-                        <div style={{ marginTop: 6 }}>
-                          {am.move.examples.map((ex, exIdx) => (
-                            <ExamplePreview key={exIdx} example={ex} idx={exIdx} />
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* Collapsible reasoning */}
-              <button onClick={() => toggleReasoning(idx)} style={S.reasoningToggle}>
-                <svg style={{
-                  width: 12, height: 12, transition: "transform 0.2s",
-                  transform: expandedReasoning.has(idx) ? "rotate(90deg)" : "rotate(0deg)",
-                }} viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
-                <span>Reasoning</span>
-              </button>
-              {expandedReasoning.has(idx) && (
-                <div style={S.reasoningContent}>{am.filterResponse.reasoning}</div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+                </Box>
+              </Paper>
+            ))}
+          </Box>
+        )}
       </>
     )
   }
 
   return (
-    <div style={S.card} onMouseEnter={handleMouseEnter} onMouseLeave={() => setIsHovering(false)}>
-      <div style={S.header}>
-        <span style={S.headerTitle}>
-          {status === "loaded" 
+    <Box
+      sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'white' }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={() => setIsHovering(false)}
+    >
+      {/* Header */}
+      <Box sx={{
+        display: 'flex', alignItems: 'center',
+        px: 1.5, py: 0.875,
+        background: G.bg,
+        borderBottom: `1px solid ${G.border}`,
+        flexShrink: 0,
+      }}>
+        <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: G.dark, flex: 1 }}>
+          {status === "loaded"
             ? `${applicableMoves.length} Applicable Move${applicableMoves.length !== 1 ? "s" : ""}`
             : "Move Suggestions"}
-        </span>
-        <div style={{ display: "flex", gap: 6 }}>
-          <button 
-            onClick={() => setShowAllMovesModal(true)} 
-            style={S.headerIconBtn} 
-            title="View all available moves"
-          >
-            <svg style={{ width: 15, height: 15 }} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-            </svg>
-          </button>
-          <button onClick={() => void fetchMoves()} style={S.headerIconBtn} title="Refresh suggestions">
-            <svg style={{ width: 14, height: 14 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
-        </div>
-      </div>
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 0.625 }}>
+          <Tooltip title="View all available moves">
+            <IconButton size="small" onClick={() => setShowAllMovesModal(true)}
+              sx={{ width: 28, height: 28, borderRadius: '7px', border: `1px solid ${G.border}`, color: G.med, background: 'white', '&:hover': { background: G.bg } }}>
+              <ListIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Refresh suggestions">
+            <IconButton size="small" onClick={() => void fetchMoves()}
+              sx={{ width: 28, height: 28, borderRadius: '7px', border: `1px solid ${G.border}`, color: G.med, background: 'white', '&:hover': { background: G.bg } }}>
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
 
-      <div style={{ flex: 1, overflowY: "auto" }}>
+      {/* Scrollable suggestions */}
+      <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         {renderMoveSuggestions()}
-      </div>
+      </Box>
 
-      <div style={{ borderTop: "1px solid #e2e8f0" }} />
-      <CustomMoveSection />
+      {/* Custom move section */}
+      <Box sx={{ flexShrink: 0, borderTop: `1px solid ${G.border}` }}>
+        <CustomMoveSection />
+      </Box>
 
-      {showAllMovesModal && (
-        <div 
-          style={S.modalOverlay} 
-          onClick={() => setShowAllMovesModal(false)}
-        >
-          <div style={S.modalContent} onClick={e => e.stopPropagation()}>
-            <div style={S.modalHeader}>
-              <span style={S.modalTitle}>Library of Moves</span>
-              <button onClick={() => setShowAllMovesModal(false)} style={S.modalCloseBtn}>✕</button>
-            </div>
-            <div style={S.modalBody}>
-              <AllMovesList />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      {/* All moves modal */}
+      <Dialog
+        open={showAllMovesModal}
+        onClose={() => setShowAllMovesModal(false)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{ paper: { sx: { borderRadius: '16px', border: `1px solid ${G.border}`, overflow: 'hidden' } } }}
+      >
+        <Box sx={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          px: 2.5, py: 1.5, borderBottom: `1px solid ${G.border}`,
+          background: G.bg, flexShrink: 0,
+        }}>
+          <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: G.dark, letterSpacing: '-0.01em' }}>
+            Library of Moves
+          </Typography>
+          <IconButton size="small" onClick={() => setShowAllMovesModal(false)}
+            sx={{ background: 'white', border: `1px solid ${G.border}`, color: G.med, borderRadius: '8px', '&:hover': { background: '#DCEDC8' } }}>
+            <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </IconButton>
+        </Box>
+        <DialogContent sx={{ p: 0, overflowY: 'auto' }}>
+          <AllMovesList />
+        </DialogContent>
+      </Dialog>
+    </Box>
   )
 }
 
@@ -609,13 +707,7 @@ function CustomMoveSection(): JSX.Element {
     setApplying(true)
     setError("")
     try {
-      await applyMove(
-        proofDiscoveryState,
-        selections,
-        customMove,
-        dispatchProofDiscoveryAction,
-        dispatchSelections
-      )
+      await applyMove(proofDiscoveryState, selections, customMove, dispatchProofDiscoveryAction, dispatchSelections)
       setDescription("")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to apply move")
@@ -625,310 +717,76 @@ function CustomMoveSection(): JSX.Element {
   }
 
   return (
-    <div style={S.customWrapper}>
-      <div style={S.customHeader}>
-        <span style={S.customTitle}>Apply Custom Move</span>
+    <Box sx={{ p: 1.25 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.75 }}>
+        <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: G.dark, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          Custom Move
+        </Typography>
         {selections.length === 0 && (
-          <div style={S.customWarning}>
-            <svg style={{ width: 12, height: 12 }} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            <span style={{ fontSize: "0.7rem" }}>No selection</span>
-          </div>
+          <Chip label="No selection" size="small"
+            sx={{ height: 18, fontSize: '0.62rem', fontWeight: 600, background: '#FFF8E1', color: '#E65100', border: '1px solid #FFE082', borderRadius: '6px', '& .MuiChip-label': { px: '7px' } }}
+          />
         )}
-      </div>
-
-      <textarea
+      </Box>
+      <Box
+        component="textarea"
         value={description}
-        onChange={e => setDescription(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
         placeholder="Describe a move to apply..."
-        style={S.customTextarea}
         rows={2}
+        sx={{
+          width: '100%', fontSize: '0.78rem', color: '#374151',
+          border: `1.5px solid ${G.border}`, borderRadius: '8px',
+          p: '7px 9px', resize: 'vertical',
+          fontFamily: 'inherit', boxSizing: 'border-box',
+          outline: 'none', background: 'white', lineHeight: 1.4,
+          boxShadow: `inset 0 1px 2px rgba(0,0,0,0.03)`,
+          display: 'block',
+          '&:focus': { borderColor: G.light },
+        }}
       />
-      <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 8 }}>
-        <select
+      <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center', mt: 0.75 }}>
+        <Select
+          size="small"
           value={kind}
           onChange={e => setKind(e.target.value as import("../core/ProofDiscoveryMove").MoveKind)}
-          style={S.customSelect}
+          sx={{
+            flex: 1, fontSize: '0.72rem', fontWeight: 600, color: G.dark,
+            background: 'white',
+            '& .MuiOutlinedInput-notchedOutline': { borderColor: G.border },
+            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: G.light },
+            '& .MuiSelect-select': { py: '5px', px: '8px' },
+          }}
         >
-          <option value="strengthening">strengthening</option>
-          <option value="weakening">weakening</option>
-          <option value="equivalence">equivalence</option>
-        </select>
-        <button
+          <MenuItem value="strengthening" sx={{ fontSize: '0.75rem' }}>strengthening</MenuItem>
+          <MenuItem value="weakening" sx={{ fontSize: '0.75rem' }}>weakening</MenuItem>
+          <MenuItem value="equivalence" sx={{ fontSize: '0.75rem' }}>equivalence</MenuItem>
+        </Select>
+        <Button
           onClick={() => void handleApply()}
           disabled={applying || !description.trim()}
-          style={{ ...S.customApplyBtn, opacity: applying || !description.trim() ? 0.5 : 1 }}
+          size="small"
+          sx={{
+            display: 'flex', alignItems: 'center', gap: 0.75,
+            px: 1.5, fontSize: '0.75rem', fontWeight: 700,
+            color: 'white', background: `linear-gradient(180deg, ${G.bright}, ${G.med})`,
+            borderRadius: '8px', textTransform: 'none', flexShrink: 0,
+            boxShadow: `0 2px 4px rgba(67,160,71,0.25)`,
+            '&:hover': { background: `linear-gradient(180deg, ${G.med}, ${G.dark})` },
+            '&:disabled': { background: '#E0E0E0', color: '#9E9E9E', boxShadow: 'none' },
+          }}
         >
-          {applying ? <div style={{ ...S.spinner, width: 12, height: 12, borderWidth: "2px" }} /> : null}
+          {applying && <SpinnerBox size={12} />}
           Apply
-        </button>
-      </div>
-      {error && <div style={S.customError}>{error}</div>}
-    </div>
+        </Button>
+      </Box>
+      {error && (
+        <Typography sx={{ mt: 0.5, fontSize: '0.7rem', color: '#C62828', p: '4px 8px', background: '#FFF5F5', border: '1px solid #FFCDD2', borderRadius: '6px' }}>
+          {error}
+        </Typography>
+      )}
+    </Box>
   )
-}
-
-// ─── Styles ────────────────────────────────────────────────────────────────────
-// Designed to match the proof state card (white bg, rounded, shadow) with true fern/forest green accent
-
-const S: Record<string, React.CSSProperties> = {
-  // Card wrapper — mirrors proofStateContent
-  card: {
-    background: "white",
-    borderRadius: 16,
-    boxShadow: "0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)",
-    border: "1px solid #e2e8f0",
-    display: "flex",
-    flexDirection: "column",
-    flex: 1,
-    padding: "0",
-    overflow: "hidden",
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-  },
-  placeholderInner: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    padding: "3rem 1.5rem",
-    textAlign: "center",
-    minHeight: 180,
-    flex: 1,
-  },
-  placeholderTitle: {
-    fontSize: "0.95rem",
-    fontWeight: 600,
-    color: "#0D2B11",
-  },
-  placeholderSub: {
-    fontSize: "0.8rem",
-    color: "#6b7280",
-    maxWidth: 280,
-    lineHeight: 1.5,
-  },
-  spinner: {
-    width: 24, height: 24,
-    border: "3px solid #E2F0E2",
-    borderTopColor: "#1B5E20",
-    borderRadius: "50%",
-    animation: "move-panel-spin 0.8s linear infinite",
-  },
-  retryButton: {
-    marginTop: 8, padding: "6px 16px", fontSize: "0.8rem", fontWeight: 600,
-    color: "#991b1b", background: "white", border: "1.5px solid #fecaca",
-    borderRadius: 8, cursor: "pointer", transition: "all 0.15s",
-  },
-
-  // Header
-  header: {
-    display: "flex", justifyContent: "space-between", alignItems: "center",
-    padding: "0.85rem 1rem",
-    background: "#F1F8F1",
-    borderBottom: "1px solid #E2F0E2",
-  },
-  headerTitle: {
-    fontSize: "0.85rem", fontWeight: 700, color: "#0D2B11",
-  },
-  countBadge: {
-    fontSize: "0.75rem", fontWeight: 700, color: "#1B5E20",
-    background: "#E2F0E2", border: "1px solid #A5D6A7",
-    borderRadius: 9999, padding: "0 8px", lineHeight: "1.6",
-  },
-  headerIconBtn: {
-    display: "flex", alignItems: "center", justifyContent: "center",
-    width: 28, height: 28, background: "white",
-    border: "1px solid #E2F0E2", borderRadius: 8,
-    cursor: "pointer", color: "#1B5E20", transition: "all 0.15s",
-  },
-
-  // Sync warning
-  syncWarning: {
-    display: "flex", alignItems: "center", gap: 8,
-    padding: "8px 12px", fontSize: "0.75rem", fontWeight: 500,
-    color: "#92400e", background: "#fffbeb",
-    borderBottom: "1px solid #fef3c7",
-  },
-  syncRefreshBtn: {
-    marginLeft: "auto", padding: "3px 10px", fontSize: "0.72rem", fontWeight: 700,
-    color: "#92400e", background: "white", border: "1.5px solid #fcd34d",
-    borderRadius: 6, cursor: "pointer", flexShrink: 0,
-  },
-
-  // Move list
-  moveList: {
-    display: "flex", flexDirection: "column",
-    padding: "8px",
-    gap: "8px",
-  },
-  moveCard: {
-    display: "flex", flexDirection: "column",
-    background: "white",
-    border: "1px solid #F1F8F1",
-    borderRadius: 12,
-    padding: "8px",
-    transition: "transform 0.1s, box-shadow 0.1s",
-  },
-  moveRow: {
-    display: "flex", alignItems: "center", gap: 6,
-  },
-  moveBtn: {
-    flex: 1, display: "flex", alignItems: "center", gap: 8,
-    padding: "10px 12px", fontSize: "0.85rem", fontWeight: 600,
-    color: "#0D2B11", background: "#F1F8F1",
-    border: "1.5px solid #A5D6A7", borderRadius: 10,
-    cursor: "pointer", transition: "all 0.15s",
-    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-  },
-  infoBtn: {
-    display: "flex", alignItems: "center", justifyContent: "center",
-    width: 32, height: 32, borderRadius: 10,
-    background: "white", border: "1.5px solid #A5D6A7",
-    cursor: "pointer", color: "#1B5E20", flexShrink: 0,
-    transition: "all 0.15s",
-  },
-
-  // Info panel
-  infoPanel: {
-    marginTop: 8, padding: "12px",
-    background: "#f9fafb", border: "1.5px solid #f3f4f6",
-    borderRadius: 10, fontSize: "0.78rem", color: "#374151",
-  },
-  infoPanelHeader: {
-    fontWeight: 700, fontSize: "0.82rem", color: "#0D2B11", marginBottom: 8,
-    borderBottom: "1px solid #e5e7eb", paddingBottom: "4px",
-  },
-  infoRow: {
-    marginBottom: 6, lineHeight: 1.5, wordBreak: "break-word",
-  },
-  examplesToggle: {
-    display: "flex", alignItems: "center", gap: 4,
-    marginTop: 8, padding: "4px 8px", background: "#F1F8F1", border: "1px solid #A5D6A7",
-    borderRadius: 6, cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, color: "#0D2B11",
-  },
-
-  // Reasoning
-  reasoningToggle: {
-    display: "flex", alignItems: "center", gap: 6,
-    padding: "6px 8px", background: "transparent", border: "none",
-    cursor: "pointer", fontSize: "0.75rem", fontWeight: 500, color: "#6b7280",
-    borderRadius: 6, marginTop: 4, transition: "background 0.15s",
-  },
-  reasoningContent: {
-    fontSize: "0.78rem", color: "#4b5563", lineHeight: 1.5,
-    padding: "8px 12px", whiteSpace: "pre-wrap",
-    background: "#f9fafb", borderRadius: 8, marginTop: 4,
-    borderLeft: "3px solid #2E7D32",
-  },
-  lastReasoningBox: {
-    background: "#f3f4f6",
-    border: "1px solid #d1d5db",
-    borderRadius: 8,
-    padding: "10px 12px",
-    margin: "8px",
-    fontSize: "0.85rem",
-    color: "#374151",
-  },
-  lastReasoningContent: {
-    whiteSpace: "pre-wrap",
-    marginTop: "6px",
-    fontSize: "0.82rem",
-    color: "#1f2937",
-  },
-  lastReasoningToggle: {
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "0.85rem",
-    color: "#1B5E20",
-    padding: "2px 6px",
-    lineHeight: 1,
-  },
-  emptyMsg: {
-    padding: "3rem 1.5rem", textAlign: "center",
-    fontSize: "0.85rem", color: "#6b7280", fontStyle: "italic",
-  },
-  customWrapper: {
-    position: "relative" as const,
-    margin: "12px 10px 10px",
-    padding: "10px",
-    background: "#F1F8F1",
-    border: "1.5px solid #A5D6A7",
-    borderRadius: 12,
-  },
-  customHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  customTitle: {
-    fontSize: "0.72rem",
-    fontWeight: 800,
-    color: "#0D2B11",
-    letterSpacing: "0.05em",
-    textTransform: "uppercase",
-  },
-  customTextarea: {
-    width: "100%", fontSize: "0.78rem", color: "#374151",
-    border: "1.5px solid #A5D6A7", borderRadius: 8,
-    padding: "6px 8px", resize: "vertical" as const,
-    fontFamily: "inherit", boxSizing: "border-box" as const,
-    outline: "none", background: "white", lineHeight: 1.4,
-    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.03)",
-  },
-  customSelect: {
-    flex: 1, fontSize: "0.72rem", color: "#0D2B11",
-    border: "1.5px solid #A5D6A7", borderRadius: 8,
-    padding: "4px 8px", background: "white",
-    cursor: "pointer", outline: "none",
-    fontWeight: 600,
-  },
-  customApplyBtn: {
-    display: "flex", alignItems: "center", gap: 6,
-    padding: "4px 12px", fontSize: "0.75rem", fontWeight: 700,
-    color: "white", background: "#2E7D32",
-    border: "none", borderRadius: 8, cursor: "pointer",
-    flexShrink: 0 as const, boxShadow: "0 2px 4px rgba(46,125,50,0.2)",
-  },
-  customError: {
-    marginTop: 6, fontSize: "0.7rem", color: "#991b1b",
-    padding: "4px 8px", background: "#fff1f2",
-    border: "1px solid #fecaca", borderRadius: 6,
-  },
-  customWarning: {
-    display: "flex", alignItems: "center", gap: 4,
-    fontSize: "0.65rem", fontWeight: 700,
-    color: "#92400e", background: "#fffbeb",
-    border: "1px solid #fde68a", padding: "2px 6px", borderRadius: 6,
-  },
-  modalOverlay: {
-    position: "fixed" as const, inset: 0, background: "rgba(0,0,0,0.4)", 
-    zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem",
-    backdropFilter: "blur(2px)",
-  },
-  modalContent: {
-    background: "white", borderRadius: 20, width: "100%", maxWidth: 600,
-    maxHeight: "85vh", display: "flex", flexDirection: "column",
-    boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", overflow: "hidden",
-    border: "1px solid #e2e8f0",
-  },
-  modalHeader: {
-    display: "flex", justifyContent: "space-between", alignItems: "center",
-    padding: "1.25rem 1.5rem", borderBottom: "1px solid #f1f5f9",
-  },
-  modalTitle: {
-    fontSize: "1.1rem", fontWeight: 800, color: "#0f172a", letterSpacing: "-0.01em",
-  },
-  modalCloseBtn: {
-    background: "#f1f5f9", border: "none", cursor: "pointer",
-    width: 28, height: 28, borderRadius: "50%",
-    fontSize: "0.8rem", color: "#64748b", display: "flex", alignItems: "center", justifyContent: "center",
-  },
-  modalBody: {
-    overflowY: "auto" as const, flex: 1, padding: "1rem 0",
-  },
 }
 
 // ─── All Moves List ────────────────────────────────────────────────────────
@@ -941,128 +799,118 @@ function AllMovesList(): JSX.Element {
   const selected = selectedIdx !== null ? moves[selectedIdx] : null
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
-      <div style={{ padding: "0 12px 12px 12px" }}>
-        <button
+    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ p: '12px 16px 8px' }}>
+        <Button
           onClick={() => setShowGenerator(true)}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            width: "100%", padding: "10px", borderRadius: 10,
-            background: "#2E7D32", color: "white", border: "none", cursor: "pointer",
-            fontSize: "0.85rem", fontWeight: 700, boxShadow: "0 2px 4px rgba(46,125,50,0.2)",
+          fullWidth
+          sx={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75,
+            p: '10px', borderRadius: '10px',
+            background: `linear-gradient(180deg, ${G.bright}, ${G.med})`,
+            color: 'white', border: 'none', textTransform: 'none',
+            fontSize: '0.85rem', fontWeight: 700,
+            boxShadow: `0 2px 8px rgba(67,160,71,0.25)`,
+            '&:hover': { background: `linear-gradient(180deg, ${G.med}, ${G.dark})` },
           }}
         >
           <svg style={{ width: 16, height: 16 }} viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
           </svg>
           Create New Move Definition
-        </button>
-      </div>
+        </Button>
+      </Box>
 
-      <div style={{ borderTop: "1px solid #f3f4f6" }}>
+      <Box sx={{ borderTop: `1px solid ${G.border}` }}>
         {moves.map((move, idx) => (
-          <div key={idx} style={{ borderBottom: "1px solid #f3f4f6" }}>
-            <button
+          <Box key={idx} sx={{ borderBottom: `1px solid ${G.border}` }}>
+            <Button
               onClick={() => { setSelectedIdx(selectedIdx === idx ? null : idx); setExamplesOpen(false) }}
-              style={{
-                display: "flex", alignItems: "center", gap: 7,
-                width: "100%", padding: "12px 14px", border: "none",
-                background: selectedIdx === idx ? "#F1F8F1" : "transparent",
-                cursor: "pointer", textAlign: "left",
+              fullWidth
+              sx={{
+                display: 'flex', alignItems: 'center', gap: 1,
+                px: 1.75, py: 1.25, border: 'none',
+                background: selectedIdx === idx ? G.bg : 'transparent',
+                justifyContent: 'flex-start', textTransform: 'none',
+                borderRadius: 0,
+                '&:hover': { background: G.bg },
               }}
             >
-              <div style={{ flex: 1 }}>
-                <div style={{ 
-                  fontSize: "0.85rem", 
-                  fontWeight: selectedIdx === idx ? 700 : 600,
-                  color: selectedIdx === idx ? "#0D2B11" : "#374151" 
-                }}>
+              <Box sx={{ flex: 1, textAlign: 'left' }}>
+                <Typography sx={{ fontSize: '0.85rem', fontWeight: selectedIdx === idx ? 700 : 600, color: selectedIdx === idx ? G.dark : '#374151' }}>
                   {move.name}
-                </div>
-              </div>
+                </Typography>
+              </Box>
               <MoveKindBadge kind={move.kind} />
-              <svg style={{
-                width: 14, height: 14, flexShrink: 0, color: "#9ca3af",
-                transition: "transform 0.2s",
-                transform: selectedIdx === idx ? "rotate(90deg)" : "rotate(0deg)",
-              }} viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
-            </button>
+              <Box sx={{ display: 'flex', color: '#9E9E9E', transition: 'transform 0.2s', transform: selectedIdx === idx ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                <ChevronIcon />
+              </Box>
+            </Button>
             {selectedIdx === idx && selected && (
-              <div style={{
-                padding: "12px 16px",
-                background: "#f9fafb",
-                fontSize: "0.8rem", color: "#374151", lineHeight: 1.5,
-              }}>
-                <div style={{ marginBottom: 6, wordBreak: "break-word" }}><strong>Trigger:</strong> {selected.trigger || <em style={{ color: "#9ca3af" }}>none</em>}</div>
-                <div style={{ wordBreak: "break-word" }}><strong>Action:</strong> {selected.action}</div>
+              <Box sx={{ px: 2, pb: 1.5, background: '#FAFAFA', fontSize: '0.8rem', color: '#374151', lineHeight: 1.5 }}>
+                <Typography sx={{ mb: 0.75, fontSize: '0.78rem', wordBreak: 'break-word' }}>
+                  <strong>Trigger:</strong> {selected.trigger || <em style={{ color: '#9E9E9E' }}>none</em>}
+                </Typography>
+                <Typography sx={{ mb: 0.5, fontSize: '0.78rem', wordBreak: 'break-word' }}>
+                  <strong>Action:</strong> {selected.action}
+                </Typography>
                 {selected.examples.length > 0 && (
                   <>
-                    <button onClick={() => setExamplesOpen(v => !v)} style={{
-                      display: "flex", alignItems: "center", gap: 4, marginTop: 10,
-                      padding: "6px 10px", background: "#F1F8F1", border: "1px solid #E2F0E2",
-                      borderRadius: 6, cursor: "pointer", fontSize: "0.75rem", fontWeight: 700, color: "#1B5E20",
-                    }}>
-                      <svg style={{
-                        width: 12, height: 12, transition: "transform 0.2s",
-                        transform: examplesOpen ? "rotate(90deg)" : "rotate(0deg)",
-                      }} viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                      </svg>
+                    <Button
+                      size="small"
+                      onClick={() => setExamplesOpen(v => !v)}
+                      endIcon={<Box sx={{ display: 'flex', transition: 'transform 0.2s', transform: examplesOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}><ChevronIcon /></Box>}
+                      sx={{
+                        mt: 1, color: G.med, background: G.bg, border: `1px solid ${G.border}`,
+                        borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'none',
+                        '&:hover': { background: '#DCEDC8' },
+                      }}
+                    >
                       Examples ({selected.examples.length})
-                    </button>
+                    </Button>
                     {examplesOpen && (
-                      <div style={{ marginTop: 12 }}>
+                      <Box sx={{ mt: 1.25 }}>
                         {selected.examples.map((ex, exIdx) => (
                           <ExamplePreview key={exIdx} example={ex} idx={exIdx} />
                         ))}
-                      </div>
+                      </Box>
                     )}
                   </>
                 )}
-              </div>
+              </Box>
             )}
-          </div>
+          </Box>
         ))}
-      </div>
+      </Box>
 
-      {showGenerator && (
-        <div
-          style={{
-            position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1100,
-            display: "flex", alignItems: "stretch", justifyContent: "center", padding: "1.5rem",
-          }}
-          onClick={() => setShowGenerator(false)}
-        >
-          <div
-            style={{
-              background: "white", borderRadius: 16, width: "100%", maxWidth: 1200,
-              display: "flex", flexDirection: "column",
-              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)", overflow: "hidden",
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "1rem 1.5rem", borderBottom: "1.5px solid #e2e8f0",
-              background: "white", flexShrink: 0,
-            }}>
-              <span style={{ fontWeight: 800, fontSize: "1rem", color: "#0f172a", letterSpacing: "-0.01em" }}>Live Move Generator</span>
-              <button
-                onClick={() => setShowGenerator(false)}
-                style={{ background: "#f1f5f9", border: "none", cursor: "pointer",
-                  width: 32, height: 32, borderRadius: "50%",
-                  fontSize: "0.9rem", color: "#64748b", display: "flex", alignItems: "center", justifyContent: "center" }}
-              >✕</button>
-            </div>
-            <div style={{ overflowY: "auto", flex: 1, padding: "1.5rem", background: "#f8fafc" }}>
-              <MoveGenerator />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      {/* Move generator dialog */}
+      <Dialog
+        open={showGenerator}
+        onClose={() => setShowGenerator(false)}
+        maxWidth="lg"
+        fullWidth
+        slotProps={{ paper: { sx: { borderRadius: '16px', border: `1px solid ${G.border}`, height: '85vh', overflow: 'hidden' } } }}
+      >
+        <Box sx={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          px: 2.5, py: 1.5, borderBottom: `1px solid ${G.border}`,
+          background: G.bg, flexShrink: 0,
+        }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: G.dark, letterSpacing: '-0.01em' }}>
+            Live Move Generator
+          </Typography>
+          <IconButton size="small" onClick={() => setShowGenerator(false)}
+            sx={{ background: 'white', border: `1px solid ${G.border}`, color: G.med, borderRadius: '8px', '&:hover': { background: '#DCEDC8' } }}>
+            <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </IconButton>
+        </Box>
+        <DialogContent sx={{ overflowY: 'auto', p: 3, background: '#F8FAF5' }}>
+          <MoveGenerator />
+        </DialogContent>
+      </Dialog>
+    </Box>
   )
 }
 
