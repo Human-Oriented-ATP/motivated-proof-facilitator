@@ -1,4 +1,6 @@
-export const unfoldDefinitionMove = {
+import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove";
+
+export const unfoldDefinitionMove: ProofDiscoveryMove = {
   "name": "Unfold the definition",
   "kind": "equivalence",
   "trigger": "This move is relevant when there is a single selection in the proof state containing a definition.",

@@ -19,6 +19,10 @@ import { ProofDiscoveryStateContext, ProofStateIdContext } from "../core/ProofDi
 import { ProofStateWithLibraryResult as ProofStateComponent } from "./ProofState"
 import { queryMove } from "../endpoints/Move"
 import MoveGenerator from "../../tests/MoveGenerator"
+import { instantiateMetavariablesMove } from "../prompts/instantiateMetavariables"
+import { unfoldDefinitionMove } from "../prompts/unfoldDefinition"
+import { simplifyExpressionMove } from "../prompts/simplifyExpression"
+import { isolateVariableMove } from "../prompts/isolateVariable"
 
 const moves: ProofDiscoveryMove[] = [
     goalConjunctionMove,
@@ -31,7 +35,11 @@ const moves: ProofDiscoveryMove[] = [
     hypothesisConjunctionMove,
     hypothesisDisjunctionMove,
     hypothesisExistentialMove,
-    rewritingMove
+    rewritingMove,
+    instantiateMetavariablesMove,
+    unfoldDefinitionMove,
+    simplifyExpressionMove,
+    isolateVariableMove
 ]
 
 const FilterResponseSchema = z.object({
