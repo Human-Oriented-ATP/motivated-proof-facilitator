@@ -51,7 +51,7 @@ export default function RenderFormalizer(): JSX.Element {
 
       console.log("Data: ", data)
 
-      const proofState = ProofStateSchema.parse(data)
+      const proofState = ProofStateSchema.parse([data])
 
       // Initialize the proof discovery state with the received proof state
       dispatch({

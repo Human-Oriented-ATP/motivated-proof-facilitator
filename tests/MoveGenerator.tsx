@@ -144,7 +144,7 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
 
       const data: unknown = await response.json()
       console.log("Formalization response:", data)
-      const proofState = ProofStateSchema.parse(data)
+      const proofState = ProofStateSchema.parse([data])
 
       let proofStateWithLibrary: ProofStateWithLibraryResultType = { proofState }
 
