@@ -298,6 +298,7 @@ function MovePanelContent(): JSX.Element {
   const [expandedExamples, setExpandedExamples] = useState<Set<number>>(new Set())
   const [showAllMovesModal, setShowAllMovesModal] = useState(false)
   const [lastMoveReasoning, setLastMoveReasoning] = useState<string | null>(null)
+  const [expandedLastReasoning, setExpandedLastReasoning] = useState(false)
 
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -455,11 +456,22 @@ function MovePanelContent(): JSX.Element {
             <button onClick={() => void fetchMoves()} style={S.syncRefreshBtn}>Refresh</button>
           </div>
         )}
-        {/* Last move reasoning */}
+        {/* Last move reasoning (collapsed by default) */}
         {lastMoveReasoning && (
           <div style={S.lastReasoningBox}>
-            <strong>Reasoning trace from last move:</strong>
-            <pre style={S.lastReasoningContent}>{lastMoveReasoning}</pre>
+            <div style={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
+              <strong>Reasoning trace from last move:</strong>
+              <button
+                onClick={() => setExpandedLastReasoning(v => !v)}
+                style={S.lastReasoningToggle}
+                title={expandedLastReasoning ? "Hide reasoning" : "Show reasoning"}
+              >
+                {expandedLastReasoning ? "▲" : "▼"}
+              </button>
+            </div>
+            {expandedLastReasoning && (
+              <pre style={S.lastReasoningContent}>{lastMoveReasoning}</pre>
+            )}
           </div>
         )}
 
@@ -855,6 +867,15 @@ const S: Record<string, React.CSSProperties> = {
     marginTop: "6px",
     fontSize: "0.82rem",
     color: "#1f2937",
+  },
+  lastReasoningToggle: {
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "0.85rem",
+    color: "#1B5E20",
+    padding: "2px 6px",
+    lineHeight: 1,
   },
   emptyMsg: {
     padding: "3rem 1.5rem", textAlign: "center",
