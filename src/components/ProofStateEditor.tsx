@@ -47,7 +47,7 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
 
   // Hypothesis form state
   const [hypLabel, setHypLabel] = useState("")
-  const [hypMode, setHypMode] = useState<"formalize" | "build">("formalize")
+  const [hypMode, setHypMode] = useState<"formalize" | "build">("build")
   const [hypText, setHypText] = useState("")
   const [hypStatement, setHypStatement] = useState<Statement>("")
   const [hypLoading, setHypLoading] = useState(false)
@@ -55,7 +55,7 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
 
   // Goal form state
   const [goalLabel, setGoalLabel] = useState("")
-  const [goalMode, setGoalMode] = useState<"formalize" | "build">("formalize")
+  const [goalMode, setGoalMode] = useState<"formalize" | "build">("build")
   const [goalText, setGoalText] = useState("")
   const [goalStatement, setGoalStatement] = useState<Statement>("")
   const [goalLoading, setGoalLoading] = useState(false)
@@ -134,9 +134,9 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
     if (section === "variable") {
       setVarName(""); setVarKind("free"); setVarDescription(""); setVarLetValue("")
     } else if (section === "hypothesis") {
-      setHypLabel(""); setHypMode("formalize"); setHypText(""); setHypStatement(""); setHypError(null)
+      setHypLabel(""); setHypMode("build"); setHypText(""); setHypStatement(""); setHypError(null)
     } else {
-      setGoalLabel(""); setGoalMode("formalize"); setGoalText(""); setGoalStatement(""); setGoalError(null)
+      setGoalLabel(""); setGoalMode("build"); setGoalText(""); setGoalStatement(""); setGoalError(null)
     }
   }
 
@@ -319,8 +319,8 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
           placeholder="e.g. hyp_continuity" style={es.input} autoFocus />
       </div>
       <div style={es.modeToggle}>
-        <button onClick={() => setHypMode("formalize")} style={hypMode === "formalize" ? es.modeActive : es.modeInactive}>Formalize</button>
-        <button onClick={() => setHypMode("build")} style={hypMode === "build" ? es.modeActive : es.modeInactive}>Build</button>
+        <button onClick={() => setHypMode("build")} style={hypMode === "build" ? es.modeActive : es.modeInactive}>Build interactively</button>
+        <button onClick={() => setHypMode("formalize")} style={hypMode === "formalize" ? es.modeActive : es.modeInactive}>Autoformalize</button>
       </div>
       {hypMode === "formalize" ? (
         <div>
@@ -358,8 +358,8 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
           placeholder="e.g. main_goal" style={es.input} autoFocus />
       </div>
       <div style={es.modeToggle}>
-        <button onClick={() => setGoalMode("formalize")} style={goalMode === "formalize" ? es.modeActive : es.modeInactive}>Formalize</button>
-        <button onClick={() => setGoalMode("build")} style={goalMode === "build" ? es.modeActive : es.modeInactive}>Build</button>
+        <button onClick={() => setGoalMode("build")} style={goalMode === "build" ? es.modeActive : es.modeInactive}>Build interactively</button>
+        <button onClick={() => setGoalMode("formalize")} style={goalMode === "formalize" ? es.modeActive : es.modeInactive}>Autoformalize</button>
       </div>
       {goalMode === "formalize" ? (
         <div>
