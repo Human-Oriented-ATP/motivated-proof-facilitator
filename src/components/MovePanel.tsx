@@ -2,7 +2,7 @@ import React, { JSX, useContext, useState, useEffect, useRef, useCallback } from
 import { z } from "zod"
 import { ProofStateSelection, ProofStateSelectionContext } from "../core/ProofStateSelectionContext"
 import { ProofState, ProofStateSchema } from "../core/ProofStateZod"
-import { getCurrentProofState, ProofDiscoveryState } from "../core/ProofDiscoveryState"
+import { getCurrentProofState, ProofDiscoveryAction, ProofDiscoveryState } from "../core/ProofDiscoveryState"
 import { ProofDiscoveryMove, ProofDiscoveryMoveExample } from "../core/ProofDiscoveryMove"
 import { goalConjunctionMove } from "../prompts/goalConjunction"
 import { goalDisjunctionMove } from "../prompts/goalDisjunction"
@@ -19,6 +19,10 @@ import { ProofDiscoveryStateContext, ProofStateIdContext } from "../core/ProofDi
 import { ProofStateWithLibraryResult as ProofStateComponent } from "./ProofState"
 import { queryMove } from "../endpoints/Move"
 import MoveGenerator from "../../tests/MoveGenerator"
+import { instantiateMetavariablesMove } from "../prompts/instantiateMetavariables"
+import { unfoldDefinitionMove } from "../prompts/unfoldDefinition"
+import { simplifyExpressionMove } from "../prompts/simplifyExpression"
+import { isolateVariableMove } from "../prompts/isolateVariable"
 
 const moves: ProofDiscoveryMove[] = [
     goalConjunctionMove,
@@ -31,7 +35,11 @@ const moves: ProofDiscoveryMove[] = [
     hypothesisConjunctionMove,
     hypothesisDisjunctionMove,
     hypothesisExistentialMove,
-    rewritingMove
+    rewritingMove,
+    instantiateMetavariablesMove,
+    unfoldDefinitionMove,
+    simplifyExpressionMove,
+    isolateVariableMove
 ]
 
 const FilterResponseSchema = z.object({
@@ -88,9 +96,14 @@ export async function applyMove(
   proofDiscoveryState: ProofDiscoveryState,
   selections: ProofStateSelection[],
   move: ProofDiscoveryMove,
-  dispatchProofDiscoveryAction: React.Dispatch<import("../core/ProofDiscoveryState").ProofDiscoveryAction>
+  dispatchProofDiscoveryAction: React.Dispatch<ProofDiscoveryAction>,
+  dispatchSelections: React.Dispatch<any>
 ): Promise<string | undefined> {
-  const { proofState: newProofState, reasoning } = await queryMove(getCurrentProofState(proofDiscoveryState), move, selections)
+  const { proofState: newProofState, reasoning } = await queryMove(
+    getCurrentProofState(proofDiscoveryState),
+    move,
+    selections
+  )
 
   dispatchProofDiscoveryAction({
     action: "transition",
@@ -98,9 +111,10 @@ export async function applyMove(
     move: {
       kind: move.kind,
       description: move.name,
-      reasoning
-    }
+      reasoning,
+    },
   })
+  dispatchSelections({ type: 'CLEAR_ALL_SELECTIONS' })
 
   return reasoning
 }
@@ -272,7 +286,7 @@ function MovePanelContent(): JSX.Element {
   useEffect(ensureKeyframe, [])
 
   const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
-  const { selections } = useContext(ProofStateSelectionContext)
+  const { selections, dispatch: dispatchSelections } = useContext(ProofStateSelectionContext)
 
   const [status, setStatus] = useState<MovePanelStatus>("idle")
   const [applicableMoves, setApplicableMoves] = useState<ApplicableMove[]>([])
@@ -340,7 +354,13 @@ function MovePanelContent(): JSX.Element {
   const handleApply = async (am: ApplicableMove, idx: number) => {
     setApplyingIndex(idx)
     try {
-      const reasoning = await applyMove(proofDiscoveryState, selections, am.move, dispatchProofDiscoveryAction)
+      const reasoning = await applyMove(
+        proofDiscoveryState,
+        selections,
+        am.move,
+        dispatchProofDiscoveryAction,
+        dispatchSelections
+      )
       setLastMoveReasoning(reasoning ?? null)
       setStatus("idle")
       setApplicableMoves([])
@@ -591,7 +611,7 @@ function MovePanelContent(): JSX.Element {
 
 function CustomMoveSection(): JSX.Element {
   const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
-  const { selections } = useContext(ProofStateSelectionContext)
+  const { selections, dispatch: dispatchSelections } = useContext(ProofStateSelectionContext)
   const [description, setDescription] = useState("")
   const [kind, setKind] = useState<import("../core/ProofDiscoveryMove").MoveKind>("strengthening")
   const [applying, setApplying] = useState(false)
@@ -609,7 +629,13 @@ function CustomMoveSection(): JSX.Element {
     setApplying(true)
     setError("")
     try {
-      await applyMove(proofDiscoveryState, selections, customMove, dispatchProofDiscoveryAction)
+      await applyMove(
+        proofDiscoveryState,
+        selections,
+        customMove,
+        dispatchProofDiscoveryAction,
+        dispatchSelections
+      )
       setDescription("")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to apply move")
