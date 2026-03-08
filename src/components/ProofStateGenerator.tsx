@@ -6,7 +6,6 @@ import Graph from "graphology"
 
 export type ProofStateGeneratorProps = {
   onGenerated: (state: ProofDiscoveryState) => void
-  onLoadDemo?: () => void
 }
 
 /** Render a live Typst preview for $...$-delimited math in the input string. */
@@ -80,7 +79,7 @@ function TypstPreview({ input }: { input: string }): JSX.Element | null {
   )
 }
 
-export function ProofStateGenerator({ onGenerated, onLoadDemo }: ProofStateGeneratorProps): JSX.Element {
+export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): JSX.Element {
   const [inputStatement, setInputStatement] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -196,14 +195,6 @@ export function ProofStateGenerator({ onGenerated, onLoadDemo }: ProofStateGener
           )}
 
           <div style={styles.buttonRow}>
-          {onLoadDemo && (
-            <button
-              onClick={onLoadDemo}
-              style={{ ...styles.button, ...styles.buttonOutlined }}
-            >
-              Try with Example
-            </button>
-          )}
           <button
             onClick={handleFormalize}
             disabled={isLoading || !inputStatement.trim()}
@@ -414,13 +405,6 @@ const styles: { [key: string]: React.CSSProperties } = {
   buttonRow: {
     display: "flex",
     justifyContent: "center",
-    gap: "0.75rem",
-  },
-  buttonOutlined: {
-    background: "transparent",
-    border: "1.5px solid #bfdbfe",
-    color: "#1d4ed8",
-    boxShadow: "none",
   },
   button: {
     width: "auto",

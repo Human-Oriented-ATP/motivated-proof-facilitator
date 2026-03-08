@@ -4,94 +4,94 @@ import { ProofDiscoveryEnvironment } from "./components/ProofDiscoveryEnvironmen
 import { ProofStateGenerator } from "./components/ProofStateGenerator"
 import { ProofStateSelectionContext, proofStateSelectionReducer } from "./core/ProofStateSelectionContext"
 import TypstContextProvider from "./components/TypstContext"
-import { Box, Button, Chip, Tooltip, Typography } from "@mui/material"
+import { Box, Button, Chip, Typography } from "@mui/material"
 import { sampleProofDiscoveryState } from "../tests/samples/ProofDiscoveryState"
 
-/** Load the sample proof state when the URL contains ?demo */
-const isDemoMode = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("demo")
-
 export default function App(): JSX.Element {
-  const [initialState, setInitialState] = useState<ProofDiscoveryState | null>(
-    isDemoMode ? sampleProofDiscoveryState : null
-  )
+  const [initialState, setInitialState] = useState<ProofDiscoveryState | null>(sampleProofDiscoveryState)
   const [selections, selectionsDispatch] = useReducer(proofStateSelectionReducer, [])
-
-  const handleNewStatement = () => {
-    setInitialState(null)
-    selectionsDispatch({ type: "CLEAR_ALL_SELECTIONS" })
-    // Remove ?demo from URL if present
-    if (isDemoMode) {
-      const url = new URL(window.location.href)
-      url.searchParams.delete("demo")
-      window.history.replaceState({}, "", url.toString())
-    }
-  }
 
   if (initialState) {
     return (
       <ProofStateSelectionContext.Provider value={{ selections, dispatch: selectionsDispatch }}>
         <TypstContextProvider>
-          <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
-
+          <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
             {/* ── App Header ── */}
             <Box sx={{
-              display: "flex", alignItems: "center", gap: 2,
-              px: 2.5, height: 52, flexShrink: 0,
-              background: "linear-gradient(180deg, #1e293b 0%, #0f172a 100%)",
-              borderBottom: "1px solid #1e3a5f",
-              boxShadow: "0 2px 16px rgba(0,0,0,0.28)",
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              px: 2.5,
+              py: 0.875,
+              background: "linear-gradient(180deg, #ffffff 0%, #f3f7fc 100%)",
+              borderBottom: "1px solid #b8ccda",
+              boxShadow: "0 2px 8px rgba(30,60,100,0.08)",
+              flexShrink: 0,
             }}>
+              <Typography sx={{
+                fontSize: "1.15rem",
+                fontWeight: 800,
+                color: "#1d4ed8",
+                whiteSpace: "nowrap",
+                letterSpacing: "-0.01em",
+                cursor: "default",
+              }}>
+                Motivated Proof Facilitator
+              </Typography>
 
-              {/* Logo + title */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexShrink: 0 }}>
-                <Box sx={{
-                  width: 30, height: 30, borderRadius: "8px",
-                  background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: "0 2px 10px rgba(59,130,246,0.45)",
-                  fontSize: "16px", color: "white", fontStyle: "italic", fontWeight: 900,
-                  lineHeight: 1, userSelect: "none",
-                }}>
-                  π
-                </Box>
+              <Box sx={{ flex: 1, display: "flex", alignItems: "center", gap: 1, overflow: "hidden", minWidth: 0 }}>
+                <Chip
+                  label="STATEMENT"
+                  size="small"
+                  sx={{
+                    flexShrink: 0,
+                    height: 20,
+                    borderRadius: "4px",
+                    background: "#1d4ed8",
+                    color: "white",
+                    fontWeight: 700,
+                    fontSize: "0.62rem",
+                    letterSpacing: "0.07em",
+                    "& .MuiChip-label": { px: "7px" },
+                  }}
+                />
                 <Typography sx={{
-                  fontSize: "0.95rem", fontWeight: 800, color: "white",
-                  letterSpacing: "-0.02em", whiteSpace: "nowrap",
+                  fontSize: "0.875rem",
+                  color: "#374151",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  fontStyle: "italic",
+                  minWidth: 0,
                 }}>
-                  Motivated Proof Facilitator
+                  {initialState.statement}
                 </Typography>
               </Box>
 
-              {/* Divider */}
-              <Box sx={{ width: "1px", height: 20, background: "#334155", flexShrink: 0 }} />
-
-              {/* Statement */}
-              <Box sx={{ flex: 1, display: "flex", alignItems: "center", gap: 1, overflow: "hidden", minWidth: 0 }}>
-                <Chip label="STATEMENT" size="small" sx={{
-                  flexShrink: 0, height: 20, borderRadius: "5px",
-                  background: "rgba(59,130,246,0.18)", color: "#93c5fd",
-                  border: "1px solid rgba(59,130,246,0.35)",
-                  fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.08em",
-                  "& .MuiChip-label": { px: "7px" },
-                }} />
-                <Tooltip title={initialState.statement} placement="bottom-start" arrow>
-                  <Typography sx={{
-                    fontSize: "0.85rem", color: "#cbd5e1",
-                    overflow: "hidden", textOverflow: "ellipsis",
-                    whiteSpace: "nowrap", fontStyle: "italic", minWidth: 0,
-                  }}>
-                    {initialState.statement}
-                  </Typography>
-                </Tooltip>
-              </Box>
-
-              {/* New Statement */}
-              <Button variant="outlined" size="small" onClick={handleNewStatement} sx={{
-                flexShrink: 0, color: "#94a3b8", borderColor: "#334155",
-                borderRadius: "8px", fontSize: "0.78rem", fontWeight: 600,
-                background: "rgba(255,255,255,0.05)", whiteSpace: "nowrap",
-                "&:hover": { borderColor: "#64748b", background: "rgba(255,255,255,0.1)", color: "white" },
-              }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setInitialState(null)
+                  selectionsDispatch({ type: "CLEAR_ALL_SELECTIONS" })
+                }}
+                sx={{
+                  flexShrink: 0,
+                  color: "#1d4ed8",
+                  borderColor: "#93aeed",
+                  borderRadius: "8px",
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  background: "linear-gradient(180deg,#ffffff,#eff4ff)",
+                  boxShadow: "0 1px 2px rgba(30,70,200,0.08)",
+                  whiteSpace: "nowrap",
+                  "&:hover": {
+                    borderColor: "#1d4ed8",
+                    background: "linear-gradient(180deg,#eff4ff,#dbeafe)",
+                  },
+                }}
+              >
                 ← New Statement
               </Button>
             </Box>
@@ -108,10 +108,7 @@ export default function App(): JSX.Element {
   return (
     <ProofStateSelectionContext.Provider value={{ selections, dispatch: selectionsDispatch }}>
       <TypstContextProvider>
-        <ProofStateGenerator
-          onGenerated={setInitialState}
-          onLoadDemo={() => setInitialState(sampleProofDiscoveryState)}
-        />
+        <ProofStateGenerator onGenerated={setInitialState} />
       </TypstContextProvider>
     </ProofStateSelectionContext.Provider>
   )
