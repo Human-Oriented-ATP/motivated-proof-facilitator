@@ -4,43 +4,11 @@ import { ProofStateSelection, ProofStateSelectionContext } from "../core/ProofSt
 import { ProofState, ProofStateSchema } from "../core/ProofStateZod"
 import { getCurrentProofState, ProofDiscoveryAction, ProofDiscoveryState } from "../core/ProofDiscoveryState"
 import { ProofDiscoveryMove, ProofDiscoveryMoveExample } from "../core/ProofDiscoveryMove"
-import { goalConjunctionMove } from "../prompts/goalConjunction"
-import { goalDisjunctionMove } from "../prompts/goalDisjunction"
-import { goalEquivalenceMove } from "../prompts/goalEquivalence"
-import { goalExistentialMove } from "../prompts/goalExistential"
-import { goalImplicationMove } from "../prompts/goalImplication"
-import { goalContradictionMove } from "../prompts/goalContradiction"
-import { goalUniversalMove } from "../prompts/goalUniversal"
-import { hypothesisConjunctionMove } from "../prompts/hypothesisConjunction"
-import { hypothesisDisjunctionMove } from "../prompts/hypothesisDisjunction"
-import { hypothesisExistentialMove } from "../prompts/hypothesisExistential"
-import { rewritingMove } from "../prompts/rewriting"
 import { ProofDiscoveryStateContext, ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
 import { ProofStateWithLibraryResult as ProofStateComponent } from "./ProofState"
 import { queryMove } from "../endpoints/Move"
 import MoveGenerator from "../../tests/MoveGenerator"
-import { instantiateMetavariablesMove } from "../prompts/instantiateMetavariables"
-import { unfoldDefinitionMove } from "../prompts/unfoldDefinition"
-import { simplifyExpressionMove } from "../prompts/simplifyExpression"
-import { isolateVariableMove } from "../prompts/isolateVariable"
-
-const moves: ProofDiscoveryMove[] = [
-    goalConjunctionMove,
-    goalDisjunctionMove,
-    goalEquivalenceMove,
-    goalExistentialMove,
-    goalImplicationMove,
-    goalContradictionMove,
-    goalUniversalMove,
-    hypothesisConjunctionMove,
-    hypothesisDisjunctionMove,
-    hypothesisExistentialMove,
-    rewritingMove,
-    instantiateMetavariablesMove,
-    unfoldDefinitionMove,
-    simplifyExpressionMove,
-    isolateVariableMove
-]
+import { moves } from "../prompts/AllMoves"
 
 const FilterResponseSchema = z.object({
   meetsCondition: z.boolean(),
