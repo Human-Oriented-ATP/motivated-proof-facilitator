@@ -63,24 +63,19 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
     // Internal padding for the SVG (in pixels)
     const INTERNAL_PADDING = 0
     const SCALING = 1.5
-    
+
+    // All hooks must be called unconditionally before any early returns
     const wasm = React.useContext(WasmContext)
     const { selections, dispatch } = React.useContext(ProofStateSelectionContext)
     const proofStateLocation = React.useContext(ProofStateLocationContext)
     const proofStateId = React.useContext(ProofStateIdContext)
-    
-    if (!wasm?.current) {
-        console.warn("WASM not loaded yet")
-        return <>Loading...</>
-    }
 
-    const compiler = wasm.current
+    const compiler = wasm?.current ?? null
 
     const compileResult = useMemo<MathCompilationResponse | null>(() => {
         if (!compiler) {
-            return { error: "Compiler unavailable" }
+            return null
         }
-
         try {
             const result = compiler.compile(input)
             return JSON.parse(result) as MathCompilationResponse
@@ -90,17 +85,9 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
         }
     }, [compiler, input])
 
-    if (!compileResult || "error" in compileResult) {
-        const message = compileResult?.error ?? "Unknown compilation error"
-        console.warn("Math compilation error:", message)
-        return <div style={{ color: 'red', fontWeight: 'bold', padding: '8px' }}>
-            ERROR: {message}
-        </div>
-    }
+    const svgString = (compileResult && !("error" in compileResult)) ? compileResult.svg : null
+    const subexprs = (compileResult && !("error" in compileResult)) ? compileResult.subexpressions : []
 
-    const svgString = compileResult.svg
-    const subexprs = compileResult.subexpressions
-    
     const [hoverIndex, setHoverIndex] = useState<number | null>(null)
     const [overlayVersion, setOverlayVersion] = useState(0)
 
@@ -245,6 +232,20 @@ export function MathExpression({ address, index, input }: MathExpressionProps): 
             ))
         }
     }, [hoverIndex, selections, proofStateId, proofStateLocation, overlayVersion])
+
+    // Early returns after all hooks are called
+    if (!compiler) {
+        console.warn("WASM not loaded yet")
+        return <>Loading...</>
+    }
+
+    if (!compileResult || "error" in compileResult) {
+        const message = compileResult?.error ?? "Unknown compilation error"
+        console.warn("Math compilation error:", message)
+        return <div style={{ color: 'red', fontWeight: 'bold', padding: '8px' }}>
+            ERROR: {message}
+        </div>
+    }
 
     // Find smallest subexpression at a point
     function findSmallestAtPoint(x: number, y: number): number {
