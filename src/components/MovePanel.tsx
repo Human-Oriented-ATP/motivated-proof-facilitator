@@ -2,7 +2,7 @@ import React, { JSX, useContext, useState, useEffect, useRef, useCallback } from
 import { z } from "zod"
 import { ProofStateSelection, ProofStateSelectionContext } from "../core/ProofStateSelectionContext"
 import { ProofState, ProofStateSchema } from "../core/ProofStateZod"
-import { getCurrentProofState, ProofDiscoveryState } from "../core/ProofDiscoveryState"
+import { getCurrentProofState, ProofDiscoveryAction, ProofDiscoveryState } from "../core/ProofDiscoveryState"
 import { ProofDiscoveryMove, ProofDiscoveryMoveExample } from "../core/ProofDiscoveryMove"
 import { goalConjunctionMove } from "../prompts/goalConjunction"
 import { goalDisjunctionMove } from "../prompts/goalDisjunction"
@@ -84,12 +84,9 @@ export async function getApplicableMoves(
 }
 
 /** Apply a move to the current proof state. */
-export async function applyMove(
-  proofDiscoveryState: ProofDiscoveryState,
-  selections: ProofStateSelection[],
-  move: ProofDiscoveryMove,
-  dispatchProofDiscoveryAction: React.Dispatch<import("../core/ProofDiscoveryState").ProofDiscoveryAction>
-): Promise<string | undefined> {
+export async function applyMove( move: ProofDiscoveryMove): Promise<string | undefined> {
+  const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
+  const { selections, dispatch: dispatchSelections } = useContext(ProofStateSelectionContext)
   const { proofState: newProofState, reasoning } = await queryMove(getCurrentProofState(proofDiscoveryState), move, selections)
 
   dispatchProofDiscoveryAction({
@@ -101,6 +98,7 @@ export async function applyMove(
       reasoning
     }
   })
+  dispatchSelections({ type: 'CLEAR_ALL_SELECTIONS'})
 
   return reasoning
 }
@@ -340,7 +338,7 @@ function MovePanelContent(): JSX.Element {
   const handleApply = async (am: ApplicableMove, idx: number) => {
     setApplyingIndex(idx)
     try {
-      const reasoning = await applyMove(proofDiscoveryState, selections, am.move, dispatchProofDiscoveryAction)
+      const reasoning = await applyMove(am.move)
       setLastMoveReasoning(reasoning ?? null)
       setStatus("idle")
       setApplicableMoves([])
@@ -609,7 +607,7 @@ function CustomMoveSection(): JSX.Element {
     setApplying(true)
     setError("")
     try {
-      await applyMove(proofDiscoveryState, selections, customMove, dispatchProofDiscoveryAction)
+      await applyMove(customMove)
       setDescription("")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to apply move")
