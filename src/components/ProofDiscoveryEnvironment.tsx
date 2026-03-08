@@ -76,11 +76,6 @@ const IconPopout = () => (
   </svg>
 )
 
-const IconDock = () => (
-  <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-    <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h7a1 1 0 100-2H3zM3 11a1 1 0 100 2h4a1 1 0 100-2H3zM15 11a1 1 0 10-2 0v4.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 15.586V11z" />
-  </svg>
-)
 
 const LoadingSpinner = () => (
   <svg style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24">
@@ -148,7 +143,7 @@ export function ProofDiscoveryEnvironment({
     proofDiscoveryStateReducer,
     initialProofDiscoveryState
   )
-  const [isGraphPopped, setIsGraphPopped] = useState(false)
+  const [isGraphExpanded, setIsGraphExpanded] = useState(false)
   const [isGraphFullscreen, setIsGraphFullscreen] = useState(false)
   const [isLibraryExpanded, setIsLibraryExpanded] = useState(false)
   const [isInformalizePopupOpen, setIsInformalizePopupOpen] = useState(false)
@@ -163,7 +158,7 @@ export function ProofDiscoveryEnvironment({
   const { selections, dispatch: selectionsDispatch } = useContext(ProofStateSelectionContext)
 
   // ── Draggable graph state ─────────────────────────────────────────────────
-  const [graphPos, setGraphPos] = useState<{ x: number; y: number }>({ x: 24, y: 24 })
+  const [graphPos, setGraphPos] = useState<{ x: number; y: number }>({ x: 356, y: 20 })
   const isDraggingGraph = useRef(false)
   const dragOffset = useRef({ x: 0, y: 0 })
   const graphContainerRef = useRef<HTMLDivElement | null>(null)
@@ -456,7 +451,7 @@ export function ProofDiscoveryEnvironment({
           </Paper>
         </Box>
 
-        {/* Right Column: Move Panel + Graph */}
+        {/* Right Column: Move Panel (full height) */}
         <Box sx={{
           width: '340px',
           flexShrink: 0,
@@ -471,63 +466,6 @@ export function ProofDiscoveryEnvironment({
               <MovePanel />
             </ProofDiscoveryStateContext.Provider>
           </Box>
-
-          {/* Embedded Graph */}
-          {!isGraphPopped ? (
-            <Box sx={{ height: 220, flexShrink: 0, display: 'flex', flexDirection: 'column', borderTop: '1px solid #b8ccda', overflow: 'hidden' }}>
-              <Box sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                px: 1.5,
-                py: 0.625,
-                background: 'linear-gradient(180deg, #e8eef5 0%, #dde5f0 100%)',
-                borderBottom: '1px solid #b8ccda',
-                flexShrink: 0,
-              }}>
-                <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: '#3a5678', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                  Proof Graph
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 0.5 }}>
-                  <Tooltip title="Fullscreen view">
-                    <IconButton size="small" onClick={() => setIsGraphFullscreen(true)} sx={graphBtnSx}>
-                      <IconFullscreen />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Pop out to floating window">
-                    <IconButton size="small" onClick={() => setIsGraphPopped(true)} sx={graphBtnSx}>
-                      <IconPopout />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              </Box>
-              <Box sx={{ flex: 1, overflow: 'hidden', background: '#f2f6fa' }}>
-                <ProofDiscoveryStateContext.Provider value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}>
-                  <ProofDiscoveryStateVisualization proofDiscoveryState={proofDiscoveryState} />
-                </ProofDiscoveryStateContext.Provider>
-              </Box>
-            </Box>
-          ) : (
-            <Box sx={{
-              height: 220,
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderTop: '1px solid #b8ccda',
-              background: 'linear-gradient(180deg, #e8eef5, #dde5f0)',
-            }}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<IconDock />}
-                onClick={() => setIsGraphPopped(false)}
-                sx={{ ...actionBtnSx, borderColor: '#6a96ba', color: '#2e5070' }}
-              >
-                Dock Graph
-              </Button>
-            </Box>
-          )}
         </Box>
       </Box>
 
@@ -608,62 +546,65 @@ export function ProofDiscoveryEnvironment({
         </Box>
       </Paper>
 
-      {/* ── Floating Proof Graph ── */}
-      {isGraphPopped && (
-        <Paper
-          ref={graphContainerRef}
-          elevation={8}
+      {/* ── Floating Proof Graph (always-visible overlay, bottom-right of proof state) ── */}
+      <Paper
+        ref={graphContainerRef}
+        elevation={8}
+        sx={{
+          position: 'fixed',
+          width: isGraphExpanded ? '300px' : '200px',
+          height: isGraphExpanded ? '300px' : 'auto',
+          right: graphPos.x,
+          bottom: graphPos.y,
+          borderRadius: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          zIndex: 500,
+          border: '1px solid #a8c0d4',
+          boxShadow: '0 10px 40px rgba(30,60,110,0.20), 0 2px 8px rgba(30,60,110,0.12)',
+          transition: 'width 0.2s ease, height 0.2s ease',
+        }}
+      >
+        <Box
           sx={{
-            position: 'fixed',
-            width: '380px',
-            height: '300px',
-            right: graphPos.x,
-            bottom: graphPos.y,
-            borderRadius: '12px',
             display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            zIndex: 500,
-            resize: 'both',
-            border: '1px solid #a8c0d4',
-            boxShadow: '0 10px 40px rgba(30,60,110,0.20), 0 2px 8px rgba(30,60,110,0.12)',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            px: 1.25,
+            py: 0.625,
+            background: 'linear-gradient(180deg, #edf2f8 0%, #e2eaf4 100%)',
+            borderBottom: isGraphExpanded ? '1px solid #b8ccda' : 'none',
+            cursor: 'grab',
+            flexShrink: 0,
+            userSelect: 'none',
           }}
+          onMouseDown={handleGraphDragStart}
         >
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              px: 1.5,
-              py: 0.75,
-              background: 'linear-gradient(180deg, #edf2f8 0%, #e2eaf4 100%)',
-              borderBottom: '1px solid #b8ccda',
-              cursor: 'grab',
-              flexShrink: 0,
-            }}
-            onMouseDown={handleGraphDragStart}
-          >
-            <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: '#2e4a68', letterSpacing: '0.06em' }}>Proof Graph</Typography>
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <Tooltip title="Fullscreen view">
-                <IconButton size="small" onClick={() => setIsGraphFullscreen(true)} sx={graphBtnSx}>
-                  <IconFullscreen />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Dock back">
-                <IconButton size="small" onClick={() => setIsGraphPopped(false)} sx={graphBtnSx}>
-                  <Typography sx={{ fontSize: '11px', lineHeight: 1, fontWeight: 700 }}>✕</Typography>
-                </IconButton>
-              </Tooltip>
-            </Box>
+          <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#2e4a68', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Proof Graph
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <Tooltip title={isGraphExpanded ? 'Collapse' : 'Expand'}>
+              <IconButton size="small" onClick={() => setIsGraphExpanded(v => !v)} sx={graphBtnSx}>
+                <IconChevron rotated={isGraphExpanded} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Fullscreen view">
+              <IconButton size="small" onClick={() => setIsGraphFullscreen(true)} sx={graphBtnSx}>
+                <IconFullscreen />
+              </IconButton>
+            </Tooltip>
           </Box>
+        </Box>
+        {isGraphExpanded && (
           <Box sx={{ flex: 1, overflow: 'auto', background: '#f2f6fa' }}>
             <ProofDiscoveryStateContext.Provider value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}>
               <ProofDiscoveryStateVisualization proofDiscoveryState={proofDiscoveryState} />
             </ProofDiscoveryStateContext.Provider>
           </Box>
-        </Paper>
-      )}
+        )}
+      </Paper>
 
       {/* ── Fullscreen Graph Dialog ── */}
       <Dialog
