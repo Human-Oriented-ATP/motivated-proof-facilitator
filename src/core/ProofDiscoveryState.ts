@@ -50,12 +50,12 @@ export type ProofDiscoveryAction =
 export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: ProofDiscoveryAction): ProofDiscoveryState {
     switch (action.action) {
         case "initialize": {
-            if (state.graph.order > 0) {
-                state.graph.clear()
-            }
-            state.graph.addNode(0, { proofState: action.proofState })
+            // start from a fresh graph rather than mutating the existing one
+            const newGraph = new Graph<ProofNode, MoveDescription>()
+            newGraph.addNode(0, { proofState: action.proofState })
             return {
                 ...state,
+                graph: newGraph,
                 statement: action.statement,
                 currentNodeId: 0,
                 isSolved: false,
@@ -67,8 +67,13 @@ export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: P
             if (!state.graph.hasNode(action.nodeId)) {
                 throw new Error(`Node with ID ${action.nodeId} does not exist.`)
             }
-            state.graph.setNodeAttribute(action.nodeId, 'proofState', action.newProofState)
-            return state
+            // copy graph and update the node
+            const repairedGraph = state.graph.copy()
+            repairedGraph.setNodeAttribute(action.nodeId, 'proofState', action.newProofState)
+            return {
+                ...state,
+                graph: repairedGraph
+            }
         }
         case "focus": {
             if (!state.graph.hasNode(action.nodeId)) {
@@ -80,24 +85,27 @@ export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: P
             }
         }
         case "transition": {
+            // clone graph before mutating
             const newNodeId = state.graph.order
-            state.graph.addNode(newNodeId, { proofState: action.newProofState })
+            const newGraph = state.graph.copy()
+            newGraph.addNode(newNodeId, { proofState: action.newProofState })
             switch (action.move.kind) {
                 case "strengthening":
-                    state.graph.addDirectedEdge(newNodeId, state.currentNodeId, action.move)
+                    newGraph.addDirectedEdge(newNodeId, state.currentNodeId, action.move)
                     break
                 case "weakening":
-                    state.graph.addDirectedEdge(state.currentNodeId, newNodeId, action.move)
+                    newGraph.addDirectedEdge(state.currentNodeId, newNodeId, action.move)
                     break
                 case "equivalence":
-                    state.graph.addUndirectedEdge(newNodeId, state.currentNodeId, action.move)
+                    newGraph.addUndirectedEdge(newNodeId, state.currentNodeId, action.move)
                     break
                 case "other":
                     // TODO: Make this edge grayed and dotted
-                    state.graph.addDirectedEdge(newNodeId, state.currentNodeId, action.move)
+                    newGraph.addDirectedEdge(newNodeId, state.currentNodeId, action.move)
             }
             return {
                 ...state,
+                graph: newGraph,
                 currentNodeId: newNodeId,
                 highlightedLibraryStatement: undefined
             }
