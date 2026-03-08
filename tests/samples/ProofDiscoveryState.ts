@@ -64,7 +64,7 @@ const sampleProofDiscoveryStateActions: ProofDiscoveryAction[] = [
                                             "$x^n + y^n = z^n$"
                                         ]
                                     },
-                                    consequent: "$x * y * z = 0$"
+                                    consequent: "$x dot y dot z = 0$"
                                     }
                                 }
                             }
