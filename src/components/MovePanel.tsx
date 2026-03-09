@@ -22,7 +22,7 @@ const FilterResponseSchema = z.object({
 
 type FilterResponse = z.infer<typeof FilterResponseSchema>
 
-export async function checkMoveValidity(proofState: ProofState, selections: ProofStateSelection[], move: ProofDiscoveryMove): Promise<FilterResponse> {
+export async function checkMoveValidity(proofState: ProofState, selections: ProofStateSelection[], move: ProofDiscoveryMove, signal?: AbortSignal): Promise<FilterResponse> {
     const response = await fetch("https://atp-backend-rygt.onrender.com/filter", {
         method: "POST",
         mode: "cors",
@@ -34,6 +34,7 @@ export async function checkMoveValidity(proofState: ProofState, selections: Proo
             selections,
             triggerCriterion: move.trigger
         }),
+        signal,
       })
 
     if (!response.ok) {
@@ -47,14 +48,16 @@ export async function checkMoveValidity(proofState: ProofState, selections: Proo
 /** Get all the applicable moves for a given proof state and selections. */
 export async function getApplicableMoves(
   proofDiscoveryState: ProofDiscoveryState,
-  selections: ProofStateSelection[]
+  selections: ProofStateSelection[],
+  signal?: AbortSignal
 ): Promise<{ move: ProofDiscoveryMove, filterResponse: FilterResponse }[]> {
   const results = await Promise.all(
     moves.map(async (move) => {
       try {
-        const filterResponse = await checkMoveValidity(getCurrentProofState(proofDiscoveryState), selections, move)
+        const filterResponse = await checkMoveValidity(getCurrentProofState(proofDiscoveryState), selections, move, signal)
         return filterResponse.meetsCondition ? { move, filterResponse } : null
       } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') throw error
         console.error(`Error checking move validity for move ${move.name}:`, error)
         return null
       }
@@ -288,18 +291,17 @@ function MovePanelContent(): JSX.Element {
   const [errorMessage, setErrorMessage] = useState("")
   const [expandedReasoning, setExpandedReasoning] = useState<Set<number>>(new Set())
   const [applyingIndex, setApplyingIndex] = useState<number | null>(null)
-  const [isHovering, setIsHovering] = useState(false)
   const [infoIndex, setInfoIndex] = useState<number | null>(null)
   const [expandedExamples, setExpandedExamples] = useState<Set<number>>(new Set())
   const [showAllMovesModal, setShowAllMovesModal] = useState(false)
   const [lastMoveReasoning, setLastMoveReasoning] = useState<string | null>(null)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
   const lastFetchedSelectionsRef = useRef<string>("")
   const lastGraphOrderRef = useRef<number>(proofDiscoveryState.graph.order)
 
   const selectionsKey = JSON.stringify(selections)
-  const isOutOfSync = status === "loaded" && selectionsKey !== lastFetchedSelectionsRef.current
 
   // Reset panel when graph node count changes (a move was applied externally, undo, etc.)
   useEffect(() => {
@@ -315,30 +317,36 @@ function MovePanelContent(): JSX.Element {
     }
   }, [proofDiscoveryState.graph.order])
 
-  // Debounce auto-fetch on selection change while hovering
+  // Debounce auto-fetch on selection change
   useEffect(() => {
     if (selectionsKey !== lastFetchedSelectionsRef.current) {
       if (debounceRef.current) clearTimeout(debounceRef.current)
-      if (isHovering && selections.length > 0) {
-        debounceRef.current = setTimeout(() => { void fetchMoves() }, 1000)
+      if (selections.length > 0) {
+        debounceRef.current = setTimeout(() => { void fetchMoves() }, 0)
       }
     }
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectionsKey, isHovering])
+  }, [selectionsKey])
 
   const fetchMoves = useCallback(async () => {
+    // Cancel any in-flight request
+    abortControllerRef.current?.abort()
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
     setStatus("loading")
     setErrorMessage("")
     setExpandedReasoning(new Set())
     setExpandedExamples(new Set())
     setInfoIndex(null)
     try {
-      const result = await getApplicableMoves(proofDiscoveryState, selections)
+      const result = await getApplicableMoves(proofDiscoveryState, selections, controller.signal)
       setApplicableMoves(result)
       setStatus("loaded")
       lastFetchedSelectionsRef.current = selectionsKey
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
       setErrorMessage(err instanceof Error ? err.message : "Unknown error")
       setStatus("error")
     }
@@ -372,14 +380,6 @@ function MovePanelContent(): JSX.Element {
   }
   const toggleExamples = (idx: number) => {
     setExpandedExamples(prev => { const n = new Set(prev); n.has(idx) ? n.delete(idx) : n.add(idx); return n })
-  }
-
-  const handleMouseEnter = () => {
-    setIsHovering(true)
-    if (selections.length > 0 && selectionsKey !== lastFetchedSelectionsRef.current && status !== "loading") {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-      debounceRef.current = setTimeout(() => { void fetchMoves() }, 1000)
-    }
   }
 
 // ── Render suggestions ──────────────────────────────────────────────────────
@@ -429,9 +429,9 @@ function MovePanelContent(): JSX.Element {
           <svg style={{ width: 28, height: 28, color: G.bright }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
-          <Typography sx={{ fontSize: '0.88rem', fontWeight: 600, color: G.dark }}>Hover to generate suggestions</Typography>
+          <Typography sx={{ fontSize: '0.88rem', fontWeight: 600, color: G.dark }}>Generating suggestions…</Typography>
           <Typography sx={{ fontSize: '0.75rem', color: '#78909C', maxWidth: 260, lineHeight: 1.5 }}>
-            Suggestions auto-generate 1 second after your last selection change
+            Suggestions will appear automatically when you make a selection
           </Typography>
         </Box>
       )
@@ -465,20 +465,6 @@ function MovePanelContent(): JSX.Element {
     // Loaded
     return (
       <>
-        {/* Out-of-sync warning */}
-        {isOutOfSync && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.875, fontSize: '0.75rem', fontWeight: 500, color: '#E65100', background: '#FFF8E1', borderBottom: '1px solid #FFE0B2' }}>
-            <svg style={{ width: 14, height: 14, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            <Typography sx={{ fontSize: '0.75rem', flex: 1 }}>Selections changed since last fetch</Typography>
-            <Button size="small" onClick={() => void fetchMoves()}
-              sx={{ color: '#E65100', background: 'white', border: '1px solid #FFCC80', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'none', minHeight: 0, py: 0.25, px: 1, '&:hover': { background: '#FFF3E0' } }}>
-              Refresh
-            </Button>
-          </Box>
-        )}
-
         {/* Last move reasoning — collapsed Accordion */}
         {lastMoveReasoning && (
           <Accordion disableGutters elevation={0} sx={{
@@ -636,8 +622,6 @@ function MovePanelContent(): JSX.Element {
   return (
     <Box
       sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: '#ffffff', borderRadius: '12px' }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={() => setIsHovering(false)}
     >
       {/* Header (aligned with Library header) */}
       <Box sx={{
