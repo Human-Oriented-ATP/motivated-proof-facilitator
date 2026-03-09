@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef, JSX } from "react"
-import { ProofStateSchema } from "../core/ProofStateZod"
+import { ProofState, ProofStateSchema } from "../core/ProofStateZod"
 import { ProofDiscoveryState, ProofNode, MoveDescription } from "../core/ProofDiscoveryState"
 import { WasmContext, loadWasm } from "./MathExpression"
+import { ProofStateEditor } from "./ProofStateEditor"
 import Graph from "graphology"
 
 export type ProofStateGeneratorProps = {
@@ -83,6 +84,13 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
   const [inputStatement, setInputStatement] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  const [isManualMode, setIsManualMode] = useState(false)
+  const [manualProofState, setManualProofState] = useState<ProofState>([{
+    variables: [],
+    hypotheses: [],
+    goals: []
+  }])
 
   // Load WASM for the Typst preview
   const wasmRef = useRef<{ compile: (input: string) => string } | null>(null)
@@ -114,7 +122,7 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-
+      console.log("Received response from backend, parsing JSON...", response)
       const data: unknown = await response.json()
       console.log("Received formalized proof state:", data)
       const proofState = ProofStateSchema.parse([data])
@@ -141,6 +149,20 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
     }
   }
 
+  const handleManualGenerate = (): void => {
+    const graph = new Graph<ProofNode, MoveDescription>()
+    graph.addNode(0, { proofState: manualProofState })
+
+    onGenerated({
+      statement: "Manual Proof State",
+      graph,
+      currentNodeId: 0,
+      library: [],
+      highlightedLibraryStatement: undefined,
+      isSolved: false,
+    })
+  }
+
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       handleFormalize()
@@ -160,78 +182,124 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
             </p>
           </div>
 
-          <div style={styles.inputSection}>
-            <div style={styles.statementBox}>
-              <div style={styles.statementLabel}>STATEMENT</div>
-              <textarea
-                id="statement-input"
-                value={inputStatement}
-                onChange={(e) => setInputStatement(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder="Enter a mathematical statement..."
-                style={styles.textarea}
-                rows={3}
-                disabled={isLoading}
-              />
-            </div>
-            <div style={styles.hint}>
-              Press <kbd style={styles.kbd}>Ctrl</kbd>+<kbd style={styles.kbd}>Enter</kbd> to submit
-            </div>
-          </div>
+          {isManualMode ? (
+            <div style={{ marginBottom: "2rem" }}>
+              <div style={{...styles.statementBox, padding: "10px", minHeight: "300px"}}>
+                <div style={styles.statementLabel}>MANUAL PROOF STATE</div>
+                <ProofStateEditor proofState={manualProofState} onUpdate={setManualProofState} />
+              </div>
 
-          {wasmReady && hasMath && <TypstPreview input={inputStatement} />}
+              <div style={{ ...styles.buttonRow, marginTop: "2rem", display: "flex", gap: "1rem" }}>
+                <button
+                  onClick={() => setIsManualMode(false)}
+                  style={styles.secondaryButton}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                  </svg>
+                  Back to Natural Language
+                </button>
 
-          {error && (
-            <div style={styles.errorBox}>
-              <svg style={styles.errorIcon} viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span>{error}</span>
+                <button
+                  onClick={handleManualGenerate}
+                  style={styles.button}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                  Start Proof
+                </button>
+              </div>
             </div>
+          ) : (
+            <>
+              <div style={styles.inputSection}>
+                <div style={styles.statementBox}>
+                  <div style={styles.statementLabel}>STATEMENT</div>
+                  <textarea
+                    id="statement-input"
+                    value={inputStatement}
+                    onChange={(e) => setInputStatement(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    placeholder="Enter a mathematical statement..."
+                    style={styles.textarea}
+                    rows={3}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div style={styles.hint}>
+                  Press <kbd style={styles.kbd}>Ctrl</kbd>+<kbd style={styles.kbd}>Enter</kbd> to submit
+                </div>
+              </div>
+
+              {wasmReady && hasMath && <TypstPreview input={inputStatement} />}
+
+              {error && (
+                <div style={styles.errorBox}>
+                  <svg style={styles.errorIcon} viewBox="0 0 20 20" fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <div style={styles.buttonRow}>
+                <button
+                  onClick={handleFormalize}
+                  disabled={isLoading || !inputStatement.trim()}
+                  style={{
+                    ...styles.button,
+                    ...(isLoading || !inputStatement.trim() ? styles.buttonDisabled : {}),
+                  }}
+                >
+                  {isLoading ? (
+                    <>
+                      <svg style={styles.spinner} viewBox="0 0 24 24">
+                        <circle
+                          style={styles.spinnerCircle}
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          style={styles.spinnerPath}
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Generating proof state...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                      Generate Proof State
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
+                <button
+                  onClick={() => setIsManualMode(true)}
+                  style={styles.textButton}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  Or manually build a proof state
+                </button>
+              </div>
+            </>
           )}
-
-          <div style={styles.buttonRow}>
-          <button
-            onClick={handleFormalize}
-            disabled={isLoading || !inputStatement.trim()}
-            style={{
-              ...styles.button,
-              ...(isLoading || !inputStatement.trim() ? styles.buttonDisabled : {}),
-            }}
-          >
-            {isLoading ? (
-              <>
-                <svg style={styles.spinner} viewBox="0 0 24 24">
-                  <circle
-                    style={styles.spinnerCircle}
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    style={styles.spinnerPath}
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Generating proof state...
-              </>
-            ) : (
-              <>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-                Generate Proof State
-              </>
-            )}
-          </button>
-          </div>
         </div>
         <div style={styles.links}>
           <a
@@ -423,6 +491,37 @@ const styles: { [key: string]: React.CSSProperties } = {
     gap: "0.6rem",
     boxShadow: "0 2px 8px rgba(29, 78, 216, 0.3)",
     letterSpacing: "0.01em",
+  },
+  secondaryButton: {
+    width: "auto",
+    padding: "0.85rem 2.5rem",
+    fontSize: "1.05rem",
+    fontWeight: "600",
+    color: "#4664b4",
+    background: "white",
+    border: "2px solid #bfdbfe",
+    borderRadius: "10px",
+    cursor: "pointer",
+    transition: "transform 0.15s, box-shadow 0.15s, background 0.15s",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "0.6rem",
+    letterSpacing: "0.01em",
+  },
+  textButton: {
+    background: "transparent",
+    border: "none",
+    color: "#5a8abb",
+    fontSize: "0.95rem",
+    fontWeight: "500",
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.4rem",
+    textDecoration: "underline",
+    padding: "0.5rem 1rem",
+    transition: "color 0.15s",
   },
   buttonDisabled: {
     opacity: 0.5,
