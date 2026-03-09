@@ -124,30 +124,37 @@ export function ProofStateContext({ proofContext }: ProofStateContextProps): JSX
 
     /** Render a context variable with its kind indicator */
     const renderVariable = (variable: ContextVariable, idx: number): JSX.Element => {
-        let kindIndicator = ""
-        let kindColor = THEME.variables.textColor
+        let kindIndicator: React.ReactNode = null
 
         if (variable.kind === "meta") {
-            kindIndicator = "?"
-            kindColor = "#9333ea"
+            kindIndicator = (
+                <span style={{
+                    color: '#9333ea',
+                    fontSize: '18px',
+                    fontWeight: '700',
+                    lineHeight: 1,
+                    userSelect: 'none',
+                    filter: 'drop-shadow(0 1px 1px rgba(147,51,234,0.30))',
+                }}>?</span>
+            )
         } else if (variable.kind === "let") {
-            kindIndicator = "≔"
-            kindColor = "#0891b2"
+            kindIndicator = (
+                <span style={{
+                    color: '#0891b2',
+                    fontSize: '13px',
+                    fontWeight: '700',
+
+                    letterSpacing: '0.03em',
+                    lineHeight: 1,
+                    userSelect: 'none',
+                }}>let</span>
+            )
         }
 
         return (
             <ProofStateLocationContext.Provider value={{ kind: "variable", label: variable.name }} key={idx}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    {kindIndicator && (
-                        <span style={{
-                            color: kindColor,
-                            fontWeight: '700',
-                            fontSize: '14px',
-                            minWidth: '16px',
-                        }}>
-                            {kindIndicator}
-                        </span>
-                    )}
+                    {kindIndicator}
                     <span style={{
                         minWidth: 'fit-content',
                         display: 'flex',
@@ -164,7 +171,7 @@ export function ProofStateContext({ proofContext }: ProofStateContextProps): JSX
                     </div>
                     {variable.kind === "let" && (
                         <>
-                            <span style={{ margin: '0 4px', color: '#9ca3af' }}>≔</span>
+                            <span style={{ margin: '0 4px', color: '#0891b2', fontSize: '17px', fontWeight: '600' }}>≔</span>
                             <AtomicStatement address={[]} input={variable.value} />
                         </>
                     )}
