@@ -128,7 +128,7 @@ export function proofStateSelectionReducer(state: ProofStateSelection[], action:
             return []
         }
         case 'CLEAR_PROOF_STATE_SELECTIONS': {
-            return state.filter(s => s.proofStateId !== action.proofStateId)
+            return state.filter(s => !areProofStateIdsEqual(s.proofStateId, action.proofStateId))
         }
         default:
             return state
