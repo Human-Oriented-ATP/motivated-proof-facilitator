@@ -10,9 +10,22 @@ import { ProofStateEditor } from './ProofStateEditor'
 import { StatementBuilder } from './StatementBuilder'
 import { Statement, StatementSchema } from '../core/ProofStateZod'
 import {
-  Box, Paper, Button, IconButton, Chip, Typography,
+  Box, Paper, Button, IconButton, Chip, Typography, TextField,
   Dialog, DialogContent, DialogActions, Tooltip,
 } from '@mui/material'
+import { createTheme, ThemeProvider } from '@mui/material/styles'
+
+// Local theme for the library "add" form — matches the amber/yellow panel colours
+const libraryTheme = createTheme({
+  palette: {
+    primary: {
+      main: '#ca8a04',
+      light: '#fde047',
+      dark: '#a16207',
+      contrastText: '#ffffff',
+    },
+  },
+})
 
 // ── Inline icons ──────────────────────────────────────────────────────────────
 
@@ -217,7 +230,7 @@ export function ProofDiscoveryEnvironment({
   }
 
   return (
-    <Box sx={{ display: 'flex', gap: 2, p: 2, height: '100%', background: '#f4f7f9', boxSizing: 'border-box', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', gap: 1, p: 1, height: '100%', background: '#f4f7f9', boxSizing: 'border-box', overflow: 'hidden' }}>
 
       {/* ════════════════════ LEFT COLUMN (Fused) ════════════════════ */}
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, borderRadius: '12px', background: '#ffffff', border: '1px solid #d4dde6', boxShadow: '0 2px 12px rgba(30,60,100,0.04)', position: 'relative', overflow: 'hidden' }}>
@@ -298,54 +311,63 @@ export function ProofDiscoveryEnvironment({
                 />
               </Box>
 
-              <Box sx={{ display: 'flex', gap: 1, mt: 1, mb: 1.5, borderBottom: '1px solid #fef9c3' }}>
-                <Button size="small" variant="text" onClick={() => setNewLibraryFormalizeMode('build')} sx={{ fontSize: '11px', minWidth: 0, px: 1, py: 0.5, color: newLibraryFormalizeMode === 'build' ? '#a16207' : '#d97706', fontWeight: newLibraryFormalizeMode === 'build' ? 700 : 500, borderBottom: newLibraryFormalizeMode === 'build' ? '2px solid #ca8a04' : 'none', borderRadius: 0, textTransform: 'none' }}>Build manually</Button>
-                <Button size="small" variant="text" onClick={() => setNewLibraryFormalizeMode('formalize')} sx={{ fontSize: '11px', minWidth: 0, px: 1, py: 0.5, color: newLibraryFormalizeMode === 'formalize' ? '#a16207' : '#d97706', fontWeight: newLibraryFormalizeMode === 'formalize' ? 700 : 500, borderBottom: newLibraryFormalizeMode === 'formalize' ? '2px solid #ca8a04' : 'none', borderRadius: 0, textTransform: 'none' }}>Autoformalize</Button>
-              </Box>
-
-              {newLibraryFormalizeMode === 'build' ? (
-                 <StatementBuilder value={newLibraryStatement} onChange={setNewLibraryStatement} />
-              ) : (
-                <Box>
-                  <textarea
-                    value={newLibraryText}
-                    onChange={e => setNewLibraryText(e.target.value)}
-                    placeholder="Enter mathematical statement in natural language..."
-                    style={{ width: '100%', padding: '6px 9px', border: '1px solid #fde047', borderRadius: '5px', fontSize: '12px', outline: 'none', background: '#fefce8', fontFamily: 'inherit', resize: 'vertical', minHeight: '60px', boxSizing: 'border-box' }}
-                  />
-                  {newLibraryError && <Typography sx={{ color: 'red', fontSize: '10px', mt: 0.5 }}>{newLibraryError}</Typography>}
+              <ThemeProvider theme={libraryTheme}>
+                <Box sx={{ display: 'flex', gap: 1, mt: 1, mb: 1.5, borderBottom: '1px solid #fef9c3' }}>
+                  <Button size="small" variant="text" onClick={() => setNewLibraryFormalizeMode('build')} sx={{ fontSize: '11px', minWidth: 0, px: 1, py: 0.5, color: newLibraryFormalizeMode === 'build' ? 'primary.dark' : 'primary.main', fontWeight: newLibraryFormalizeMode === 'build' ? 700 : 500, borderBottom: newLibraryFormalizeMode === 'build' ? '2px solid' : 'none', borderColor: 'primary.main', borderRadius: 0, textTransform: 'none' }}>Build manually</Button>
+                  <Button size="small" variant="text" onClick={() => setNewLibraryFormalizeMode('formalize')} sx={{ fontSize: '11px', minWidth: 0, px: 1, py: 0.5, color: newLibraryFormalizeMode === 'formalize' ? 'primary.dark' : 'primary.main', fontWeight: newLibraryFormalizeMode === 'formalize' ? 700 : 500, borderBottom: newLibraryFormalizeMode === 'formalize' ? '2px solid' : 'none', borderColor: 'primary.main', borderRadius: 0, textTransform: 'none' }}>Autoformalize</Button>
                 </Box>
-              )}
 
-              <Box sx={{ display: 'flex', gap: 1, mt: 1.5 }}>
                 {newLibraryFormalizeMode === 'build' ? (
-                  <Button
-                    size="small" variant="contained"
-                    disabled={!newLibraryLabel.trim()}
-                    onClick={() => {
-                      if (!newLibraryLabel.trim()) return
-                      dispatchProofDiscoveryAction({ action: 'addToLibrary', statement: { label: newLibraryLabel.trim(), statement: newLibraryStatement } })
-                      setIsAddLibraryOpen(false); setNewLibraryLabel(''); setNewLibraryStatement(''); setIsLibraryExpanded(true)
-                    }}
-                    sx={{ background: '#ca8a04', color: 'white', boxShadow: 'none', '&:hover': { background: '#a16207', boxShadow: 'none' }, fontSize: '12px', fontWeight: 600, textTransform: 'none' }}
-                  >
-                    Add to Library
-                  </Button>
+                  <StatementBuilder value={newLibraryStatement} onChange={setNewLibraryStatement} />
                 ) : (
-                  <Button
-                    size="small" variant="contained"
-                    disabled={!newLibraryLabel.trim() || !newLibraryText.trim() || newLibraryLoading}
-                    onClick={formalizeLibraryStatement}
-                    sx={{ background: '#ca8a04', color: 'white', boxShadow: 'none', '&:hover': { background: '#a16207', boxShadow: 'none' }, fontSize: '12px', fontWeight: 600, textTransform: 'none' }}
-                  >
-                    {newLibraryLoading ? 'Formalizing...' : 'Formalize and add to library'}
-                  </Button>
+                  <Box>
+                    <TextField
+                      size="small" fullWidth multiline minRows={2}
+                      value={newLibraryText}
+                      onChange={e => setNewLibraryText(e.target.value)}
+                      placeholder="Enter mathematical statement in natural language..."
+                      sx={{
+                        '& .MuiInputBase-input': { fontSize: '0.6875rem', py: '3px', px: '8px' },
+                        '& .MuiOutlinedInput-root': { fontSize: '0.6875rem' },
+                      }}
+                    />
+                    {newLibraryError && (
+                      <Typography sx={{ color: 'error.main', fontSize: '10px', mt: 0.5 }}>{newLibraryError}</Typography>
+                    )}
+                  </Box>
                 )}
-                <Button size="small" variant="outlined" onClick={() => setIsAddLibraryOpen(false)}
-                  sx={{ color: '#a16207', borderColor: '#fde047', fontSize: '12px', textTransform: 'none', '&:hover': { borderColor: '#eab308', background: '#fefce8' } }}>
-                  Cancel
-                </Button>
-              </Box>
+
+                <Box sx={{ display: 'flex', gap: 1, mt: 1.5 }}>
+                  {newLibraryFormalizeMode === 'build' ? (
+                    <Button
+                      size="small" variant="contained" color="primary"
+                      disabled={!newLibraryLabel.trim()}
+                      onClick={() => {
+                        if (!newLibraryLabel.trim()) return
+                        dispatchProofDiscoveryAction({ action: 'addToLibrary', statement: { label: newLibraryLabel.trim(), statement: newLibraryStatement } })
+                        setIsAddLibraryOpen(false); setNewLibraryLabel(''); setNewLibraryStatement(''); setIsLibraryExpanded(true)
+                      }}
+                      sx={{ boxShadow: 'none', '&:hover': { boxShadow: 'none' }, fontSize: '12px', fontWeight: 600, textTransform: 'none' }}
+                    >
+                      Add to Library
+                    </Button>
+                  ) : (
+                    <Button
+                      size="small" variant="contained" color="primary"
+                      disabled={!newLibraryLabel.trim() || !newLibraryText.trim() || newLibraryLoading}
+                      onClick={formalizeLibraryStatement}
+                      sx={{ boxShadow: 'none', '&:hover': { boxShadow: 'none' }, fontSize: '12px', fontWeight: 600, textTransform: 'none' }}
+                    >
+                      {newLibraryLoading ? 'Formalizing...' : 'Formalize and add to library'}
+                    </Button>
+                  )}
+                  <Button size="small" variant="outlined" color="primary"
+                    onClick={() => setIsAddLibraryOpen(false)}
+                    sx={{ fontSize: '12px', textTransform: 'none' }}>
+                    Cancel
+                  </Button>
+                </Box>
+              </ThemeProvider>
             </Paper>
           </Box>
         )}
@@ -495,7 +517,7 @@ export function ProofDiscoveryEnvironment({
       <Box sx={{
         width: '400px', flexShrink: 0,
         display: 'flex', flexDirection: 'column',
-        gap: 2,
+        gap: 1,
         overflow: 'hidden',
       }}>
         {/* Move Panel Container */}
@@ -504,8 +526,9 @@ export function ProofDiscoveryEnvironment({
           borderRadius: '12px', background: '#ffffff',
           border: '1px solid #d4dde6', boxShadow: '0 2px 12px rgba(30,60,100,0.04)',
           overflow: 'hidden',
+          minHeight: 0,
         }}>
-          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
             <ProofDiscoveryStateContext.Provider value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}>
               <MovePanel />
             </ProofDiscoveryStateContext.Provider>
@@ -518,6 +541,7 @@ export function ProofDiscoveryEnvironment({
           flexShrink: 0, display: 'flex', flexDirection: 'column',
           borderRadius: '12px', background: '#ffffff',
           border: '1px solid #d4dde6', boxShadow: '0 2px 12px rgba(30,60,100,0.04)',
+          boxSizing: 'border-box',
           overflow: 'hidden', transition: 'height 0.3s ease',
         }}>
            {/* ════════════════════ GRAPH HEADER ════════════════════ */}

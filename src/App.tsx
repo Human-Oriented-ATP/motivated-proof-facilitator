@@ -15,7 +15,7 @@ export default function App(): JSX.Element {
     return (
       <ProofStateSelectionContext.Provider value={{ selections, dispatch: selectionsDispatch }}>
         <TypstContextProvider>
-          <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+          <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
             {/* ── App Header ── */}
             <Box sx={{
               display: "flex",

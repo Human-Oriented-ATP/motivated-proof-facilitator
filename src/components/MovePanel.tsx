@@ -382,17 +382,41 @@ function MovePanelContent(): JSX.Element {
     }
   }
 
-  // ── Render suggestions ──────────────────────────────────────────────────────
+// ── Render suggestions ──────────────────────────────────────────────────────
 
   const renderMoveSuggestions = () => {
+    if ((status === "idle" || status === "error") && selections.length === 0 && lastMoveReasoning) {
+      return (
+        <Box sx={{ display: 'flex', flexDirection: 'column', p: 1.5, flex: 1, minHeight: 0, gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 0.5, pb: 0.5, borderBottom: `1px solid ${G.border}` }}>
+            <Box sx={{ color: G.bright, display: 'flex' }}>
+              <svg style={{ width: 18, height: 18 }} viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </Box>
+            <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: G.dark, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reasoning Trace</Typography>
+          </Box>
+          <Box sx={{
+              flex: 1, overflowY: 'auto', p: 1.5,
+              background: '#F9FBF2', borderRadius: '8px',
+              border: `1px solid ${G.border}`, fontSize: '0.78rem',
+              color: '#334155', whiteSpace: 'pre-wrap',
+              lineHeight: 1.6, fontFamily: "'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace",
+          }}>
+            {lastMoveReasoning}
+          </Box>
+        </Box>
+      )
+    }
+
     if (selections.length === 0 && status !== "loaded") {
       return (
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, p: '2.5rem 1.5rem', textAlign: 'center', flex: 1 }}>
-          <svg style={{ width: 32, height: 32, color: G.light }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg style={{ width: 32, height: 32, color: '#B0BEC5' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
           </svg>
-          <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, color: G.dark }}>Select expressions</Typography>
-          <Typography sx={{ fontSize: '0.78rem', color: '#78909C', maxWidth: 260, lineHeight: 1.5 }}>
+          <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, color: '#546E7A', fontFamily: "'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace" }}>No selection</Typography>
+          <Typography sx={{ fontSize: '0.78rem', color: '#90A4AE', maxWidth: 260, lineHeight: 1.5 }}>
             Click on hypotheses, goals, or sub-expressions to generate suggestions
           </Typography>
         </Box>
@@ -726,7 +750,7 @@ function CustomMoveSection(): JSX.Element {
         </Typography>
         {selections.length === 0 && (
           <Chip label="No selection" size="small"
-            sx={{ height: 18, fontSize: '0.62rem', fontWeight: 600, background: '#FFF8E1', color: '#E65100', border: '1px solid #FFE082', borderRadius: '6px', '& .MuiChip-label': { px: '7px' } }}
+            sx={{ height: 18, fontSize: '0.62rem', fontWeight: 600, fontFamily: "'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace", background: '#F1F5F9', color: '#64748B', border: '1px solid #E2E8F0', borderRadius: '6px', '& .MuiChip-label': { px: '7px' } }}
           />
         )}
       </Box>
@@ -737,14 +761,14 @@ function CustomMoveSection(): JSX.Element {
         placeholder="Describe a move to apply..."
         rows={2}
         sx={{
-          width: '100%', fontSize: '0.78rem', color: '#374151',
+          width: '100%', fontSize: '0.78rem', color: '#334155',
           border: `1.5px solid ${G.border}`, borderRadius: '8px',
           p: '7px 9px', resize: 'vertical',
-          fontFamily: 'inherit', boxSizing: 'border-box',
-          outline: 'none', background: 'white', lineHeight: 1.4,
-          boxShadow: `inset 0 1px 2px rgba(0,0,0,0.03)`,
+          fontFamily: "'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace", boxSizing: 'border-box',
+          outline: 'none', background: '#FAFAFA', lineHeight: 1.45,
+          boxShadow: `inset 0 1px 3px rgba(0,0,0,0.04)`,
           display: 'block',
-          '&:focus': { borderColor: G.light },
+          '&:focus': { borderColor: G.light, background: 'white' },
         }}
       />
       <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center', mt: 0.75 }}>
