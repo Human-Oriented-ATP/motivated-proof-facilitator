@@ -16,6 +16,7 @@ import { isolateVariableMove } from "../prompts/isolateVariable"
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
 import { dischargeGoalMove } from "./dischargeGoal"
 import { goalDirectedReasoningMove } from "./goalDirectedReasoning"
+import { dischargeGoalWithOtherGoalMove } from "./dischargeGoalWithOtherGoal"
 
 export const moves: ProofDiscoveryMove[] = [
     goalConjunctionMove,
@@ -34,5 +35,6 @@ export const moves: ProofDiscoveryMove[] = [
     simplifyExpressionMove,
     isolateVariableMove,
     dischargeGoalMove,
-    goalDirectedReasoningMove
+    goalDirectedReasoningMove,
+    dischargeGoalWithOtherGoalMove
 ]
