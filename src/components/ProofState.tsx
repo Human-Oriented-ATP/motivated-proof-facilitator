@@ -1,5 +1,5 @@
 import React, { JSX, useContext } from "react"
-import { ProofStateContext as ProofStateContextType, ProofState as ProofStateType, ContextVariable, ProofStateContext, LabelledStatement, ProofStateWithLibraryResult } from "../core/ProofStateZod"
+import { type ProofStateContext as ProofStateContextType, type ProofState as ProofStateType, type ContextVariable, type LabelledStatement, type ProofStateWithLibraryResult } from "../core/ProofStateZod"
 import { MathStatement } from "./MathStatement"
 import { AtomicStatement } from "./AtomicStatement"
 import { ProofStateLocationContext } from "../core/ProofStateSelectionContext"
@@ -162,7 +162,7 @@ export function ProofStateContext({ proofContext }: ProofStateContextProps): JSX
                         gap: '8px',
                     }}>
                         <AtomicStatement address={[]} input={variable.name} />
-                        <span style={{ color: '#9ca3af' }}>:</span>
+                        <span style={{ color: '#b91c1c', fontWeight: '600', fontSize: '15px' }}>:</span>
                     </span>
                     <div style={{ display: 'inline-block' }}>
                         <ProofStateLocationContext.Provider value={{ kind: "variable_body", label: variable.name }}>
