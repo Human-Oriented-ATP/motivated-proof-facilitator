@@ -39,8 +39,8 @@ function TypstPreview({ input }: { input: string }): JSX.Element | null {
           const rawSvg = result.svg.replace(/fill="#ffffff"/g, 'fill="#000000"')
           const wMatch = rawSvg.match(/\bwidth="([\d.]+)(pt|px)?"/)
           const hMatch = rawSvg.match(/\bheight="([\d.]+)(pt|px)?"/)
-          const w = wMatch ? parseFloat(wMatch[1]) : null
-          const h = hMatch ? parseFloat(hMatch[1]) : null
+          const w = wMatch?.[1] != null ? parseFloat(wMatch[1]!) : null
+          const h = hMatch?.[1] != null ? parseFloat(hMatch[1]!) : null
           const unit = wMatch?.[2] ?? "pt"
           const svgStyle = "width:100%; height:100%; font-size:10pt; vertical-align:-0.2em"
           const fixedSvg = rawSvg.includes(" style=")
@@ -135,7 +135,6 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
         graph,
         currentNodeId: 0,
         library: [],
-        highlightedLibraryStatement: undefined,
         isSolved: false,
       })
     } catch (err) {
@@ -158,7 +157,6 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
       graph,
       currentNodeId: 0,
       library: [],
-      highlightedLibraryStatement: undefined,
       isSolved: false,
     })
   }
