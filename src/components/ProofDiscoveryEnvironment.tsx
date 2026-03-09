@@ -69,25 +69,27 @@ const LoadingSpinner = () => (
 /** Shared sx for bottom-pill action buttons */
 const actionBtnSx = {
   color: '#2e4a68',
-  borderColor: '#a8becc',
-  borderRadius: '8px',
+  borderColor: 'rgba(180,200,220,0.8)',
+  borderRadius: '20px',
   fontSize: '0.8rem',
-  fontWeight: 500,
+  fontWeight: 600,
   textTransform: 'none' as const,
-  background: 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(241,245,249,0.95) 100%)',
-  backdropFilter: 'blur(4px)',
-  boxShadow: '0 1px 2px rgba(30,60,100,0.06)',
-  gap: '0.35rem',
-  py: 0.6,
-  px: 1.25,
+  background: 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(245,248,252,0.95) 100%)',
+  backdropFilter: 'blur(8px)',
+  boxShadow: '0 4px 12px rgba(30,60,110,0.1), 0 1px 3px rgba(30,60,110,0.05)',
+  gap: '0.4rem',
+  py: 0.75,
+  px: 1.5,
   minHeight: 0,
   lineHeight: 1.4,
   '&:hover': {
-    borderColor: '#2c5f8a',
-    background: 'linear-gradient(180deg, rgba(234,243,255,0.98) 0%, rgba(219,238,251,0.98) 100%)',
-    boxShadow: '0 2px 6px rgba(30,70,130,0.12)',
+    borderColor: '#8ba7c4',
+    background: 'linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(235,242,250,1) 100%)',
+    boxShadow: '0 6px 16px rgba(30,70,130,0.15)',
+    transform: 'translateY(-1px)'
   },
-  '&.Mui-disabled': { opacity: 0.38 },
+  transition: 'all 0.2s ease',
+  '&.Mui-disabled': { opacity: 0.4 },
 }
 
 /** Sx for the small icon buttons in the floating graph header */
@@ -147,36 +149,6 @@ export function ProofDiscoveryEnvironment({
   const [jsonCopied, setJsonCopied] = useState(false)
   const { selections, dispatch: selectionsDispatch } = useContext(ProofStateSelectionContext)
 
-  // Draggable floating graph
-  const [graphPos, setGraphPos] = useState<{ x: number; y: number }>({ x: 400, y: 24 })
-  const isDraggingGraph = useRef(false)
-  const dragOffset = useRef({ x: 0, y: 0 })
-  const graphContainerRef = useRef<HTMLDivElement | null>(null)
-
-  const handleGraphDragStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    isDraggingGraph.current = true
-    const rect = graphContainerRef.current?.getBoundingClientRect()
-    if (rect) {
-      dragOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
-    }
-  }, [])
-
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      if (!isDraggingGraph.current || !graphContainerRef.current) return
-      const rect = graphContainerRef.current.getBoundingClientRect()
-      setGraphPos({
-        x: Math.max(0, Math.min(window.innerWidth - e.clientX - (rect.width - dragOffset.current.x), window.innerWidth - rect.width)),
-        y: Math.max(0, Math.min(window.innerHeight - e.clientY - (rect.height - dragOffset.current.y), window.innerHeight - rect.height)),
-      })
-    }
-    const onUp = () => { isDraggingGraph.current = false }
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-    return () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
-  }, [])
-
   useEffect(() => {
     if (!proofDiscoveryState.isSolved && isProofComplete(proofDiscoveryState)) {
       dispatchProofDiscoveryAction({ action: 'finish' })
@@ -218,83 +190,85 @@ export function ProofDiscoveryEnvironment({
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#ffffff' }}>
+    <Box sx={{ display: 'flex', gap: 2, p: 2, height: '100%', background: '#f4f7f9', boxSizing: 'border-box', overflow: 'hidden' }}>
 
-      {/* ════════════════════ LIBRARY BAR ════════════════════ */}
-      <Box sx={{
-        flexShrink: 0,
-        borderBottom: '1px solid #d4a520',
-        background: 'linear-gradient(180deg, #fffdf0 0%, #fef6d4 100%)',
-        boxShadow: '0 2px 6px rgba(180,120,0,0.08)',
-      }}>
-        {/* Header row */}
-        <Box sx={{ display: 'flex', alignItems: 'center', px: 2, py: 0.75, gap: 1 }}>
-          {/* Star icon + label */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: '#92400e' }}>
-            <Box component="span" sx={{ fontSize: '13px', lineHeight: 1, color: '#d97706' }}>★</Box>
-            <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#92400e' }}>
-              Library
-            </Typography>
-          </Box>
+      {/* ════════════════════ LEFT COLUMN ════════════════════ */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2, overflow: 'hidden', minHeight: 0 }}>
 
-          {/* Count badge */}
-          <Chip
-            label={proofDiscoveryState.library.length}
-            size="small"
-            sx={{ height: 18, minWidth: 24, fontSize: '11px', fontWeight: 700, background: '#fde68a', color: '#7a4500', border: '1px solid #f5c03a', borderRadius: '9px', '& .MuiChip-label': { px: '6px' } }}
-          />
+        {/* ════════════════════ LIBRARY BAR ════════════════════ */}
+        <Box sx={{
+          flexShrink: 0,
+          borderRadius: '12px',
+          border: '1px solid #d4dde6',
+          background: '#ffffff',
+          boxShadow: '0 2px 12px rgba(30,60,100,0.04)',
+          overflow: 'hidden',
+        }}>
+          {/* Header row */}
+          <Box sx={{ display: 'flex', alignItems: 'center', px: 2, py: 0.75, gap: 1, borderBottom: isLibraryExpanded ? '1px solid #f0f4f8' : 'none' }}>
+            {/* Library icon + label */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: '#2e4a68' }}>
+              <Box component="span" sx={{ fontSize: '14px', lineHeight: 1, color: '#4a729e', filter: 'grayscale(1)' }}>📚</Box>
+              <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#2e4a68' }}>
+                Library
+              </Typography>
+            </Box>
 
-          {/* Divider */}
-          <Box sx={{ width: '1px', height: 14, background: '#f0c060', mx: 0.25 }} />
-
-          {/* Show/hide toggle */}
-          <Button
-            onClick={() => setIsLibraryExpanded(v => !v)}
-            size="small"
-            endIcon={<IconChevron rotated={isLibraryExpanded} />}
-            sx={{
-              color: '#7a4f00', fontSize: '0.73rem', fontWeight: 500, textTransform: 'none',
-              px: 0.75, py: 0.25, minHeight: 0, gap: 0.5,
-              '&:hover': { background: 'rgba(180,110,0,0.08)' },
-            }}
-          >
-            {isLibraryExpanded ? 'Hide' : 'Show statements'}
-          </Button>
-
-          <Box sx={{ flex: 1 }} />
-
-          {/* Add button */}
-          <Tooltip title="Add a statement to the library">
-            <IconButton
-              onClick={() => { setIsAddLibraryOpen(v => !v); setNewLibraryLabel(''); setNewLibraryStatement('') }}
+            {/* Count badge */}
+            <Chip
+              label={proofDiscoveryState.library.length}
               size="small"
+              sx={{ height: 18, minWidth: 24, fontSize: '11px', fontWeight: 700, background: '#f8fafc', color: '#4a729e', border: '1px solid #d4dde6', borderRadius: '9px', '& .MuiChip-label': { px: '6px' } }}
+            />
+
+            {/* Divider */}
+            <Box sx={{ width: '1px', height: 14, background: '#e2e8f0', mx: 0.25 }} />
+
+            {/* Show/hide toggle */}
+            <Button
+              onClick={() => setIsLibraryExpanded(v => !v)}
+              size="small"
+              endIcon={<IconChevron rotated={isLibraryExpanded} />}
               sx={{
-                width: 24, height: 24, borderRadius: '6px',
-                border: '1.5px solid #c08800', color: '#7a4f00', fontSize: '15px', fontWeight: 700,
-                background: isAddLibraryOpen
-                  ? 'linear-gradient(180deg, #fde68a, #fcd34d)'
-                  : 'linear-gradient(180deg, #fef9e0, #fef0b0)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
-                '&:hover': { background: 'linear-gradient(180deg, #fde68a, #fcd34d)', borderColor: '#a06800' },
+                color: '#4a729e', fontSize: '0.73rem', fontWeight: 600, textTransform: 'none',
+                px: 0.75, py: 0.25, minHeight: 0, gap: 0.5,
+                '&:hover': { background: '#f1f5f9' },
               }}
             >
-              +
-            </IconButton>
-          </Tooltip>
-        </Box>
+              {isLibraryExpanded ? 'Hide' : 'Show statements'}
+            </Button>
+
+            <Box sx={{ flex: 1 }} />
+
+            {/* Add button */}
+            <Tooltip title="Add a statement to the library">
+              <IconButton
+                onClick={() => { setIsAddLibraryOpen(v => !v); setNewLibraryLabel(''); setNewLibraryStatement('') }}
+                size="small"
+                sx={{
+                  width: 24, height: 24, borderRadius: '6px',
+                  border: '1px solid #d4dde6', color: '#2e4a68', fontSize: '15px', fontWeight: 700,
+                  background: isAddLibraryOpen ? '#e2e8f0' : '#f8fafc',
+                  '&:hover': { background: '#e2e8f0' }
+                }}
+              >
+                +
+              </IconButton>
+            </Tooltip>
+          </Box>
 
         {/* Add form */}
         {isAddLibraryOpen && (
           <Box sx={{ px: 2, pb: 1.5 }}>
-            <Paper elevation={0} sx={{ border: '1px solid #fde68a', borderRadius: '10px', p: 2, background: 'white', boxShadow: '0 2px 8px rgba(180,120,0,0.07)' }}>
+            <Paper elevation={0} sx={{ border: '1px solid #e2e8f0', borderRadius: '10px', p: 2, background: '#f8fafc', boxShadow: 'inset 0 1px 3px rgba(30,60,100,0.03)' }}>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1.5 }}>
-                <Typography sx={{ fontSize: '10px', fontWeight: 800, color: '#92400e', letterSpacing: '0.08em', flexShrink: 0, textTransform: 'uppercase' }}>Label</Typography>
+                <Typography sx={{ fontSize: '10px', fontWeight: 800, color: '#475569', letterSpacing: '0.08em', flexShrink: 0, textTransform: 'uppercase' }}>Label</Typography>
                 <input
                   type="text"
                   value={newLibraryLabel}
                   onChange={e => setNewLibraryLabel(e.target.value)}
                   placeholder="e.g. lemma_1"
-                  style={{ flex: 1, padding: '4px 9px', border: '1px solid #fde68a', borderRadius: '5px', fontSize: '13px', outline: 'none', background: '#fffef8', fontFamily: 'inherit' }}
+                  style={{ flex: 1, padding: '4px 9px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '13px', outline: 'none', background: 'white', fontFamily: 'inherit', color: '#1e293b' }}
                 />
               </Box>
               <StatementBuilder value={newLibraryStatement} onChange={setNewLibraryStatement} />
@@ -307,12 +281,12 @@ export function ProofDiscoveryEnvironment({
                     dispatchProofDiscoveryAction({ action: 'addToLibrary', statement: { label: newLibraryLabel.trim(), statement: newLibraryStatement } })
                     setIsAddLibraryOpen(false); setNewLibraryLabel(''); setNewLibraryStatement(''); setIsLibraryExpanded(true)
                   }}
-                  sx={{ background: 'linear-gradient(180deg,#b07800,#8a5c00)', '&:hover': { background: 'linear-gradient(180deg,#8a5c00,#6a4400)' }, fontSize: '12px', fontWeight: 700, textTransform: 'none' }}
+                  sx={{ background: '#2e4a68', color: 'white', boxShadow: 'none', '&:hover': { background: '#1e3a5f', boxShadow: 'none' }, fontSize: '12px', fontWeight: 600, textTransform: 'none' }}
                 >
                   Add to Library
                 </Button>
                 <Button size="small" variant="outlined" onClick={() => setIsAddLibraryOpen(false)}
-                  sx={{ color: '#92400e', borderColor: '#fbc97a', fontSize: '12px', textTransform: 'none', '&:hover': { borderColor: '#d97706', background: '#fff8e0' } }}>
+                  sx={{ color: '#475569', borderColor: '#cbd5e1', fontSize: '12px', textTransform: 'none', '&:hover': { borderColor: '#94a3b8', background: '#f1f5f9' } }}>
                   Cancel
                 </Button>
               </Box>
@@ -330,22 +304,22 @@ export function ProofDiscoveryEnvironment({
                   onClick={() => dispatchProofDiscoveryAction(active ? { action: 'clearHighlightedStatement' } : { action: 'setHighlightedStatement', index: idx })}
                   sx={{
                     px: 1.75, py: 1,
-                    border: active ? '1.5px solid #86cc20' : '1px solid #e8c84a',
-                    background: active ? 'linear-gradient(135deg,#ecfccb,#dcf5a0)' : 'linear-gradient(135deg,#fffef2,#fefce8)',
+                    border: active ? '1.5px solid #10b981' : '1px solid #e2e8f0',
+                    background: active ? '#ecfdf5' : '#f8fafc',
                     borderRadius: '9px', cursor: 'pointer', transition: 'all 0.15s',
-                    boxShadow: active ? '0 3px 10px rgba(132,204,22,0.22)' : '0 1px 2px rgba(180,120,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
-                    '&:hover': { boxShadow: '0 3px 10px rgba(180,120,0,0.14)', borderColor: active ? '#70bc10' : '#d4a020' },
+                    boxShadow: active ? '0 2px 8px rgba(16,185,129,0.15)' : '0 1px 2px rgba(30,60,100,0.03)',
+                    '&:hover': { borderColor: active ? '#059669' : '#cbd5e1', background: active ? '#dcfeeb' : '#f1f5f9' },
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                    <Box component="span" sx={{ color: '#c08000', fontSize: '12px', flexShrink: 0, userSelect: 'none' }}>★</Box>
+                    <Box component="span" sx={{ color: active ? '#059669' : '#94a3b8', fontSize: '14px', flexShrink: 0, userSelect: 'none', filter: 'grayscale(1)' }}>📚</Box>
                     <Box sx={{ flex: 1 }}>
                       <ProofStateLocationContext.Provider value={{ kind: 'library_statement', label: statement.label }}>
                         <MathStatement address={[]} statement={statement.statement} polarity={null} />
                       </ProofStateLocationContext.Provider>
                     </Box>
                     <Chip label={statement.label} size="small" variant="outlined"
-                      sx={{ height: 20, fontSize: '10px', fontWeight: 700, background: '#fefce8', border: '1px solid #d4a020', color: '#7a4800', userSelect: 'none', '& .MuiChip-label': { px: '6px' } }}
+                      sx={{ height: 20, fontSize: '10px', fontWeight: 700, background: 'white', border: '1px solid #e2e8f0', color: '#475569', userSelect: 'none', '& .MuiChip-label': { px: '6px' } }}
                     />
                   </Box>
                 </Paper>
@@ -353,33 +327,28 @@ export function ProofDiscoveryEnvironment({
             })}
           </Box>
         )}
-      </Box>
+        </Box>
 
-      {/* ════════════════════ MAIN CONTENT ════════════════════ */}
-      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      {/* ════════════════════ PROOF STATE AREA ════════════════════ */}
+      <Box sx={{ 
+        flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', 
+        overflow: 'hidden', borderRadius: '12px', background: '#ffffff',
+        border: '1px solid #d4dde6', boxShadow: '0 2px 12px rgba(30,60,100,0.04)'
+      }}>
 
-        {/* Proof State — scrollable, with floating pill at bottom */}
-        <Box sx={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
-          {/* Scrollable proof state content */}
-          <Box sx={{ flex: 1, overflow: 'auto', p: 2, pb: '76px', background: '#ffffff' }}>
-            {proofDiscoveryState.isSolved && (
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1.5 }}>
-                <Chip
-                  icon={<Box sx={{ display: 'flex', color: '#10b981', ml: 0.5 }}><IconCheck size={15} /></Box>}
-                  label="Solved!"
-                  sx={{ background: 'linear-gradient(135deg,#d1fae5,#a7f3d0)', border: '2px solid #10b981', color: '#065f46', fontWeight: 700, fontSize: '0.88rem', height: 30, boxShadow: '0 2px 8px rgba(16,185,129,0.22)' }}
-                />
-              </Box>
-            )}
-            <Paper elevation={0} sx={{
-              p: 3, borderRadius: '14px',
-              background: '#ffffff',
-              border: '1px solid #d4dde6',
-              boxShadow: '0 2px 12px rgba(30,60,100,0.07), inset 0 1px 0 rgba(255,255,255,0.95)',
-              overflow: 'visible',
-            }}>
-              <ProofStateIdContext.Provider value={{ proofNodeId: proofDiscoveryState.currentNodeId, proofContextId: 0 }}>
+        {/* Scrollable proof state content */}
+        <Box sx={{ flex: 1, overflow: 'auto', p: 3, pb: '76px' }}>
+          {proofDiscoveryState.isSolved && (
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1.5 }}>
+              <Chip
+                icon={<Box sx={{ display: 'flex', color: '#10b981', ml: 0.5 }}><IconCheck size={15} /></Box>}
+                label="Solved!"
+                sx={{ background: 'linear-gradient(135deg,#d1fae5,#a7f3d0)', border: '2px solid #10b981', color: '#065f46', fontWeight: 700, fontSize: '0.88rem', height: 30, boxShadow: '0 2px 8px rgba(16,185,129,0.22)' }}
+              />
+            </Box>
+          )}
+          <Box sx={{ overflow: 'visible' }}>
+            <ProofStateIdContext.Provider value={{ proofNodeId: proofDiscoveryState.currentNodeId, proofContextId: 0 }}>
                 <ProofStateComponent
                   proofState={currentProofState}
                   libraryResult={proofDiscoveryState.highlightedLibraryStatement !== undefined
@@ -387,21 +356,14 @@ export function ProofDiscoveryEnvironment({
                     : undefined}
                 />
               </ProofStateIdContext.Provider>
-            </Paper>
+            </Box>
           </Box>
 
-          {/* ── Floating action pill ── */}
-          <Paper elevation={0}
+          {/* ── Floating action buttons (separated) ── */}
+          <Box
             sx={{
               position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)',
-              zIndex: 20,
-              display: 'flex', alignItems: 'center', gap: 0.75,
-              px: 1.75, py: 0.875,
-              borderRadius: '40px',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(240,246,252,0.97) 100%)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(180,200,220,0.75)',
-              boxShadow: '0 4px 20px rgba(30,60,110,0.14), 0 1px 4px rgba(30,60,110,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+              zIndex: 20, display: 'flex', alignItems: 'center', gap: 1.5,
               whiteSpace: 'nowrap',
             }}
           >
@@ -410,9 +372,6 @@ export function ProofDiscoveryEnvironment({
                 Copy
               </Button>
             </Tooltip>
-
-            {/* Divider */}
-            <Box sx={{ width: '1px', height: 20, background: 'rgba(160,185,210,0.5)', mx: 0.25 }} />
 
             <Tooltip title="Clear selections in current proof state">
               <span>
@@ -428,8 +387,6 @@ export function ProofDiscoveryEnvironment({
                 </Button>
               </span>
             </Tooltip>
-
-            <Box sx={{ width: '1px', height: 20, background: 'rgba(160,185,210,0.5)', mx: 0.25 }} />
 
             <Tooltip title="Edit the current proof state">
               <Button variant="outlined" size="small" startIcon={<IconEdit />} onClick={() => setIsEditModalOpen(true)} sx={actionBtnSx}>
@@ -451,100 +408,87 @@ export function ProofDiscoveryEnvironment({
             </Tooltip>
 
             {selections.length > 0 && (
-              <>
-                <Box sx={{ width: '1px', height: 20, background: 'rgba(160,185,210,0.5)', mx: 0.25 }} />
-                <Chip
-                  label={`${selections.length} sel.`}
-                  size="small"
-                  sx={{ background: 'linear-gradient(135deg,#dbeafe,#c3d8f8)', border: '1px solid #7aaad8', color: '#1a3a6e', fontWeight: 700, fontSize: '0.75rem', height: 24, boxShadow: '0 1px 3px rgba(30,70,160,0.10)' }}
-                />
-              </>
+              <Chip
+                label={`${selections.length} sel.`}
+                size="small"
+                sx={{ background: 'linear-gradient(135deg,#dbeafe,#c3d8f8)', border: '1px solid #7aaad8', color: '#1a3a6e', fontWeight: 700, fontSize: '0.75rem', height: 32, borderRadius: '16px', boxShadow: '0 4px 12px rgba(30,60,110,0.1)' }}
+              />
             )}
-          </Paper>
+          </Box>
         </Box>
+      </Box>
 
-        {/* ── Right column: Move Panel (full height) ── */}
+      {/* ════════════════════ RIGHT COLUMN (Move Panel + Graph) ════════════════════ */}
+      <Box sx={{
+        width: '400px', flexShrink: 0,
+        display: 'flex', flexDirection: 'column',
+        gap: 2,
+        overflow: 'hidden',
+      }}>
+        {/* Move Panel Container */}
         <Box sx={{
-          width: '400px', flexShrink: 0,
-          display: 'flex', flexDirection: 'column',
-          borderLeft: '1px solid #b8ccda',
-          background: 'linear-gradient(180deg, #f0f4f8 0%, #e8eef5 100%)',
+          flex: 1, display: 'flex', flexDirection: 'column',
+          borderRadius: '12px', background: '#ffffff',
+          border: '1px solid #d4dde6', boxShadow: '0 2px 12px rgba(30,60,100,0.04)',
           overflow: 'hidden',
         }}>
-          <Box sx={{ flex: 1, overflow: 'auto', p: 1.5 }}>
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <ProofDiscoveryStateContext.Provider value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}>
               <MovePanel />
             </ProofDiscoveryStateContext.Provider>
           </Box>
         </Box>
-      </Box>
 
-      {/* ════════════════════ FLOATING GRAPH WINDOW ════════════════════ */}
-      <Paper
-        ref={graphContainerRef}
-        elevation={10}
-        sx={{
-          position: 'fixed',
-          right: graphPos.x,
-          bottom: graphPos.y,
-          width: isGraphExpanded ? '340px' : '200px',
-          height: isGraphExpanded ? '280px' : 'auto',
-          borderRadius: '12px',
-          display: 'flex', flexDirection: 'column',
-          overflow: 'hidden',
-          zIndex: 500,
-          resize: isGraphExpanded ? 'both' : 'none',
-          border: '1px solid #a0b8cc',
-          background: 'linear-gradient(180deg, #edf2f8 0%, #e4ecf5 100%)',
-          boxShadow: '0 12px 40px rgba(20,50,100,0.22), 0 3px 8px rgba(20,50,100,0.12), inset 0 1px 0 rgba(255,255,255,0.7)',
-          transition: 'width 0.2s ease, height 0.2s ease',
-        }}
-      >
-        {/* Drag handle / header */}
-        <Box
-          onMouseDown={handleGraphDragStart}
-          sx={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            px: 1.25, py: 0.625,
-            background: 'linear-gradient(180deg, #e8f0f8 0%, #dce8f2 100%)',
-            borderBottom: isGraphExpanded ? '1px solid #b0c8dc' : 'none',
-            cursor: 'grab', userSelect: 'none', flexShrink: 0,
-            '&:active': { cursor: 'grabbing' },
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-            <Box sx={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-              {['#f6c97a', '#79d07a', '#7ab8f6'].map((c, i) => (
-                <Box key={i} sx={{ width: 8, height: 8, borderRadius: '50%', background: c, boxShadow: `0 1px 2px rgba(0,0,0,0.15)` }} />
-              ))}
-            </Box>
-            <Typography sx={{ fontSize: '0.67rem', fontWeight: 800, color: '#2e4a68', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-              Proof Graph
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 0.4 }}>
-            <Tooltip title={isGraphExpanded ? 'Collapse' : 'Expand graph'}>
-              <IconButton size="small" onClick={() => setIsGraphExpanded(v => !v)} sx={graphBtnSx}>
-                <IconChevron rotated={isGraphExpanded} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Fullscreen">
-              <IconButton size="small" onClick={() => setIsGraphFullscreen(true)} sx={graphBtnSx}>
-                <IconFullscreen />
-              </IconButton>
-            </Tooltip>
-          </Box>
+        {/* Graph Box (Docked inside right column) */}
+        <Box sx={{
+          height: isGraphExpanded ? '300px' : '44px',
+          flexShrink: 0, display: 'flex', flexDirection: 'column',
+          borderRadius: '12px', background: '#ffffff',
+          border: '1px solid #d4dde6', boxShadow: '0 2px 12px rgba(30,60,100,0.04)',
+          overflow: 'hidden', transition: 'height 0.3s ease',
+        }}>
+           {/* ════════════════════ GRAPH HEADER ════════════════════ */}
+           <Box
+             sx={{
+               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+               px: 2, py: 1, height: '44px', boxSizing: 'border-box',
+               background: isGraphExpanded ? 'transparent' : 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)',
+               borderBottom: isGraphExpanded ? '1px solid #e2e8f0' : 'none',
+               userSelect: 'none', flexShrink: 0, cursor: 'pointer',
+               opacity: isGraphExpanded ? 0 : 1, transition: 'all 0.2s ease',
+               '&:hover': { opacity: 1, background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)' }
+             }}
+             onClick={() => setIsGraphExpanded(v => !v)}
+           >
+             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+               <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: '#2e4a68', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                 Proof Graph
+               </Typography>
+             </Box>
+             <Box sx={{ display: 'flex', gap: 0.5 }} onClick={(e) => e.stopPropagation()}>
+               <Tooltip title="Fullscreen">
+                 <IconButton size="small" onClick={() => setIsGraphFullscreen(true)} sx={graphBtnSx}>
+                   <IconFullscreen />
+                 </IconButton>
+               </Tooltip>
+               <Tooltip title={isGraphExpanded ? 'Collapse' : 'Expand'}>
+                 <IconButton size="small" onClick={() => setIsGraphExpanded(v => !v)} sx={graphBtnSx}>
+                   <IconChevron rotated={isGraphExpanded} />
+                 </IconButton>
+               </Tooltip>
+             </Box>
+           </Box>
+          
+           {/* ════════════════════ GRAPH BODY ════════════════════ */}
+           {isGraphExpanded && (
+             <Box sx={{ flex: 1, overflow: 'hidden', background: '#f8fafc' }}>
+               <ProofDiscoveryStateContext.Provider value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}>
+                 <ProofDiscoveryStateVisualization proofDiscoveryState={proofDiscoveryState} />
+               </ProofDiscoveryStateContext.Provider>
+             </Box>
+           )}
         </Box>
-
-        {/* Graph body */}
-        {isGraphExpanded && (
-          <Box sx={{ flex: 1, overflow: 'hidden', background: '#f2f6fa' }}>
-            <ProofDiscoveryStateContext.Provider value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}>
-              <ProofDiscoveryStateVisualization proofDiscoveryState={proofDiscoveryState} />
-            </ProofDiscoveryStateContext.Provider>
-          </Box>
-        )}
-      </Paper>
+      </Box>
 
       {/* ════════════════════ DIALOGS ════════════════════ */}
 

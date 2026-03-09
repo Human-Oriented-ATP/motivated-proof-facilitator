@@ -5,7 +5,6 @@ import {
   Edge,
   Background,
   Controls,
-  MiniMap,
   NodeTypes,
   MarkerType,
   Position,
@@ -30,6 +29,7 @@ interface ProofNodeData extends Record<string, unknown> {
   isCurrentNode: boolean
   isSolved: boolean
 }
+
 // local styles
 const styles: Record<string, React.CSSProperties> = {
   edgeTooltip: {
@@ -47,6 +47,7 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'pre-wrap' as const,
   }
 }
+
 /** Props for the ProofDiscoveryGraphLoader component */
 export type ProofDiscoveryGraphLoaderProps = {
     /** The proof discovery state to visualize */
@@ -57,7 +58,7 @@ export type ProofDiscoveryGraphLoaderProps = {
 function ProofNode({ data }: { data: ProofNodeData }): JSX.Element {
   const { proofNodeId, proofState, isCurrentNode, isSolved } = data
   const { dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
-  
+
   return (
     <div
       style={{
@@ -67,8 +68,8 @@ function ProofNode({ data }: { data: ProofNodeData }): JSX.Element {
         padding: '12px',
         minWidth: '300px',
         maxWidth: '400px',
-        boxShadow: isCurrentNode 
-          ? '0 10px 15px -3px rgba(59, 130, 246, 0.3)' 
+        boxShadow: isCurrentNode
+          ? '0 10px 15px -3px rgba(59, 130, 246, 0.3)'
           : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
         fontSize: '11px',
         position: 'relative',
@@ -76,16 +77,12 @@ function ProofNode({ data }: { data: ProofNodeData }): JSX.Element {
       }}
       onClick={() => dispatchProofDiscoveryAction({ action: 'focus', nodeId: proofNodeId })}
     >
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={{ opacity: 0 }}
-      />
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        style={{ opacity: 0 }}
-      />
+      {/* Invisible handles at both top and bottom for both source and target */}
+      <Handle type="target" position={Position.Top}    id="target-top"    style={{ opacity: 0 }} />
+      <Handle type="target" position={Position.Bottom} id="target-bottom" style={{ opacity: 0 }} />
+      <Handle type="source" position={Position.Top}    id="source-top"    style={{ opacity: 0 }} />
+      <Handle type="source" position={Position.Bottom} id="source-bottom" style={{ opacity: 0 }} />
+
       {/* Node ID Badge */}
       <div
         style={{
@@ -103,7 +100,7 @@ function ProofNode({ data }: { data: ProofNodeData }): JSX.Element {
       >
         {isCurrentNode ? '● Current' : isSolved ? '✓ Solved' : `State ${proofNodeId}`}
       </div>
-      
+
       {/* Miniaturized Proof State */}
       <div
         style={{
@@ -128,42 +125,38 @@ const nodeTypes: NodeTypes = {
   proofNode: ProofNode,
 }
 
-/** Get color and style for edge based on move kind */
-function getEdgeStyle(moveKind: MoveKind): { 
+/** Edge colors and styles per move kind */
+const EDGE_STYLE = {
+  strengthening: {
+    stroke: '#16a34a',      // Forest green — productive deepening of the goal
+    strokeWidth: 3,
+    strokeDasharray: undefined,
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#16a34a' },
+  },
+  weakening: {
+    stroke: '#f97316',      // Orange — relaxing/retreating the goal
+    strokeWidth: 3,
+    strokeDasharray: '6,4',
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#f97316' },
+  },
+  equivalence: {
+    stroke: '#7c3aed',      // Violet — equivalent reformulation
+    strokeWidth: 2.5,
+    strokeDasharray: undefined,
+    markerEnd: { type: MarkerType.Arrow, color: '#7c3aed' },
+  },
+  other: {
+    stroke: '#94a3b8',      // Slate — unknown/other relation
+    strokeWidth: 2,
+    strokeDasharray: '5,5',
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
+  },
+} satisfies Record<MoveKind, {
   stroke: string
   strokeWidth: number
   strokeDasharray?: string
   markerEnd: { type: MarkerType; color: string }
-} {
-  switch (moveKind) {
-    case 'strengthening':
-      return {
-        stroke: '#10b981', // Green
-        strokeWidth: 3,
-        markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' },
-      }
-    case 'weakening':
-      return {
-        stroke: '#f59e0b', // Orange
-        strokeWidth: 3,
-        strokeDasharray: '5,5',
-        markerEnd: { type: MarkerType.ArrowClosed, color: '#f59e0b' },
-      }
-    case 'equivalence':
-      return {
-        stroke: '#8b5cf6', // Purple
-        strokeWidth: 3,
-        markerEnd: { type: MarkerType.Arrow, color: '#8b5cf6' },
-      }
-    case 'other':
-      return {
-        stroke: '#9ca3af', // Gray
-        strokeWidth: 2,
-        strokeDasharray: '5,5',
-        markerEnd: { type: MarkerType.ArrowClosed, color: '#9ca3af' },
-      }
-  }
-}
+}>
 
 /** Props for the ProofDiscoveryState component */
 export type ProofDiscoveryStateProps = {
@@ -172,30 +165,29 @@ export type ProofDiscoveryStateProps = {
 
 /**
  * Visualize a proof discovery state as an interactive graph using React Flow.
- * 
- * Converts a graphology graph into React Flow format, with:
- * - Miniaturized proof states as nodes
- * - Color-coded edges based on move kind
- * - Current node highlighted
- * - Auto-layout using dagre algorithm
- * 
- * @param props - ProofDiscoveryStateProps
- * @returns JSX element containing the React Flow graph
+ *
+ * Layout semantics (matching the proof-theory conventions):
+ *   - Strengthening (newNode → parent in graphology): new node appears BELOW parent.
+ *     Arrow direction: parent → strengthened child (downward).
+ *   - Weakening (parent → newNode in graphology): new node appears ABOVE parent.
+ *     Arrow direction: parent → weakened child (upward).
+ *   - Equivalence: same vertical rank, bidirectional.
+ *   - Within a rank, nodes are spread horizontally in discovery order (by node ID).
  */
 export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryStateProps): JSX.Element {
   const { graph, currentNodeId, isSolved } = proofDiscoveryState
 
-  // Convert graphology nodes to React Flow nodes
+  // Convert graphology nodes to React Flow nodes with computed layout
   const derivedNodes: Node<ProofNodeData>[] = useMemo(() => {
     const flowNodes: Node<ProofNodeData>[] = []
-    
+
     graph.forEachNode((nodeId, attributes) => {
-      const numericId = typeof nodeId === 'string' ? parseInt(nodeId) : nodeId
-      
+      const numericId = typeof nodeId === 'string' ? parseInt(nodeId) : nodeId as number
+
       flowNodes.push({
         id: nodeId.toString(),
         type: 'proofNode',
-        position: { x: numericId * 450, y: 0 }, // Temporary positioning
+        position: { x: 0, y: 0 }, // overwritten by computeLayout
         data: {
           proofNodeId: numericId,
           proofState: attributes.proofState,
@@ -208,56 +200,85 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
       })
     })
 
-    // Simple hierarchical layout
-    const layouted = simpleLayout(flowNodes, graph)
-    
-    return layouted
+    return computeLayout(flowNodes, graph)
   }, [graph, currentNodeId, isSolved])
 
-  // Convert graphology edges to React Flow edges
+  // Convert graphology edges to React Flow edges with correct direction and handles
   const derivedEdges: Edge[] = useMemo(() => {
     const flowEdges: Edge[] = []
-    
+
     graph.forEachEdge((edge, attributes, source, target, _sa, _ta, undirected) => {
-      const edgeStyle = getEdgeStyle(attributes.kind)
-      
+      const kind: MoveKind = attributes.kind
+      const es = EDGE_STYLE[kind] ?? EDGE_STYLE.other
+
+      // Arrow direction: always parent → child.
+      //   Strengthening (graphology: source=child, target=parent) → swap so arrow goes parent→child (down)
+      //   Weakening     (graphology: source=parent, target=child) → keep  so arrow goes parent→child (up)
+      //   Equivalence   (undirected)                              → straight, bidirectional
+      let rfSource: string
+      let rfTarget: string
+      let sourceHandle: string
+      let targetHandle: string
+
+      if (undirected) {
+        // Equivalence: straight line between the two nodes, centered handles
+        rfSource = source.toString()
+        rfTarget = target.toString()
+        sourceHandle = 'source-bottom'
+        targetHandle = 'target-top'
+      } else if (kind === 'strengthening' || kind === 'other') {
+        // Swap: child (graphology source) ← parent (graphology target)
+        // Arrow goes from parent (above) DOWN to child (below)
+        rfSource = target.toString()  // parent
+        rfTarget = source.toString()  // child
+        sourceHandle = 'source-bottom'  // exits from bottom of parent
+        targetHandle = 'target-top'     // arrives at top of child
+      } else {
+        // Weakening: no swap, parent (graphology source) → child (graphology target)
+        // Arrow goes from parent (below) UP to child (above)
+        rfSource = source.toString()  // parent
+        rfTarget = target.toString()  // child
+        sourceHandle = 'source-top'    // exits from top of parent
+        targetHandle = 'target-bottom' // arrives at bottom of child (which is above parent)
+      }
+
       flowEdges.push({
         id: edge.toString(),
-        source: target.toString(),
-        target: source.toString(),
+        source: rfSource,
+        target: rfTarget,
+        sourceHandle,
+        targetHandle,
         type: undirected ? 'straight' : 'bezier',
         animated: false,
         style: {
-          stroke: edgeStyle.stroke,
-          strokeWidth: edgeStyle.strokeWidth,
-          strokeDasharray: edgeStyle.strokeDasharray,
+          stroke: es.stroke,
+          strokeWidth: es.strokeWidth,
+          strokeDasharray: es.strokeDasharray,
         },
-        markerEnd: undirected ? undefined : edgeStyle.markerEnd,
+        markerEnd: undirected ? undefined : es.markerEnd,
         label: attributes.description,
-        labelStyle: { fill: edgeStyle.stroke, fontWeight: 600, fontSize: 11 },
-        labelBgStyle: { fill: '#ffffff', fillOpacity: 0.9 },
+        labelStyle: { fill: es.stroke, fontWeight: 600, fontSize: 11 },
+        labelBgStyle: { fill: '#ffffff', fillOpacity: 0.92 },
         data: { reasoning: attributes.reasoning ?? '' },
       })
     })
-    
+
     return flowEdges
   }, [graph])
 
   const [nodes, setNodes, onNodesChange] = useNodesState(derivedNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(derivedEdges)
   const [hoveredEdgeReasoning, setHoveredEdgeReasoning] = useState<string | null>(null)
+  const [rfInstance, setRfInstance] = useState<any>(null)
 
+  // Preserve user-dragged positions; only update data/styling on existing nodes
   useEffect(() => {
     setNodes((currentNodes) => {
-      const existingById = new Map(currentNodes.map((node) => [node.id, node]))
+      const existingById = new Map(currentNodes.map((n) => [n.id, n]))
       return derivedNodes.map((node) => {
         const existing = existingById.get(node.id)
         if (!existing) return node
-
-        return {
-          ...node,
-          position: existing.position,
-        }
+        return { ...node, position: existing.position }
       })
     })
   }, [derivedNodes, setNodes])
@@ -266,8 +287,17 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
     setEdges(derivedEdges)
   }, [derivedEdges, setEdges])
 
+  // Re-fit view when nodes are added
+  const prevNodeCount = React.useRef(nodes.length)
+  useEffect(() => {
+    if (rfInstance && nodes.length !== prevNodeCount.current) {
+      prevNodeCount.current = nodes.length
+      rfInstance.fitView({ padding: 0.18, duration: 400 })
+    }
+  }, [nodes.length, rfInstance])
+
   return (
-    <div style={{ width: '100%', height: '800px', border: '2px solid #e5e7eb', borderRadius: '12px' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {hoveredEdgeReasoning && (
         <div style={styles.edgeTooltip}>
           {hoveredEdgeReasoning}
@@ -279,140 +309,113 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onEdgeMouseEnter={(e, edge) => {
+        onInit={(instance) => {
+          setRfInstance(instance)
+          instance.fitView({ padding: 0.18 })
+        }}
+        onEdgeMouseEnter={(_e, edge) => {
           const reasoning = (edge.data as any)?.reasoning
           setHoveredEdgeReasoning(reasoning || null)
         }}
         onEdgeMouseLeave={() => setHoveredEdgeReasoning(null)}
         fitView
-        minZoom={0.1}
+        fitViewOptions={{ padding: 0.18 }}
+        minZoom={0.08}
         maxZoom={1.5}
         nodesDraggable={true}
         nodesConnectable={false}
         elementsSelectable={true}
         selectNodesOnDrag={false}
         panOnDrag={true}
-        defaultEdgeOptions={{
-          type: 'bezier',
-        }}
+        defaultEdgeOptions={{ type: 'bezier' }}
         proOptions={{ hideAttribution: true }}
       >
-        <Background />
+        <Background color="#e2e8f0" gap={20} />
         <Controls />
-        <MiniMap
-          nodeColor={(node) => {
-            if (node.data.isCurrentNode) return '#3b82f6'
-            if (node.data.isSolved) return '#22c55e'
-            return '#d1d5db'
-          }}
-          style={{
-            backgroundColor: '#f9fafb',
-          }}
-        />
       </ReactFlow>
-      
-      {/* Legend
-      <div
-        style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          backgroundColor: 'white',
-          border: '2px solid #e5e7eb',
-          borderRadius: '8px',
-          padding: '12px',
-          fontSize: '12px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          zIndex: 5,
-        }}
-      >
-        <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Edge Types</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '30px', height: '3px', backgroundColor: '#10b981' }} />
-            <span>Strengthening</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '30px', height: '3px', backgroundColor: '#f59e0b' }} />
-            <span>Weakening</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '30px', height: '3px', backgroundColor: '#8b5cf6' }} />
-            <span>Equivalence</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '30px', height: '2px', backgroundColor: '#9ca3af', backgroundImage: 'repeating-linear-gradient(90deg, #9ca3af 0, #9ca3af 5px, transparent 5px, transparent 10px)' }} />
-            <span>Other</span>
-          </div>
-        </div>
-      </div> */ }
-    </div> 
+    </div>
   )
 }
 
 /**
- * Simple layout algorithm for positioning nodes
- * Uses a basic hierarchical approach based on graph structure
+ * Compute node positions based on proof-theoretic rank:
+ *   - Node 0 at rank 0 (vertical center of the discovery).
+ *   - Strengthening child: rank(parent) + 1 → placed BELOW parent (y increases).
+ *   - Weakening child:     rank(parent) - 1 → placed ABOVE parent (y decreases).
+ *   - Equivalence partner: same rank.
+ *
+ * Nodes are processed in discovery order (by numeric ID) so that when we compute
+ * a node's rank, its parent (always a lower ID) already has an assigned rank.
+ * Within the same rank, nodes are spread horizontally in discovery order.
  */
-function simpleLayout(nodes: Node<ProofNodeData>[], graph: any): Node<ProofNodeData>[] {
+function computeLayout(nodes: Node<ProofNodeData>[], graph: any): Node<ProofNodeData>[] {
   if (nodes.length === 0) return nodes
 
-  // Calculate levels using BFS from node 0
-  const levels = new Map<string, number>()
-  const queue: string[] = ['0']
-  levels.set('0', 0)
-  
-  while (queue.length > 0) {
-    const current = queue.shift()!
-    const currentLevel = levels.get(current)!
-    
-    // Get all neighbors
-    try {
-      const processNeighbor = (neighbor: number) => {
-        const neighborStr = neighbor.toString()
-        if (!levels.has(neighborStr)) {
-          levels.set(neighborStr, currentLevel + 1)
-          queue.push(neighborStr)
+  const ranks = new Map<string, number>()
+  ranks.set('0', 0)
+
+  // Sort by numeric ID so parents are always processed before children
+  const sorted = [...nodes].sort((a, b) => parseInt(a.id) - parseInt(b.id))
+
+  for (let i = 1; i < sorted.length; i++) {
+    const nodeId = sorted[i].id
+    let rank: number | undefined
+
+    // Iterate all edges to find the one that connects this node to its parent
+    graph.forEachEdge((_edge: string, attrs: any, source: string, target: string, _sa: any, _ta: any, undirected: boolean) => {
+      const src = source.toString()
+      const tgt = target.toString()
+
+      // Only consider edges involving this node
+      if (src !== nodeId && tgt !== nodeId) return
+      // Rank already determined
+      if (rank !== undefined) return
+
+      if (undirected) {
+        // Equivalence: same rank as the other (already-ranked) node
+        const other = src === nodeId ? tgt : src
+        if (ranks.has(other)) rank = ranks.get(other)!
+        return
+      }
+
+      const kind: MoveKind = attrs.kind
+      if (kind === 'strengthening' || kind === 'other') {
+        // graphology: source=child, target=parent
+        // This node is the child (source); parent is target
+        if (src === nodeId && ranks.has(tgt)) {
+          rank = ranks.get(tgt)! + 1  // child is one rank BELOW parent
+        }
+      } else if (kind === 'weakening') {
+        // graphology: source=parent, target=child
+        // This node is the child (target); parent is source
+        if (tgt === nodeId && ranks.has(src)) {
+          rank = ranks.get(src)! - 1  // child is one rank ABOVE parent
         }
       }
-      
-      graph.forEachOutboundNeighbor(parseInt(current), processNeighbor)
-      graph.forEachInboundNeighbor(parseInt(current), processNeighbor)
-    } catch (e) {
-      // Node might not have neighbors
-    }
+    })
+
+    ranks.set(nodeId, rank ?? 0)
   }
-  
-  // Position nodes by level (x) and chronological order (y)
-  const nodesByLevel = new Map<number, Node[]>()
-  nodes.forEach((node) => {
-    const level = levels.get(node.id) ?? 0
-    if (!nodesByLevel.has(level)) {
-      nodesByLevel.set(level, [])
-    }
-    nodesByLevel.get(level)!.push(node)
-  })
 
-  // Arrange nodes with proper spacing (vertical levels)
-  const levelSpacing = 440
-  const nodeSpacing = 360
+  // Group nodes by rank
+  const byRank = new Map<number, Node<ProofNodeData>[]>()
+  for (const node of nodes) {
+    const r = ranks.get(node.id) ?? 0
+    if (!byRank.has(r)) byRank.set(r, [])
+    byRank.get(r)!.push(node)
+  }
 
-  nodesByLevel.forEach((levelNodes, level) => {
-    const sortedById = [...levelNodes].sort((a, b) => {
-      const aId = Number(a.id)
-      const bId = Number(b.id)
-      if (Number.isNaN(aId) || Number.isNaN(bId)) return a.id.localeCompare(b.id)
-      return aId - bId
+  const LEVEL_SPACING = 430  // vertical distance between ranks
+  const NODE_SPACING = 380   // horizontal distance within a rank
+
+  for (const [rank, rankNodes] of byRank) {
+    // Spread horizontally in discovery order
+    rankNodes.sort((a, b) => parseInt(a.id) - parseInt(b.id))
+    const xStart = -((rankNodes.length - 1) * NODE_SPACING) / 2
+    rankNodes.forEach((node, idx) => {
+      node.position = { x: xStart + idx * NODE_SPACING, y: rank * LEVEL_SPACING }
     })
+  }
 
-    const xOffset = -((sortedById.length - 1) * nodeSpacing) / 2
-    sortedById.forEach((node, index) => {
-      node.position = {
-        x: xOffset + index * nodeSpacing,
-        y: level * levelSpacing,
-      }
-    })
-  })
-  
   return nodes
 }

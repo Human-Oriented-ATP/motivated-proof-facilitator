@@ -95,13 +95,13 @@ export async function applyMove(
 // ─── Design tokens ──────────────────────────────────────────────────────────
 
 const G = {
-  dark:   '#1B5E20',  // deep forest
-  med:    '#2E7D32',  // forest
-  bright: '#43A047',  // bright glade
-  light:  '#81C784',  // leaf
-  bg:     '#F1F8E9',  // morning dew
-  border: '#C8E6C9',  // pale leaf
-  text:   '#1B5E20',  // forest text
+  dark:   '#064e3b',  // Sleek dark emerald
+  med:    '#059669',  // Medium emerald
+  bright: '#10b981',  // Bright action emerald
+  light:  '#a7f3d0',  // Soft emerald
+  bg:     '#f6fbf9',  // Sleek green-tinted background
+  border: '#d1fae5',  // Soft green border
+  text:   '#022c22',  // Slate dark green text
 }
 
 // ─── Inline SVG icons ────────────────────────────────────────────────────────
@@ -611,33 +611,36 @@ function MovePanelContent(): JSX.Element {
 
   return (
     <Box
-      sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'white' }}
+      sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: '#ffffff', borderRadius: '12px' }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setIsHovering(false)}
     >
-      {/* Header */}
+      {/* Header (aligned with Library header) */}
       <Box sx={{
         display: 'flex', alignItems: 'center',
-        px: 1.5, py: 0.875,
-        background: G.bg,
-        borderBottom: `1px solid ${G.border}`,
+        px: 2, py: 0.75,
+        background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)',
+        borderBottom: '1px solid #c0cedb',
         flexShrink: 0,
       }}>
-        <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: G.dark, flex: 1 }}>
-          {status === "loaded"
-            ? `${applicableMoves.length} Applicable Move${applicableMoves.length !== 1 ? "s" : ""}`
-            : "Move Suggestions"}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flex: 1, color: '#2e4a68' }}>
+          <Box component="span" sx={{ fontSize: '13px', lineHeight: 1, color: '#4a729e' }}>⚡</Box>
+          <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#2e4a68' }}>
+            {status === "loaded"
+              ? `${applicableMoves.length} Move Suggested`
+              : "Move Suggestions"}
+          </Typography>
+        </Box>
         <Box sx={{ display: 'flex', gap: 0.625 }}>
           <Tooltip title="View all available moves">
             <IconButton size="small" onClick={() => setShowAllMovesModal(true)}
-              sx={{ width: 28, height: 28, borderRadius: '7px', border: `1px solid ${G.border}`, color: G.med, background: 'white', '&:hover': { background: G.bg } }}>
+              sx={{ width: 24, height: 24, borderRadius: '6px', border: '1px solid rgba(180,200,220,0.6)', color: '#3a5070', background: 'rgba(255,255,255,0.5)', '&:hover': { background: 'rgba(255,255,255,0.9)', borderColor: '#8aabcc' } }}>
               <ListIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="Refresh suggestions">
             <IconButton size="small" onClick={() => void fetchMoves()}
-              sx={{ width: 28, height: 28, borderRadius: '7px', border: `1px solid ${G.border}`, color: G.med, background: 'white', '&:hover': { background: G.bg } }}>
+              sx={{ width: 24, height: 24, borderRadius: '6px', border: '1px solid rgba(180,200,220,0.6)', color: '#3a5070', background: 'rgba(255,255,255,0.5)', '&:hover': { background: 'rgba(255,255,255,0.9)', borderColor: '#8aabcc' } }}>
               <RefreshIcon />
             </IconButton>
           </Tooltip>
@@ -660,18 +663,18 @@ function MovePanelContent(): JSX.Element {
         onClose={() => setShowAllMovesModal(false)}
         maxWidth="sm"
         fullWidth
-        slotProps={{ paper: { sx: { borderRadius: '16px', border: `1px solid ${G.border}`, overflow: 'hidden' } } }}
+        slotProps={{ paper: { sx: { borderRadius: '16px', border: `1px solid #c0cedb`, overflow: 'hidden' } } }}
       >
         <Box sx={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          px: 2.5, py: 1.5, borderBottom: `1px solid ${G.border}`,
-          background: G.bg, flexShrink: 0,
+          px: 2.5, py: 1.5, borderBottom: `1px solid #c0cedb`,
+          background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)', flexShrink: 0,
         }}>
-          <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: G.dark, letterSpacing: '-0.01em' }}>
+          <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: '#1E3A5F', letterSpacing: '-0.01em' }}>
             Library of Moves
           </Typography>
           <IconButton size="small" onClick={() => setShowAllMovesModal(false)}
-            sx={{ background: 'white', border: `1px solid ${G.border}`, color: G.med, borderRadius: '8px', '&:hover': { background: '#DCEDC8' } }}>
+            sx={{ background: 'white', border: `1px solid #c0cedb`, color: '#3A5B80', borderRadius: '8px', '&:hover': { background: '#E2E8F0' } }}>
             <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
@@ -894,19 +897,19 @@ function AllMovesList(): JSX.Element {
         <Box sx={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           px: 2.5, py: 1.5, borderBottom: `1px solid ${G.border}`,
-          background: G.bg, flexShrink: 0,
+          background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)', flexShrink: 0,
         }}>
-          <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: G.dark, letterSpacing: '-0.01em' }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#1E3A5F', letterSpacing: '-0.01em' }}>
             Live Move Generator
           </Typography>
           <IconButton size="small" onClick={() => setShowGenerator(false)}
-            sx={{ background: 'white', border: `1px solid ${G.border}`, color: G.med, borderRadius: '8px', '&:hover': { background: '#DCEDC8' } }}>
+            sx={{ background: 'white', border: `1px solid ${G.border}`, color: '#3A5B80', borderRadius: '8px', '&:hover': { background: '#E2E8F0' } }}>
             <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
           </IconButton>
         </Box>
-        <DialogContent sx={{ overflowY: 'auto', p: 3, background: '#F8FAF5' }}>
+        <DialogContent sx={{ overflowY: 'auto', p: 3, background: '#F8FAFC' }}>
           <MoveGenerator />
         </DialogContent>
       </Dialog>
