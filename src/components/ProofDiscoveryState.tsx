@@ -336,83 +336,181 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
 }
 
 /**
- * Compute node positions based on proof-theoretic rank:
- *   - Node 0 at rank 0 (vertical center of the discovery).
- *   - Strengthening child: rank(parent) + 1 → placed BELOW parent (y increases).
- *   - Weakening child:     rank(parent) - 1 → placed ABOVE parent (y decreases).
+ * Tree layout with ancestor-aware overlap resolution.
+ *
+ * Rank semantics (y-axis):
+ *   - Node 0 at rank 0.
+ *   - Strengthening child (graphology: source=child, target=parent): rank = parent + 1 (below).
+ *   - Weakening child     (graphology: source=parent, target=child): rank = parent − 1 (above).
  *   - Equivalence partner: same rank.
  *
- * Nodes are processed in discovery order (by numeric ID) so that when we compute
- * a node's rank, its parent (always a lower ID) already has an assigned rank.
- * Within the same rank, nodes are spread horizontally in discovery order.
+ * Pass 1 (x-axis): Reingold-Tilford bottom-up subtree widths + top-down placement.
+ *   Parents always lower IDs than children, so ascending ID = top-down order,
+ *   descending ID = bottom-up order.
+ *
+ * Pass 2 (overlap fix): Weakenings can land at the same rank as unrelated ancestor
+ *   nodes. After the tree layout a multi-pass per-rank sweep pushes overlapping
+ *   pairs apart. Pairs that are ancestor/descendant are handled without touching
+ *   the ancestor: only the descendant's own sub-subtree is shifted.
  */
 function computeLayout(nodes: Node<ProofNodeData>[], graph: any): Node<ProofNodeData>[] {
   if (nodes.length === 0) return nodes
 
-  const ranks = new Map<string, number>()
+  const NODE_WIDTH    = 360  // approximate rendered width of a proof-node card
+  const H_GAP         = 60   // horizontal gap between sibling subtrees
+  const LEVEL_SPACING = 430  // vertical distance between ranks
+
+  // ── Step 1: Ranks and parent→children (ascending ID = top-down) ──────────
+
+  const ranks      = new Map<string, number>()
+  const parentOf   = new Map<string, string>()
+  const childrenOf = new Map<string, string[]>()
+
+  for (const n of nodes) childrenOf.set(n.id, [])
   ranks.set('0', 0)
 
-  // Sort by numeric ID so parents are always processed before children
   const sorted = [...nodes].sort((a, b) => parseInt(a.id) - parseInt(b.id))
 
   for (let i = 1; i < sorted.length; i++) {
     const nodeId = sorted[i].id
     let rank: number | undefined
+    let par: string | undefined
 
-    // Iterate all edges to find the one that connects this node to its parent
-    graph.forEachEdge((_edge: string, attrs: any, source: string, target: string, _sa: any, _ta: any, undirected: boolean) => {
-      const src = source.toString()
-      const tgt = target.toString()
-
-      // Only consider edges involving this node
-      if (src !== nodeId && tgt !== nodeId) return
-      // Rank already determined
+    graph.forEachEdge((_e: string, attrs: any, src: string, tgt: string,
+                       _sa: any, _ta: any, undirected: boolean) => {
+      const s = src.toString()
+      const t = tgt.toString()
+      if (s !== nodeId && t !== nodeId) return
       if (rank !== undefined) return
 
       if (undirected) {
-        // Equivalence: same rank as the other (already-ranked) node
-        const other = src === nodeId ? tgt : src
-        if (ranks.has(other)) rank = ranks.get(other)!
+        const other = s === nodeId ? t : s
+        if (ranks.has(other)) { rank = ranks.get(other)!; par = other }
         return
       }
 
       const kind: MoveKind = attrs.kind
       if (kind === 'strengthening' || kind === 'other') {
-        // graphology: source=child, target=parent
-        // This node is the child (source); parent is target
-        if (src === nodeId && ranks.has(tgt)) {
-          rank = ranks.get(tgt)! + 1  // child is one rank BELOW parent
-        }
+        if (s === nodeId && ranks.has(t)) { rank = ranks.get(t)! + 1; par = t }
       } else if (kind === 'weakening') {
-        // graphology: source=parent, target=child
-        // This node is the child (target); parent is source
-        if (tgt === nodeId && ranks.has(src)) {
-          rank = ranks.get(src)! - 1  // child is one rank ABOVE parent
-        }
+        if (t === nodeId && ranks.has(s)) { rank = ranks.get(s)! - 1; par = s }
       }
     })
 
     ranks.set(nodeId, rank ?? 0)
+    if (par !== undefined) {
+      parentOf.set(nodeId, par)
+      childrenOf.get(par)!.push(nodeId)
+    }
   }
 
-  // Group nodes by rank
-  const byRank = new Map<number, Node<ProofNodeData>[]>()
-  for (const node of nodes) {
-    const r = ranks.get(node.id) ?? 0
+  // ── Step 2: Subtree widths — bottom-up (descending ID = leaves first) ────
+
+  const subtreeW = new Map<string, number>()
+
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    const id   = sorted[i].id
+    const kids = childrenOf.get(id)!
+    subtreeW.set(id,
+      kids.length === 0
+        ? NODE_WIDTH
+        : Math.max(NODE_WIDTH,
+            kids.reduce((s, c) => s + subtreeW.get(c)!, 0) + (kids.length - 1) * H_GAP))
+  }
+
+  // ── Step 3: x positions — top-down, root centred at x = 0 ───────────────
+
+  const xPos = new Map<string, number>()
+  xPos.set('0', 0)
+
+  for (const { id } of sorted) {
+    const kids = childrenOf.get(id)!
+    if (kids.length === 0) continue
+    const px    = xPos.get(id) ?? 0
+    const total = kids.reduce((s, c) => s + subtreeW.get(c)!, 0) + (kids.length - 1) * H_GAP
+    let cursor  = px - total / 2
+    for (const kid of kids) {
+      xPos.set(kid, cursor + subtreeW.get(kid)! / 2)
+      cursor += subtreeW.get(kid)! + H_GAP
+    }
+  }
+
+  // ── Step 4: Build ancestor sets and descendant sets for overlap resolution
+
+  // ancestors(v) = all layout-tree ancestors of v
+  const ancestors = new Map<string, Set<string>>()
+  for (const { id } of sorted) {
+    const set = new Set<string>()
+    let cur = parentOf.get(id)
+    while (cur !== undefined) { set.add(cur); cur = parentOf.get(cur) }
+    ancestors.set(id, set)
+  }
+
+  // descendants(v) = v plus all layout-tree descendants of v
+  const descendants = new Map<string, Set<string>>()
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    const id  = sorted[i].id
+    const set = new Set<string>([id])
+    for (const kid of childrenOf.get(id)!)
+      for (const d of descendants.get(kid)!) set.add(d)
+    descendants.set(id, set)
+  }
+
+  // ── Step 5: Per-rank overlap resolution (ancestor-aware, multi-pass) ─────
+
+  const byRank      = new Map<number, string[]>()
+  for (const { id } of sorted) {
+    const r = ranks.get(id) ?? 0
     if (!byRank.has(r)) byRank.set(r, [])
-    byRank.get(r)!.push(node)
+    byRank.get(r)!.push(id)
   }
 
-  const LEVEL_SPACING = 430  // vertical distance between ranks
-  const NODE_SPACING = 380   // horizontal distance within a rank
+  const MIN_SPACING = NODE_WIDTH + H_GAP
 
-  for (const [rank, rankNodes] of byRank) {
-    // Spread horizontally in discovery order
-    rankNodes.sort((a, b) => parseInt(a.id) - parseInt(b.id))
-    const xStart = -((rankNodes.length - 1) * NODE_SPACING) / 2
-    rankNodes.forEach((node, idx) => {
-      node.position = { x: xStart + idx * NODE_SPACING, y: rank * LEVEL_SPACING }
-    })
+  for (let pass = 0; pass < 12; pass++) {
+    let changed = false
+
+    for (const ids of byRank.values()) {
+      // Sort by current x each pass (positions change during resolution)
+      ids.sort((a, b) => xPos.get(a)! - xPos.get(b)!)
+
+      for (let i = 1; i < ids.length; i++) {
+        const lId = ids[i - 1]
+        const rId = ids[i]
+        const gap = xPos.get(rId)! - xPos.get(lId)!
+        if (gap >= MIN_SPACING) continue
+
+        changed = true
+        const overlap = MIN_SPACING - gap
+
+        const lIsAncOfR = ancestors.get(rId)!.has(lId)
+        const rIsAncOfL = ancestors.get(lId)!.has(rId)
+
+        if (lIsAncOfR) {
+          // Left is ancestor of right: only shift right's own subtree rightward
+          for (const d of descendants.get(rId)!) xPos.set(d, xPos.get(d)! + overlap)
+        } else if (rIsAncOfL) {
+          // Right is ancestor of left: only shift left's own subtree leftward
+          for (const d of descendants.get(lId)!) xPos.set(d, xPos.get(d)! - overlap)
+        } else {
+          // Unrelated subtrees: split the push evenly
+          const half = overlap / 2
+          for (const d of descendants.get(lId)!) xPos.set(d, xPos.get(d)! - half)
+          for (const d of descendants.get(rId)!) xPos.set(d, xPos.get(d)! + half)
+        }
+      }
+    }
+
+    if (!changed) break
+  }
+
+  // ── Step 6: Apply positions ───────────────────────────────────────────────
+
+  for (const node of nodes) {
+    node.position = {
+      x: xPos.get(node.id) ?? 0,
+      y: (ranks.get(node.id) ?? 0) * LEVEL_SPACING,
+    }
   }
 
   return nodes
