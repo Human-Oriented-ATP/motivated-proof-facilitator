@@ -811,12 +811,51 @@ function CustomMoveSection(): JSX.Element {
 
 // ─── All Moves List ────────────────────────────────────────────────────────
 
+type RunPhase = 'idle' | 'checking' | 'warning' | 'applying' | 'error'
+type RunState = { phase: RunPhase; warningReasoning?: string; errorText?: string }
+
 function AllMovesList(): JSX.Element {
+  const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
+  const { selections, dispatch: dispatchSelections } = useContext(ProofStateSelectionContext)
+
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
   const [examplesOpen, setExamplesOpen] = useState(false)
   const [showGenerator, setShowGenerator] = useState(false)
+  const [runState, setRunState] = useState<RunState>({ phase: 'idle' })
 
   const selected = selectedIdx !== null ? moves[selectedIdx] : null
+
+  const resetRunState = () => setRunState({ phase: 'idle' })
+
+  const handleRunMove = async (move: ProofDiscoveryMove, skipCheck = false) => {
+    if (!skipCheck) {
+      setRunState({ phase: 'checking' })
+      try {
+        const filterResponse = await checkMoveValidity(
+          getCurrentProofState(proofDiscoveryState),
+          selections,
+          move
+        )
+        if (!filterResponse.meetsCondition) {
+          setRunState({ phase: 'warning', warningReasoning: filterResponse.reasoning })
+          return
+        }
+      } catch (err) {
+        setRunState({ phase: 'error', errorText: err instanceof Error ? err.message : 'Failed to check trigger criterion' })
+        return
+      }
+    }
+
+    setRunState({ phase: 'applying' })
+    try {
+      await applyMove(proofDiscoveryState, selections, move, dispatchProofDiscoveryAction, dispatchSelections)
+      resetRunState()
+    } catch (err) {
+      setRunState({ phase: 'error', errorText: err instanceof Error ? err.message : 'Failed to apply move' })
+    }
+  }
+
+  const isBusy = runState.phase === 'checking' || runState.phase === 'applying'
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
@@ -845,7 +884,7 @@ function AllMovesList(): JSX.Element {
         {moves.map((move, idx) => (
           <Box key={idx} sx={{ borderBottom: `1px solid ${G.border}` }}>
             <Button
-              onClick={() => { setSelectedIdx(selectedIdx === idx ? null : idx); setExamplesOpen(false) }}
+              onClick={() => { setSelectedIdx(selectedIdx === idx ? null : idx); setExamplesOpen(false); resetRunState() }}
               fullWidth
               sx={{
                 display: 'flex', alignItems: 'center', gap: 1,
@@ -874,6 +913,97 @@ function AllMovesList(): JSX.Element {
                 <Typography sx={{ mb: 0.5, fontSize: '0.78rem', wordBreak: 'break-word' }}>
                   <strong>Action:</strong> {selected.action}
                 </Typography>
+
+                {/* ── Run button ── */}
+                <Box sx={{ mt: 1.25, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Button
+                    size="small"
+                    disabled={isBusy}
+                    onClick={() => void handleRunMove(selected)}
+                    sx={{
+                      display: 'flex', alignItems: 'center', gap: 0.75,
+                      px: 1.5, fontSize: '0.75rem', fontWeight: 700, textTransform: 'none',
+                      color: 'white', background: `linear-gradient(180deg, ${G.bright}, ${G.med})`,
+                      borderRadius: '7px', boxShadow: `0 2px 4px rgba(67,160,71,0.25)`,
+                      '&:hover': { background: `linear-gradient(180deg, ${G.med}, ${G.dark})` },
+                      '&:disabled': { background: '#E0E0E0', color: '#9E9E9E', boxShadow: 'none' },
+                    }}
+                  >
+                    {isBusy ? <SpinnerBox size={12} /> : <PlayIcon />}
+                    {runState.phase === 'checking' ? 'Checking…' : runState.phase === 'applying' ? 'Applying…' : 'Run'}
+                  </Button>
+                  {selections.length === 0 && (
+                    <Typography sx={{ fontSize: '0.7rem', color: '#90A4AE', fontStyle: 'italic' }}>
+                      No selection active
+                    </Typography>
+                  )}
+                </Box>
+
+                {/* ── Warning strip ── */}
+                {runState.phase === 'warning' && (
+                  <Box sx={{
+                    mt: 1.25, p: '10px 12px', borderRadius: '8px',
+                    background: '#FFFBEB', border: '1.5px solid #FDE68A',
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.75 }}>
+                      <svg style={{ width: 15, height: 15, color: '#D97706', flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#92400E' }}>
+                        Trigger criterion not satisfied
+                      </Typography>
+                    </Box>
+                    <Typography sx={{ fontSize: '0.73rem', color: '#78350F', lineHeight: 1.5, mb: 1 }}>
+                      {runState.warningReasoning}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 0.75 }}>
+                      <Button
+                        size="small"
+                        onClick={() => void handleRunMove(selected, true)}
+                        sx={{
+                          fontSize: '0.73rem', fontWeight: 700, textTransform: 'none',
+                          color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A',
+                          borderRadius: '6px',
+                          '&:hover': { background: '#FDE68A' },
+                        }}
+                      >
+                        Apply anyway
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={resetRunState}
+                        sx={{
+                          fontSize: '0.73rem', fontWeight: 600, textTransform: 'none',
+                          color: '#6B7280', background: 'white', border: '1px solid #E5E7EB',
+                          borderRadius: '6px',
+                          '&:hover': { background: '#F3F4F6' },
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
+
+                {/* ── Error strip ── */}
+                {runState.phase === 'error' && (
+                  <Box sx={{
+                    mt: 1.25, p: '8px 12px', borderRadius: '8px',
+                    background: '#FFF5F5', border: '1.5px solid #FFCDD2',
+                    display: 'flex', alignItems: 'flex-start', gap: 0.75,
+                  }}>
+                    <svg style={{ width: 14, height: 14, color: '#E53935', marginTop: 2, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <Typography sx={{ fontSize: '0.73rem', color: '#C62828', lineHeight: 1.5, flex: 1 }}>
+                      {runState.errorText}
+                    </Typography>
+                    <Button size="small" onClick={resetRunState} sx={{ fontSize: '0.7rem', textTransform: 'none', color: '#C62828', minWidth: 0, p: '0 4px' }}>
+                      ✕
+                    </Button>
+                  </Box>
+                )}
+
                 {selected.examples.length > 0 && (
                   <>
                     <Button
