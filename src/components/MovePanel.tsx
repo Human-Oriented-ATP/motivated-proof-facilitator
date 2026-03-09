@@ -34,7 +34,7 @@ export async function checkMoveValidity(proofState: ProofState, selections: Proo
             selections,
             triggerCriterion: move.trigger
         }),
-        signal,
+        ...(signal && { signal }),
       })
 
     if (!response.ok) {

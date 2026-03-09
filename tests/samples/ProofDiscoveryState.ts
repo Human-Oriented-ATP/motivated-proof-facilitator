@@ -6,8 +6,8 @@ import { sampleProofStates } from './ProofState'
 const sampleProofDiscoveryStateActions: ProofDiscoveryAction[] = [
     {
         action: "initialize",
-        statement: sampleProofStates[0].description,
-        proofState: sampleProofStates[0].proofState
+        statement: sampleProofStates[0]!.description,
+        proofState: sampleProofStates[0]!.proofState
     },
     {
         action: "addToLibrary",
@@ -77,7 +77,7 @@ const sampleProofDiscoveryStateActions: ProofDiscoveryAction[] = [
             kind: "strengthening",
             description: "<placeholder> Rewrite the goal"
         },
-        newProofState: sampleProofStates[1].proofState
+        newProofState: sampleProofStates[1]!.proofState
     },
     {
         action: "transition",
@@ -85,7 +85,7 @@ const sampleProofDiscoveryStateActions: ProofDiscoveryAction[] = [
             kind: "weakening",
             description: "<placeholder> Apply a known theorem"
         },
-        newProofState: sampleProofStates[2].proofState
+        newProofState: sampleProofStates[2]!.proofState
     },
     {
         action: "transition",
@@ -93,7 +93,7 @@ const sampleProofDiscoveryStateActions: ProofDiscoveryAction[] = [
             kind: "equivalence",
             description: "<placeholder> Apply logical strengthening"
         },
-        newProofState: sampleProofStates[3].proofState
+        newProofState: sampleProofStates[3]!.proofState
     },
     {
         action: "transition",
@@ -101,7 +101,7 @@ const sampleProofDiscoveryStateActions: ProofDiscoveryAction[] = [
             kind: "other",
             description: "<placeholder> Apply an exploratory move"
         },
-        newProofState: sampleProofStates[4].proofState
+        newProofState: sampleProofStates[4]!.proofState
     },
     {
         action: "transition",
@@ -109,7 +109,7 @@ const sampleProofDiscoveryStateActions: ProofDiscoveryAction[] = [
             kind: "strengthening",
             description: "<placeholder> By abstract nonsense"
         },
-        newProofState: sampleProofStates[5].proofState
+        newProofState: sampleProofStates[5]!.proofState
     },
     {
         action: "setHighlightedStatement",

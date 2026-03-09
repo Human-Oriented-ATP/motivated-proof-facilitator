@@ -30,7 +30,7 @@ export type StatementAddress = StatementCoordinate[]
 export function areStatementAddressesEqual(a: StatementAddress, b: StatementAddress): boolean {
   if (a.length !== b.length) return false
   for (let i = 0; i < a.length; i++) {
-    if (!areStatementCoordinatesEqual(a[i], b[i])) {
+    if (!areStatementCoordinatesEqual(a[i]!, b[i]!)) {
       return false
     }
   }

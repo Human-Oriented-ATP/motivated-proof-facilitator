@@ -13,7 +13,7 @@ import {
 } from '@xyflow/react'
 // @ts-ignore
 import '@xyflow/react/dist/style.css'
-import { ProofDiscoveryState, MoveKind } from '../core/ProofDiscoveryState'
+import { type ProofDiscoveryState, MoveKind } from '../core/ProofDiscoveryState'
 import { ProofState } from '../core/ProofStateZod'
 import { ProofState as ProofStateComponent } from './ProofState'
 import { ProofDiscoveryStateContext, ProofStateIdContext } from '../core/ProofDiscoveryStateContext'
@@ -129,7 +129,6 @@ const EDGE_STYLE = {
   strengthening: {
     stroke: '#16a34a',      // Forest green — productive deepening of the goal
     strokeWidth: 3,
-    strokeDasharray: undefined,
     markerEnd: { type: MarkerType.ArrowClosed, color: '#16a34a' },
   },
   weakening: {
@@ -141,7 +140,6 @@ const EDGE_STYLE = {
   equivalence: {
     stroke: '#7c3aed',      // Violet — equivalent reformulation
     strokeWidth: 2.5,
-    strokeDasharray: undefined,
     markerEnd: { type: MarkerType.Arrow, color: '#7c3aed' },
   },
   other: {
@@ -150,7 +148,7 @@ const EDGE_STYLE = {
     strokeDasharray: '5,5',
     markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
   },
-} satisfies Record<MoveKind, {
+} as Record<MoveKind, {
   stroke: string
   strokeWidth: number
   strokeDasharray?: string
@@ -252,9 +250,9 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
         style: {
           stroke: es.stroke,
           strokeWidth: es.strokeWidth,
-          strokeDasharray: es.strokeDasharray,
+          ...(es.strokeDasharray !== undefined ? { strokeDasharray: es.strokeDasharray } : {}),
         },
-        markerEnd: undirected ? undefined : es.markerEnd,
+        ...(undirected ? {} : { markerEnd: es.markerEnd }),
         label: attributes.description,
         labelStyle: { fill: es.stroke, fontWeight: 600, fontSize: 11 },
         labelBgStyle: { fill: '#ffffff', fillOpacity: 0.92 },
@@ -372,7 +370,7 @@ function computeLayout(nodes: Node<ProofNodeData>[], graph: any): Node<ProofNode
   const sorted = [...nodes].sort((a, b) => parseInt(a.id) - parseInt(b.id))
 
   for (let i = 1; i < sorted.length; i++) {
-    const nodeId = sorted[i].id
+    const nodeId = sorted[i]!.id
     let rank: number | undefined
     let par: string | undefined
 
@@ -409,7 +407,7 @@ function computeLayout(nodes: Node<ProofNodeData>[], graph: any): Node<ProofNode
   const subtreeW = new Map<string, number>()
 
   for (let i = sorted.length - 1; i >= 0; i--) {
-    const id   = sorted[i].id
+    const id   = sorted[i]!.id
     const kids = childrenOf.get(id)!
     subtreeW.set(id,
       kids.length === 0
@@ -449,7 +447,7 @@ function computeLayout(nodes: Node<ProofNodeData>[], graph: any): Node<ProofNode
   // descendants(v) = v plus all layout-tree descendants of v
   const descendants = new Map<string, Set<string>>()
   for (let i = sorted.length - 1; i >= 0; i--) {
-    const id  = sorted[i].id
+    const id  = sorted[i]!.id
     const set = new Set<string>([id])
     for (const kid of childrenOf.get(id)!)
       for (const d of descendants.get(kid)!) set.add(d)
@@ -475,8 +473,8 @@ function computeLayout(nodes: Node<ProofNodeData>[], graph: any): Node<ProofNode
       ids.sort((a, b) => xPos.get(a)! - xPos.get(b)!)
 
       for (let i = 1; i < ids.length; i++) {
-        const lId = ids[i - 1]
-        const rId = ids[i]
+        const lId = ids[i - 1]!
+        const rId = ids[i]!
         const gap = xPos.get(rId)! - xPos.get(lId)!
         if (gap >= MIN_SPACING) continue
 
