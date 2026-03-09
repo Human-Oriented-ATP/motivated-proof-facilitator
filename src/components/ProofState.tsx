@@ -292,10 +292,6 @@ export function ProofStateWithLibraryResult({ proofState, libraryResult }: Proof
             {libraryResult && (
                 <>
                     <div style={{
-                        borderTop: '1px dashed #6b7280',
-                        margin: '0 20px'
-                    }} />
-                    <div style={{
                         backgroundColor: '#fefce8',
                         border: '2px solid #fde047',
                         borderRadius: '12px',
