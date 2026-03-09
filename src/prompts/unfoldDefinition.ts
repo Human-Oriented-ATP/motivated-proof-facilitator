@@ -3,7 +3,7 @@ import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove";
 export const unfoldDefinitionMove: ProofDiscoveryMove = {
   "name": "Unfold the definition",
   "kind": "equivalence",
-  "trigger": "This move is relevant when there is a single selection in the proof state", // containing a definition.",
+  "trigger": "This move is relevant when there is a single selection in the proof state, ideally representing a definition that can be unfold to something more concrete.",
   "action": "This move unfolds the selected definition and replaces it with an equivalent expression, usually conceptually simpler than the original. When there are multiple possibilities, definitions at a higher level of abstraction are favoured. Care must be taken to ensure that the variable names in the unfolded definition, including bound variable names, do not clash with existing variable names in the proof state.",
   "examples": [
     {
