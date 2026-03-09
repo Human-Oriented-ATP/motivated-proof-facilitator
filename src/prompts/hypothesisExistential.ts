@@ -5,7 +5,7 @@ export const hypothesisExistentialMove: ProofDiscoveryMove = {
   "name": "Obtaining a witness from an existentially quantified hypothesis",
   "kind": "equivalence",
   "trigger": "This move is relevant when the only selection in the proof state is an existentially quantified hypothesis.",
-  "action": "Peel the existentially quantified variable from the statement and insert it into the list of variables *immediately below* all the variables used in the statement, instead of defaulting to the bottom of the list. Replace the hypothesis with the body of the existentially quantified statement.",
+  "action": "Peel the existentially quantified variable from the statement and insert it into the list of variables *immediately below* all the variables used in the statement, instead of defaulting to the bottom of the list. If a variable of that name already exists in the list of variables, please rename the existential variable in the statement before proceeding. Replace the hypothesis with the body of the existentially quantified statement.",
   "examples": [
     {
       "description": "",
