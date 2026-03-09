@@ -30,9 +30,7 @@ export type StatementAddress = StatementCoordinate[]
 export function areStatementAddressesEqual(a: StatementAddress, b: StatementAddress): boolean {
   if (a.length !== b.length) return false
   for (let i = 0; i < a.length; i++) {
-    const coordA = a[i]
-    const coordB = b[i]
-    if (coordA === undefined || coordB === undefined || !areStatementCoordinatesEqual(coordA, coordB)) {
+    if (!areStatementCoordinatesEqual(a[i], b[i])) {
       return false
     }
   }
@@ -130,7 +128,7 @@ export function proofStateSelectionReducer(state: ProofStateSelection[], action:
             return []
         }
         case 'CLEAR_PROOF_STATE_SELECTIONS': {
-            return state.filter(s => !areProofStateIdsEqual(s.proofStateId, action.proofStateId))
+            return state.filter(s => s.proofStateId !== action.proofStateId)
         }
         default:
             return state
