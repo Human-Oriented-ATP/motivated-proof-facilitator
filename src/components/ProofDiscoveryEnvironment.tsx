@@ -8,7 +8,7 @@ import { ProofStateIdContext, ProofDiscoveryStateContext } from '../core/ProofDi
 import { MovePanel } from './MovePanel'
 import { ProofStateEditor } from './ProofStateEditor'
 import { StatementBuilder } from './StatementBuilder'
-import { Statement } from '../core/ProofStateZod'
+import { Statement, StatementSchema } from '../core/ProofStateZod'
 import {
   Box, Paper, Button, IconButton, Chip, Typography,
   Dialog, DialogContent, DialogActions, Tooltip,
@@ -145,6 +145,10 @@ export function ProofDiscoveryEnvironment({
   const [isAddLibraryOpen, setIsAddLibraryOpen] = useState(false)
   const [newLibraryLabel, setNewLibraryLabel] = useState('')
   const [newLibraryStatement, setNewLibraryStatement] = useState<Statement>("")
+  const [newLibraryFormalizeMode, setNewLibraryFormalizeMode] = useState<"build" | "formalize">("build")
+  const [newLibraryText, setNewLibraryText] = useState("")
+  const [newLibraryLoading, setNewLibraryLoading] = useState(false)
+  const [newLibraryError, setNewLibraryError] = useState<string | null>(null)
   const [isFinishScreenOpen, setIsFinishScreenOpen] = useState(false)
   const [jsonCopied, setJsonCopied] = useState(false)
   const { selections, dispatch: selectionsDispatch } = useContext(ProofStateSelectionContext)
@@ -189,27 +193,48 @@ export function ProofDiscoveryEnvironment({
     }
   }
 
+  const formalizeLibraryStatement = async (): Promise<void> => {
+    if (!newLibraryText.trim()) return
+    setNewLibraryLoading(true)
+    setNewLibraryError(null)
+    try {
+      const resp = await fetch("https://atp-backend-rygt.onrender.com/formalize-statement", {
+        method: "POST", mode: "cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ statement: newLibraryText }),
+      })
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+      const json = await resp.json()
+      const stmt = StatementSchema.parse(json)
+      
+      dispatchProofDiscoveryAction({ action: 'addToLibrary', statement: { label: newLibraryLabel.trim(), statement: stmt } })
+      setIsAddLibraryOpen(false); setNewLibraryLabel(''); setNewLibraryStatement(''); setNewLibraryText(''); setIsLibraryExpanded(true)
+    } catch (err) {
+      setNewLibraryError(err instanceof Error ? err.message : "Failed to formalize")
+    } finally {
+      setNewLibraryLoading(false)
+    }
+  }
+
   return (
     <Box sx={{ display: 'flex', gap: 2, p: 2, height: '100%', background: '#f4f7f9', boxSizing: 'border-box', overflow: 'hidden' }}>
 
-      {/* ════════════════════ LEFT COLUMN ════════════════════ */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 2, overflow: 'hidden', minHeight: 0 }}>
+      {/* ════════════════════ LEFT COLUMN (Fused) ════════════════════ */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, borderRadius: '12px', background: '#ffffff', border: '1px solid #d4dde6', boxShadow: '0 2px 12px rgba(30,60,100,0.04)', position: 'relative', overflow: 'hidden' }}>
 
         {/* ════════════════════ LIBRARY BAR ════════════════════ */}
         <Box sx={{
           flexShrink: 0,
-          borderRadius: '12px',
-          border: '1px solid #d4dde6',
-          background: '#ffffff',
-          boxShadow: '0 2px 12px rgba(30,60,100,0.04)',
-          overflow: 'hidden',
+          background: '#fefce8',
+          borderBottom: '1px solid #fde047',
+          position: 'relative',
+          zIndex: 30,
         }}>
           {/* Header row */}
-          <Box sx={{ display: 'flex', alignItems: 'center', px: 2, py: 0.75, gap: 1, borderBottom: isLibraryExpanded ? '1px solid #f0f4f8' : 'none' }}>
-            {/* Library icon + label */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: '#2e4a68' }}>
-              <Box component="span" sx={{ fontSize: '14px', lineHeight: 1, color: '#4a729e', filter: 'grayscale(1)' }}>📚</Box>
-              <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#2e4a68' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', px: 2, height: '44px', gap: 1, boxSizing: 'border-box' }}>
+            {/* Library label */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: '#a16207' }}>
+              <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#a16207' }}>
                 Library
               </Typography>
             </Box>
@@ -218,11 +243,11 @@ export function ProofDiscoveryEnvironment({
             <Chip
               label={proofDiscoveryState.library.length}
               size="small"
-              sx={{ height: 18, minWidth: 24, fontSize: '11px', fontWeight: 700, background: '#f8fafc', color: '#4a729e', border: '1px solid #d4dde6', borderRadius: '9px', '& .MuiChip-label': { px: '6px' } }}
+              sx={{ height: 18, minWidth: 24, fontSize: '11px', fontWeight: 700, background: '#fef9c3', color: '#a16207', border: '1px solid #fde047', borderRadius: '9px', '& .MuiChip-label': { px: '6px' } }}
             />
 
             {/* Divider */}
-            <Box sx={{ width: '1px', height: 14, background: '#e2e8f0', mx: 0.25 }} />
+            <Box sx={{ width: '1px', height: 14, background: '#fde047', mx: 0.25 }} />
 
             {/* Show/hide toggle */}
             <Button
@@ -230,9 +255,9 @@ export function ProofDiscoveryEnvironment({
               size="small"
               endIcon={<IconChevron rotated={isLibraryExpanded} />}
               sx={{
-                color: '#4a729e', fontSize: '0.73rem', fontWeight: 600, textTransform: 'none',
+                color: '#a16207', fontSize: '0.73rem', fontWeight: 600, textTransform: 'none',
                 px: 0.75, py: 0.25, minHeight: 0, gap: 0.5,
-                '&:hover': { background: '#f1f5f9' },
+                '&:hover': { background: '#fef9c3' },
               }}
             >
               {isLibraryExpanded ? 'Hide' : 'Show statements'}
@@ -247,9 +272,10 @@ export function ProofDiscoveryEnvironment({
                 size="small"
                 sx={{
                   width: 24, height: 24, borderRadius: '6px',
-                  border: '1px solid #d4dde6', color: '#2e4a68', fontSize: '15px', fontWeight: 700,
-                  background: isAddLibraryOpen ? '#e2e8f0' : '#f8fafc',
-                  '&:hover': { background: '#e2e8f0' }
+                  border: isAddLibraryOpen ? '1px solid #fde047' : '1px solid transparent',
+                  color: '#a16207', fontSize: '15px', fontWeight: 700,
+                  background: isAddLibraryOpen ? '#fefce8' : 'transparent',
+                  '&:hover': { background: '#fefce8', borderColor: '#fde047' }
                 }}
               >
                 +
@@ -260,33 +286,63 @@ export function ProofDiscoveryEnvironment({
         {/* Add form */}
         {isAddLibraryOpen && (
           <Box sx={{ px: 2, pb: 1.5 }}>
-            <Paper elevation={0} sx={{ border: '1px solid #e2e8f0', borderRadius: '10px', p: 2, background: '#f8fafc', boxShadow: 'inset 0 1px 3px rgba(30,60,100,0.03)' }}>
+            <Paper elevation={0} sx={{ border: '1px solid #fde047', borderRadius: '10px', p: 2, background: 'white', boxShadow: 'inset 0 1px 3px rgba(161,98,7,0.05)' }}>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1.5 }}>
-                <Typography sx={{ fontSize: '10px', fontWeight: 800, color: '#475569', letterSpacing: '0.08em', flexShrink: 0, textTransform: 'uppercase' }}>Label</Typography>
+                <Typography sx={{ fontSize: '10px', fontWeight: 800, color: '#a16207', letterSpacing: '0.08em', flexShrink: 0, textTransform: 'uppercase' }}>Label</Typography>
                 <input
                   type="text"
                   value={newLibraryLabel}
                   onChange={e => setNewLibraryLabel(e.target.value)}
                   placeholder="e.g. lemma_1"
-                  style={{ flex: 1, padding: '4px 9px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '13px', outline: 'none', background: 'white', fontFamily: 'inherit', color: '#1e293b' }}
+                  style={{ flex: 1, padding: '4px 9px', border: '1px solid #fde047', borderRadius: '5px', fontSize: '13px', outline: 'none', background: '#fefce8', fontFamily: 'inherit', color: '#1e293b' }}
                 />
               </Box>
-              <StatementBuilder value={newLibraryStatement} onChange={setNewLibraryStatement} />
+
+              <Box sx={{ display: 'flex', gap: 1, mt: 1, mb: 1.5, borderBottom: '1px solid #fef9c3' }}>
+                <Button size="small" variant="text" onClick={() => setNewLibraryFormalizeMode('build')} sx={{ fontSize: '11px', minWidth: 0, px: 1, py: 0.5, color: newLibraryFormalizeMode === 'build' ? '#a16207' : '#d97706', fontWeight: newLibraryFormalizeMode === 'build' ? 700 : 500, borderBottom: newLibraryFormalizeMode === 'build' ? '2px solid #ca8a04' : 'none', borderRadius: 0, textTransform: 'none' }}>Build manually</Button>
+                <Button size="small" variant="text" onClick={() => setNewLibraryFormalizeMode('formalize')} sx={{ fontSize: '11px', minWidth: 0, px: 1, py: 0.5, color: newLibraryFormalizeMode === 'formalize' ? '#a16207' : '#d97706', fontWeight: newLibraryFormalizeMode === 'formalize' ? 700 : 500, borderBottom: newLibraryFormalizeMode === 'formalize' ? '2px solid #ca8a04' : 'none', borderRadius: 0, textTransform: 'none' }}>Autoformalize</Button>
+              </Box>
+
+              {newLibraryFormalizeMode === 'build' ? (
+                 <StatementBuilder value={newLibraryStatement} onChange={setNewLibraryStatement} />
+              ) : (
+                <Box>
+                  <textarea
+                    value={newLibraryText}
+                    onChange={e => setNewLibraryText(e.target.value)}
+                    placeholder="Enter mathematical statement in natural language..."
+                    style={{ width: '100%', padding: '6px 9px', border: '1px solid #fde047', borderRadius: '5px', fontSize: '12px', outline: 'none', background: '#fefce8', fontFamily: 'inherit', resize: 'vertical', minHeight: '60px', boxSizing: 'border-box' }}
+                  />
+                  {newLibraryError && <Typography sx={{ color: 'red', fontSize: '10px', mt: 0.5 }}>{newLibraryError}</Typography>}
+                </Box>
+              )}
+
               <Box sx={{ display: 'flex', gap: 1, mt: 1.5 }}>
-                <Button
-                  size="small" variant="contained"
-                  disabled={!newLibraryLabel.trim()}
-                  onClick={() => {
-                    if (!newLibraryLabel.trim()) return
-                    dispatchProofDiscoveryAction({ action: 'addToLibrary', statement: { label: newLibraryLabel.trim(), statement: newLibraryStatement } })
-                    setIsAddLibraryOpen(false); setNewLibraryLabel(''); setNewLibraryStatement(''); setIsLibraryExpanded(true)
-                  }}
-                  sx={{ background: '#2e4a68', color: 'white', boxShadow: 'none', '&:hover': { background: '#1e3a5f', boxShadow: 'none' }, fontSize: '12px', fontWeight: 600, textTransform: 'none' }}
-                >
-                  Add to Library
-                </Button>
+                {newLibraryFormalizeMode === 'build' ? (
+                  <Button
+                    size="small" variant="contained"
+                    disabled={!newLibraryLabel.trim()}
+                    onClick={() => {
+                      if (!newLibraryLabel.trim()) return
+                      dispatchProofDiscoveryAction({ action: 'addToLibrary', statement: { label: newLibraryLabel.trim(), statement: newLibraryStatement } })
+                      setIsAddLibraryOpen(false); setNewLibraryLabel(''); setNewLibraryStatement(''); setIsLibraryExpanded(true)
+                    }}
+                    sx={{ background: '#ca8a04', color: 'white', boxShadow: 'none', '&:hover': { background: '#a16207', boxShadow: 'none' }, fontSize: '12px', fontWeight: 600, textTransform: 'none' }}
+                  >
+                    Add to Library
+                  </Button>
+                ) : (
+                  <Button
+                    size="small" variant="contained"
+                    disabled={!newLibraryLabel.trim() || !newLibraryText.trim() || newLibraryLoading}
+                    onClick={formalizeLibraryStatement}
+                    sx={{ background: '#ca8a04', color: 'white', boxShadow: 'none', '&:hover': { background: '#a16207', boxShadow: 'none' }, fontSize: '12px', fontWeight: 600, textTransform: 'none' }}
+                  >
+                    {newLibraryLoading ? 'Formalizing...' : 'Formalize and add to library'}
+                  </Button>
+                )}
                 <Button size="small" variant="outlined" onClick={() => setIsAddLibraryOpen(false)}
-                  sx={{ color: '#475569', borderColor: '#cbd5e1', fontSize: '12px', textTransform: 'none', '&:hover': { borderColor: '#94a3b8', background: '#f1f5f9' } }}>
+                  sx={{ color: '#a16207', borderColor: '#fde047', fontSize: '12px', textTransform: 'none', '&:hover': { borderColor: '#eab308', background: '#fefce8' } }}>
                   Cancel
                 </Button>
               </Box>
@@ -296,31 +352,49 @@ export function ProofDiscoveryEnvironment({
 
         {/* Library items */}
         {isLibraryExpanded && proofDiscoveryState.library.length > 0 && (
-          <Box sx={{ px: 2, pb: 1.25, display: 'flex', flexDirection: 'column', gap: 0.625, maxHeight: 180, overflowY: 'auto' }}>
+          <Box sx={{ 
+            position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 40,
+            background: 'white', borderBottom: '1px solid #e2e8f0',
+            boxShadow: '0 12px 24px rgba(0,0,0,0.06)',
+            px: 2, py: 1.25, display: 'flex', flexDirection: 'column', gap: 0.625, maxHeight: 280, overflowY: 'auto' 
+          }}>
             {proofDiscoveryState.library.map((statement, idx) => {
               const active = proofDiscoveryState.highlightedLibraryStatement === idx
               return (
                 <Paper key={idx} elevation={0}
-                  onClick={() => dispatchProofDiscoveryAction(active ? { action: 'clearHighlightedStatement' } : { action: 'setHighlightedStatement', index: idx })}
+                  onClick={() => {
+                    dispatchProofDiscoveryAction(active ? { action: 'clearHighlightedStatement' } : { action: 'setHighlightedStatement', index: idx })
+                    setIsLibraryExpanded(false)
+                  }}
                   sx={{
-                    px: 1.75, py: 1,
-                    border: active ? '1.5px solid #10b981' : '1px solid #e2e8f0',
-                    background: active ? '#ecfdf5' : '#f8fafc',
-                    borderRadius: '9px', cursor: 'pointer', transition: 'all 0.15s',
-                    boxShadow: active ? '0 2px 8px rgba(16,185,129,0.15)' : '0 1px 2px rgba(30,60,100,0.03)',
-                    '&:hover': { borderColor: active ? '#059669' : '#cbd5e1', background: active ? '#dcfeeb' : '#f1f5f9' },
+                    px: 1.5, py: 1,
+                    border: '1px solid',
+                    borderColor: active ? '#fde047' : 'transparent',
+                    background: active ? '#fefce8' : 'white',
+                    borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s',
+                    '&:hover': { borderColor: '#fde047', background: '#fefce8' },
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                    <Box component="span" sx={{ color: active ? '#059669' : '#94a3b8', fontSize: '14px', flexShrink: 0, userSelect: 'none', filter: 'grayscale(1)' }}>📚</Box>
+                    <Box component="span" sx={{ color: '#a16207', fontSize: '14px', flexShrink: 0, userSelect: 'none' }}>★</Box>
                     <Box sx={{ flex: 1 }}>
                       <ProofStateLocationContext.Provider value={{ kind: 'library_statement', label: statement.label }}>
                         <MathStatement address={[]} statement={statement.statement} polarity={null} />
                       </ProofStateLocationContext.Provider>
                     </Box>
-                    <Chip label={statement.label} size="small" variant="outlined"
-                      sx={{ height: 20, fontSize: '10px', fontWeight: 700, background: 'white', border: '1px solid #e2e8f0', color: '#475569', userSelect: 'none', '& .MuiChip-label': { px: '6px' } }}
-                    />
+                    <Box sx={{ 
+                        backgroundColor: active ? '#fef9c3' : '#fefce8', 
+                        border: '1px solid #eab308', 
+                        color: '#a16207', 
+                        fontSize: '12px', 
+                        fontWeight: '500', 
+                        padding: '4px 8px', 
+                        borderRadius: '6px', 
+                        whiteSpace: 'nowrap', 
+                        userSelect: 'none' 
+                    }}>
+                      {statement.label}
+                    </Box>
                   </Box>
                 </Paper>
               )
@@ -332,8 +406,7 @@ export function ProofDiscoveryEnvironment({
       {/* ════════════════════ PROOF STATE AREA ════════════════════ */}
       <Box sx={{ 
         flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', 
-        overflow: 'hidden', borderRadius: '12px', background: '#ffffff',
-        border: '1px solid #d4dde6', boxShadow: '0 2px 12px rgba(30,60,100,0.04)'
+        overflow: 'hidden', background: 'transparent'
       }}>
 
         {/* Scrollable proof state content */}
@@ -451,12 +524,12 @@ export function ProofDiscoveryEnvironment({
            <Box
              sx={{
                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-               px: 2, py: 1, height: '44px', boxSizing: 'border-box',
-               background: isGraphExpanded ? 'transparent' : 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)',
-               borderBottom: isGraphExpanded ? '1px solid #e2e8f0' : 'none',
+               px: 2, height: '44px', boxSizing: 'border-box',
+               background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)',
+               borderBottom: isGraphExpanded ? '1px solid #c0cedb' : 'none',
                userSelect: 'none', flexShrink: 0, cursor: 'pointer',
-               opacity: isGraphExpanded ? 0 : 1, transition: 'all 0.2s ease',
-               '&:hover': { opacity: 1, background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)' }
+               transition: 'all 0.2s ease',
+               '&:hover': { background: '#edf2f7' }
              }}
              onClick={() => setIsGraphExpanded(v => !v)}
            >

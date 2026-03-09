@@ -331,7 +331,6 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
         proOptions={{ hideAttribution: true }}
       >
         <Background color="#e2e8f0" gap={20} />
-        <Controls />
       </ReactFlow>
     </div>
   )

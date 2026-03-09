@@ -618,13 +618,12 @@ function MovePanelContent(): JSX.Element {
       {/* Header (aligned with Library header) */}
       <Box sx={{
         display: 'flex', alignItems: 'center',
-        px: 2, py: 0.75,
+        px: 2, height: '44px', boxSizing: 'border-box',
         background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)',
         borderBottom: '1px solid #c0cedb',
         flexShrink: 0,
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flex: 1, color: '#2e4a68' }}>
-          <Box component="span" sx={{ fontSize: '13px', lineHeight: 1, color: '#4a729e' }}>⚡</Box>
           <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#2e4a68' }}>
             {status === "loaded"
               ? `${applicableMoves.length} Move Suggested`
