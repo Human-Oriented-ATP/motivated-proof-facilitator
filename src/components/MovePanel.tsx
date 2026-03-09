@@ -323,6 +323,16 @@ function MovePanelContent(): JSX.Element {
       if (debounceRef.current) clearTimeout(debounceRef.current)
       if (selections.length > 0) {
         debounceRef.current = setTimeout(() => { void fetchMoves() }, 0)
+      } else {
+        // Selections cleared — abort any in-flight request and reset to idle
+        abortControllerRef.current?.abort()
+        abortControllerRef.current = null
+        lastFetchedSelectionsRef.current = selectionsKey
+        setStatus("idle")
+        setApplicableMoves([])
+        setExpandedReasoning(new Set())
+        setExpandedExamples(new Set())
+        setInfoIndex(null)
       }
     }
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
