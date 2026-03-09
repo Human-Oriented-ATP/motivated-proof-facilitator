@@ -18,6 +18,7 @@ import { dischargeGoalMove } from "./dischargeGoal"
 import { goalDirectedReasoningMove } from "./goalDirectedReasoning"
 import { dischargeGoalWithOtherGoalMove } from "./dischargeGoalWithOtherGoal"
 import { unifyHypothesisAndGoalMove } from "./unifyHypothesisAndGoal"
+import { modusPonensMove } from "./modusPonens"
 
 export const moves: ProofDiscoveryMove[] = [
     goalConjunctionMove,
@@ -38,5 +39,6 @@ export const moves: ProofDiscoveryMove[] = [
     dischargeGoalMove,
     goalDirectedReasoningMove,
     dischargeGoalWithOtherGoalMove,
-    unifyHypothesisAndGoalMove
+    unifyHypothesisAndGoalMove,
+    modusPonensMove
 ]
