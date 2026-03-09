@@ -329,15 +329,33 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
             size="small"
           />
           <FormControl size="small" sx={{ minWidth: 180 }}>
-            <InputLabel>Kind</InputLabel>
+            <InputLabel sx={{ color: '#2e4a68', fontSize: '0.82rem', '&.Mui-focused': { color: '#2e4a68' } }}>Kind</InputLabel>
             <Select
               label="Kind"
               value={moveKind}
               onChange={(e: SelectChangeEvent) => setMoveKind(e.target.value as MoveKind)}
+              sx={{
+                fontSize: '0.82rem', fontWeight: 600, color: '#2e4a68',
+                background: 'rgba(255,255,255,0.65)',
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(180,200,220,0.7)' },
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#8aabcc' },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#8aabcc', borderWidth: '1.5px' },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)',
+                    border: '1px solid #c0cedb',
+                    borderRadius: '8px',
+                    mt: '3px',
+                    boxShadow: '0 4px 16px rgba(30,60,100,0.12)',
+                  }
+                }
+              }}
             >
-              <MenuItem value="strengthening">Strengthening</MenuItem>
-              <MenuItem value="weakening">Weakening</MenuItem>
-              <MenuItem value="equivalence">Equivalence</MenuItem>
+              <MenuItem value="strengthening" sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#2e4a68', '&:hover': { background: 'rgba(138,171,204,0.15)' }, '&.Mui-selected': { background: 'rgba(138,171,204,0.2)', color: '#1e3a5f' }, '&.Mui-selected:hover': { background: 'rgba(138,171,204,0.28)' } }}>Strengthening</MenuItem>
+              <MenuItem value="weakening"     sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#2e4a68', '&:hover': { background: 'rgba(138,171,204,0.15)' }, '&.Mui-selected': { background: 'rgba(138,171,204,0.2)', color: '#1e3a5f' }, '&.Mui-selected:hover': { background: 'rgba(138,171,204,0.28)' } }}>Weakening</MenuItem>
+              <MenuItem value="equivalence"   sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#2e4a68', '&:hover': { background: 'rgba(138,171,204,0.15)' }, '&.Mui-selected': { background: 'rgba(138,171,204,0.2)', color: '#1e3a5f' }, '&.Mui-selected:hover': { background: 'rgba(138,171,204,0.28)' } }}>Equivalence</MenuItem>
             </Select>
           </FormControl>
         </Stack>
@@ -497,10 +515,17 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
             {workflowState === "formalized" && (
               <Stack direction="row" spacing={1.5} flexWrap="wrap">
                 <Button
-                  variant="contained"
+                  variant="outlined"
                   onClick={() => handleApplyMove()}
                   disabled={isLoading || !action.trim()}
-                  sx={{ bgcolor: '#1e3a5f', '&:hover': { bgcolor: '#2e4a68' }, fontWeight: 600 }}
+                  sx={{
+                    fontWeight: 700, textTransform: 'none', borderRadius: '20px',
+                    color: '#2d5a2a', background: 'linear-gradient(180deg, #e8f5e3 0%, #c5dfc0 100%)',
+                    borderColor: '#7ab872', boxShadow: '0 2px 6px rgba(100,155,85,0.18)',
+                    transition: 'all 0.2s ease',
+                    '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54', boxShadow: '0 4px 10px rgba(100,155,85,0.28)', transform: 'translateY(-1px)' },
+                    '&:disabled': { opacity: 0.45, boxShadow: 'none', transform: 'none' },
+                  }}
                 >
                   Apply Move
                 </Button>
@@ -570,9 +595,15 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
 
             <Stack direction="row" spacing={1.5} flexWrap="wrap">
               <Button
-                variant="contained"
+                variant="outlined"
                 onClick={() => handleSaveExample("example")}
-                sx={{ bgcolor: '#059669', '&:hover': { bgcolor: '#047857' }, fontWeight: 600 }}
+                sx={{
+                  fontWeight: 700, textTransform: 'none', borderRadius: '20px',
+                  color: '#2d5a2a', background: 'linear-gradient(180deg, #e8f5e3 0%, #c5dfc0 100%)',
+                  borderColor: '#7ab872', boxShadow: '0 2px 6px rgba(100,155,85,0.18)',
+                  transition: 'all 0.2s ease',
+                  '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54', boxShadow: '0 4px 10px rgba(100,155,85,0.28)', transform: 'translateY(-1px)' },
+                }}
               >
                 Save as Example
               </Button>
@@ -615,7 +646,7 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
             expandIcon={<ChevronDownIcon />}
             sx={{ px: 2, minHeight: 44, '& .MuiAccordionSummary-content': { my: 0 } }}
           >
-            <Typography variant="body2" sx={{ fontWeight: 600, color: '#3182ce' }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: '#558567' }}>
               Or paste JSON here
             </Typography>
           </AccordionSummary>
@@ -638,11 +669,18 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
       <SectionCard title="Export">
         <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
           <Button
-            variant="contained"
+            variant="outlined"
             startIcon={<DownloadIcon />}
             onClick={handleExport}
             disabled={!moveName || examples.length === 0}
-            sx={{ bgcolor: '#059669', '&:hover': { bgcolor: '#047857' }, fontWeight: 600 }}
+            sx={{
+              fontWeight: 700, textTransform: 'none', borderRadius: '20px',
+              color: '#2d5a2a', background: 'linear-gradient(180deg, #e8f5e3 0%, #c5dfc0 100%)',
+              borderColor: '#7ab872', boxShadow: '0 2px 6px rgba(100,155,85,0.18)',
+              transition: 'all 0.2s ease',
+              '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54', boxShadow: '0 4px 10px rgba(100,155,85,0.28)', transform: 'translateY(-1px)' },
+              '&:disabled': { opacity: 0.45, boxShadow: 'none', transform: 'none' },
+            }}
           >
             Download
           </Button>

@@ -670,7 +670,7 @@ function MovePanelContent(): JSX.Element {
       </Box>
 
       {/* Custom move section */}
-      <Box sx={{ flexShrink: 0, borderTop: `1px solid ${G.border}` }}>
+      <Box sx={{ flexShrink: 0 }}>
         <CustomMoveSection />
       </Box>
 
@@ -737,17 +737,33 @@ function CustomMoveSection(): JSX.Element {
   }
 
   return (
-    <Box sx={{ p: 1.25 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.75 }}>
-        <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: G.dark, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+    <Box sx={{
+      background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)',
+      borderTop: '1px solid #c0cedb',
+      p: '10px 14px 12px',
+    }}>
+      {/* Section header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.875 }}>
+        <Typography sx={{
+          fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.12em',
+          textTransform: 'uppercase', color: '#2e4a68',
+        }}>
           Custom Move
         </Typography>
         {selections.length === 0 && (
           <Chip label="No selection" size="small"
-            sx={{ height: 18, fontSize: '0.62rem', fontWeight: 600, fontFamily: "'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace", background: '#F1F5F9', color: '#64748B', border: '1px solid #E2E8F0', borderRadius: '6px', '& .MuiChip-label': { px: '7px' } }}
+            sx={{
+              height: 17, fontSize: '0.61rem', fontWeight: 600,
+              fontFamily: "'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace",
+              background: 'rgba(255,255,255,0.7)', color: '#64748B',
+              border: '1px solid rgba(180,200,220,0.6)', borderRadius: '5px',
+              '& .MuiChip-label': { px: '6px' },
+            }}
           />
         )}
       </Box>
+
+      {/* Textarea */}
       <Box
         component="textarea"
         value={description}
@@ -755,53 +771,74 @@ function CustomMoveSection(): JSX.Element {
         placeholder="Describe a move to apply..."
         rows={2}
         sx={{
-          width: '100%', fontSize: '0.78rem', color: '#334155',
-          border: `1.5px solid ${G.border}`, borderRadius: '8px',
+          width: '100%', fontSize: '0.78rem', color: '#1e3a5f',
+          border: '1.5px solid rgba(180,200,220,0.7)', borderRadius: '7px',
           p: '7px 9px', resize: 'vertical',
-          fontFamily: "'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace", boxSizing: 'border-box',
-          outline: 'none', background: '#FAFAFA', lineHeight: 1.45,
-          boxShadow: `inset 0 1px 3px rgba(0,0,0,0.04)`,
+          fontFamily: "'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace",
+          boxSizing: 'border-box', outline: 'none',
+          background: 'rgba(255,255,255,0.65)',
+          backdropFilter: 'blur(2px)',
+          lineHeight: 1.45,
+          boxShadow: 'inset 0 1px 3px rgba(30,60,100,0.06)',
           display: 'block',
-          '&:focus': { borderColor: G.light, background: 'white' },
+          '&::placeholder': { color: '#8aabcc' },
+          '&:focus': { borderColor: '#8aabcc', background: 'rgba(255,255,255,0.9)', boxShadow: '0 0 0 3px rgba(138,171,204,0.15), inset 0 1px 3px rgba(30,60,100,0.06)' },
         }}
       />
+
+      {/* Controls row */}
       <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center', mt: 0.75 }}>
         <Select
           size="small"
           value={kind}
           onChange={e => setKind(e.target.value as import("../core/ProofDiscoveryMove").MoveKind)}
           sx={{
-            flex: 1, fontSize: '0.72rem', fontWeight: 600, color: G.dark,
-            background: 'white',
-            '& .MuiOutlinedInput-notchedOutline': { borderColor: G.border },
-            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: G.light },
+            flex: 1, fontSize: '0.72rem', fontWeight: 600, color: '#2e4a68',
+            background: 'rgba(255,255,255,0.65)',
+            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(180,200,220,0.7)' },
+            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#8aabcc' },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#8aabcc', borderWidth: '1.5px' },
             '& .MuiSelect-select': { py: '5px', px: '8px' },
           }}
+          MenuProps={{
+            PaperProps: {
+              sx: {
+                background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)',
+                border: '1px solid #c0cedb',
+                borderRadius: '8px',
+                mt: '3px',
+                boxShadow: '0 4px 16px rgba(30,60,100,0.12)',
+              }
+            }
+          }}
         >
-          <MenuItem value="strengthening" sx={{ fontSize: '0.75rem' }}>strengthening</MenuItem>
-          <MenuItem value="weakening" sx={{ fontSize: '0.75rem' }}>weakening</MenuItem>
-          <MenuItem value="equivalence" sx={{ fontSize: '0.75rem' }}>equivalence</MenuItem>
+          <MenuItem value="strengthening" sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#2e4a68', '&:hover': { background: 'rgba(138,171,204,0.15)' }, '&.Mui-selected': { background: 'rgba(138,171,204,0.2)', color: '#1e3a5f' }, '&.Mui-selected:hover': { background: 'rgba(138,171,204,0.28)' } }}>strengthening</MenuItem>
+          <MenuItem value="weakening"     sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#2e4a68', '&:hover': { background: 'rgba(138,171,204,0.15)' }, '&.Mui-selected': { background: 'rgba(138,171,204,0.2)', color: '#1e3a5f' }, '&.Mui-selected:hover': { background: 'rgba(138,171,204,0.28)' } }}>weakening</MenuItem>
+          <MenuItem value="equivalence"   sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#2e4a68', '&:hover': { background: 'rgba(138,171,204,0.15)' }, '&.Mui-selected': { background: 'rgba(138,171,204,0.2)', color: '#1e3a5f' }, '&.Mui-selected:hover': { background: 'rgba(138,171,204,0.28)' } }}>equivalence</MenuItem>
         </Select>
         <Button
           onClick={() => void handleApply()}
           disabled={applying || !description.trim()}
           size="small"
+          variant="outlined"
           sx={{
             display: 'flex', alignItems: 'center', gap: 0.75,
             px: 1.5, fontSize: '0.75rem', fontWeight: 700,
-            color: 'white', background: `linear-gradient(180deg, ${G.bright}, ${G.med})`,
-            borderRadius: '8px', textTransform: 'none', flexShrink: 0,
-            boxShadow: `0 2px 4px rgba(67,160,71,0.25)`,
-            '&:hover': { background: `linear-gradient(180deg, ${G.med}, ${G.dark})` },
-            '&:disabled': { background: '#E0E0E0', color: '#9E9E9E', boxShadow: 'none' },
+            color: '#2d5a2a', background: 'linear-gradient(180deg, #e8f5e3 0%, #c5dfc0 100%)',
+            borderColor: '#7ab872', borderRadius: '20px', textTransform: 'none', flexShrink: 0,
+            boxShadow: '0 2px 6px rgba(100,155,85,0.18)',
+            transition: 'all 0.2s ease',
+            '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54', boxShadow: '0 4px 10px rgba(100,155,85,0.28)', transform: 'translateY(-1px)' },
+            '&:disabled': { opacity: 0.45, boxShadow: 'none', transform: 'none' },
           }}
         >
           {applying && <SpinnerBox size={12} />}
           Apply
         </Button>
       </Box>
+
       {error && (
-        <Typography sx={{ mt: 0.5, fontSize: '0.7rem', color: '#C62828', p: '4px 8px', background: '#FFF5F5', border: '1px solid #FFCDD2', borderRadius: '6px' }}>
+        <Typography sx={{ mt: 0.625, fontSize: '0.7rem', color: '#C62828', p: '4px 8px', background: '#FFF5F5', border: '1px solid #FFCDD2', borderRadius: '6px' }}>
           {error}
         </Typography>
       )}
@@ -863,14 +900,16 @@ function AllMovesList(): JSX.Element {
         <Button
           onClick={() => setShowGenerator(true)}
           fullWidth
+          variant="outlined"
           sx={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75,
-            p: '10px', borderRadius: '10px',
-            background: `linear-gradient(180deg, ${G.bright}, ${G.med})`,
-            color: 'white', border: 'none', textTransform: 'none',
+            p: '10px', borderRadius: '12px',
+            background: 'linear-gradient(180deg, #e8f5e3 0%, #c5dfc0 100%)',
+            color: '#2d5a2a', borderColor: '#7ab872', textTransform: 'none',
             fontSize: '0.85rem', fontWeight: 700,
-            boxShadow: `0 2px 8px rgba(67,160,71,0.25)`,
-            '&:hover': { background: `linear-gradient(180deg, ${G.med}, ${G.dark})` },
+            boxShadow: '0 2px 8px rgba(100,155,85,0.18)',
+            transition: 'all 0.2s ease',
+            '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54', boxShadow: '0 4px 14px rgba(100,155,85,0.28)', transform: 'translateY(-1px)' },
           }}
         >
           <svg style={{ width: 16, height: 16 }} viewBox="0 0 20 20" fill="currentColor">
@@ -919,14 +958,17 @@ function AllMovesList(): JSX.Element {
                   <Button
                     size="small"
                     disabled={isBusy}
+                    variant="outlined"
                     onClick={() => void handleRunMove(selected)}
                     sx={{
                       display: 'flex', alignItems: 'center', gap: 0.75,
                       px: 1.5, fontSize: '0.75rem', fontWeight: 700, textTransform: 'none',
-                      color: 'white', background: `linear-gradient(180deg, ${G.bright}, ${G.med})`,
-                      borderRadius: '7px', boxShadow: `0 2px 4px rgba(67,160,71,0.25)`,
-                      '&:hover': { background: `linear-gradient(180deg, ${G.med}, ${G.dark})` },
-                      '&:disabled': { background: '#E0E0E0', color: '#9E9E9E', boxShadow: 'none' },
+                      color: '#2d5a2a', background: 'linear-gradient(180deg, #e8f5e3 0%, #c5dfc0 100%)',
+                      borderColor: '#7ab872', borderRadius: '20px',
+                      boxShadow: '0 2px 6px rgba(100,155,85,0.18)',
+                      transition: 'all 0.2s ease',
+                      '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54', boxShadow: '0 4px 10px rgba(100,155,85,0.28)', transform: 'translateY(-1px)' },
+                      '&:disabled': { opacity: 0.45, boxShadow: 'none', transform: 'none' },
                     }}
                   >
                     {isBusy ? <SpinnerBox size={12} /> : <PlayIcon />}
@@ -1047,7 +1089,7 @@ function AllMovesList(): JSX.Element {
           background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)', flexShrink: 0,
         }}>
           <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#1E3A5F', letterSpacing: '-0.01em' }}>
-            Live Move Generator
+            Move Generator
           </Typography>
           <IconButton size="small" onClick={() => setShowGenerator(false)}
             sx={{ background: 'white', border: `1px solid ${G.border}`, color: '#3A5B80', borderRadius: '8px', '&:hover': { background: '#E2E8F0' } }}>
