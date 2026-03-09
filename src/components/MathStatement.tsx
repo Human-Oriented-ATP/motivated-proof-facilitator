@@ -2,8 +2,9 @@ import React, { JSX, useContext, useState } from "react"
 import { Statement } from "../core/ProofState"
 import { AtomicStatement } from "./AtomicStatement"
 import { StatementAddress, ProofStateSelectionContext, ProofStateLocationContext, StatementCoordinate,
-        areStatementAddressesEqual, locationPolarity, addressPolarity, coordinatePolarity } from "../core/ProofStateSelectionContext"
+        areStatementAddressesEqual, coordinatePolarity } from "../core/ProofStateSelectionContext"
 import { areProofStateIdsEqual, ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
+import Tooltip from "@mui/material/Tooltip"
 
 // Import generated logical symbol SVGs
 import conjunctionSvg from "../assets/logical-symbols/conjunction.svg"
@@ -14,103 +15,88 @@ import equivalenceSvg from "../assets/logical-symbols/equivalence.svg"
 import universalSvg from "../assets/logical-symbols/universal.svg"
 import existentialSvg from "../assets/logical-symbols/existential.svg"
 
-// SVG logical connectives - inline the imported SVGs
-const ConjunctionSymbol = () => (
-    <img 
-        src={conjunctionSvg} 
-        alt="∧" 
-        style={{ 
-            display: 'inline-block', 
-            verticalAlign: '-0.2em', 
-            margin: '0 6px',
-            height: '1.2em',
-            width: 'auto'
-        }} 
-    />
-)
+const TOOLTIP_SLOT = { tooltip: { sx: { fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.04em' } } } as const
 
-const DisjunctionSymbol = () => (
-    <img 
-        src={disjunctionSvg} 
-        alt="∨" 
-        style={{ 
-            display: 'inline-block', 
-            verticalAlign: '-0.2em', 
-            margin: '0 6px',
-            height: '1.2em',
-            width: 'auto'
-        }} 
-    />
-)
+// Per-section theme RGB values, matching ProofState.tsx THEME
+type RGB = [number, number, number]
 
-const NegationSymbol = () => (
-    <img 
-        src={negationSvg} 
-        alt="¬" 
-        style={{ 
-            display: 'inline-block', 
-            verticalAlign: 'middle', 
+function getLocationRgb(kind: string): RGB {
+    switch (kind) {
+        case 'hypothesis':        return [194, 65,  12 ]
+        case 'goal':              return [29,  78,  216]
+        case 'library_statement': return [161, 98,  7  ]
+        case 'variable':
+        case 'variable_body':     return [185, 28,  28 ]
+        default:                  return [100, 116, 139]
+    }
+}
+
+function toRgba([r, g, b]: RGB, alpha: number): string {
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+// Connective symbol wrapped in a soft colored glow matching the section theme
+function Connective({ src, alt, label, height = '1.1em', margin = '0 6px', padding = '2px 5px' }: {
+    src: string; alt: string; label: string
+    height?: string; margin?: string; padding?: string
+}) {
+    const [hovered, setHovered] = useState(false)
+    return (
+        <Tooltip title={label} placement="top" arrow disableInteractive enterDelay={350} slotProps={TOOLTIP_SLOT}>
+            <span
+                onMouseEnter={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
+                style={{
+                    display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle',
+                    borderRadius: '3px',
+                    background: hovered ? 'rgba(0,0,0,0.06)' : 'transparent',
+                    padding, margin,
+                    cursor: 'help', userSelect: 'none' as const, lineHeight: 0,
+                    transition: 'background 0.15s ease',
+                }}
+            >
+                <img src={src} alt={alt} style={{ display: 'block', height, width: 'auto' }} />
+            </span>
+        </Tooltip>
+    )
+}
+
+const ConjunctionSymbol = () => <Connective src={conjunctionSvg}  alt="∧" label="And"            />
+const DisjunctionSymbol = () => <Connective src={disjunctionSvg}  alt="∨" label="Or"             />
+const ImplicationSymbol = () => <Connective src={implicationSvg}  alt="⇒" label="Implies"        />
+const EquivalenceSymbol = () => <Connective src={equivalenceSvg}  alt="⇔" label="If and only if" />
+const NegationSymbol    = () => <Connective src={negationSvg}     alt="¬" label="Not"             height="0.55em" margin="0 4px 0 0" padding="4px 5px" />
+
+// Quantifier symbol: plain inline image with tooltip (glow comes from QuantifierGroup)
+function QuantifierSymbol({ src, alt, label }: { src: string; alt: string; label: string }) {
+    return (
+        <Tooltip title={label} placement="top" arrow disableInteractive enterDelay={350} slotProps={TOOLTIP_SLOT}>
+            <span style={{ display: 'inline', cursor: 'help', userSelect: 'none' }}>
+                <img src={src} alt={alt} style={{ display: 'inline-block', height: '1.1em', width: 'auto', verticalAlign: '-0.18em' }} />
+            </span>
+        </Tooltip>
+    )
+}
+
+// Soft glow wrapper that envelops the quantifier symbol + its binding together
+function QuantifierGroup({ rgb, children }: { rgb: RGB; children: React.ReactNode }) {
+    return (
+        <span style={{
+            display: 'inline-block',
+            verticalAlign: 'middle',
+            borderRadius: '5px',
+            background: toRgba(rgb, 0.04),
+            boxShadow: `0 0 10px 1px ${toRgba(rgb, 0.15)}, 0 0 28px 6px ${toRgba(rgb, 0.06)}`,
+            padding: '1px 6px 1px 4px',
             marginRight: '4px',
-            height: '0.6em',
-            width: 'auto'
-        }} 
-    />
-)
+        }}>
+            {children}
+        </span>
+    )
+}
 
-const ImplicationSymbol = () => (
-    <img 
-        src={implicationSvg} 
-        alt="⇒" 
-        style={{ 
-            display: 'inline-block', 
-            verticalAlign: '-0.2em', 
-            margin: '0 6px',
-            height: '1.2em',
-            width: 'auto'
-        }} 
-    />
-)
-
-const EquivalenceSymbol = () => (
-    <img 
-        src={equivalenceSvg} 
-        alt="⇔" 
-        style={{ 
-            display: 'inline-block', 
-            verticalAlign: '-0.2em', 
-            margin: '0 6px',
-            height: '1.2em',
-            width: 'auto'
-        }} 
-    />
-)
-
-const UniversalSymbol = () => (
-    <img 
-        src={universalSvg} 
-        alt="∀" 
-        style={{ 
-            display: 'inline-block', 
-            verticalAlign: '-0.2em', 
-            marginRight: '1px',
-            height: '1.2em',
-            width: 'auto'
-        }} 
-    />
-)
-
-const ExistentialSymbol = () => (
-    <img 
-        src={existentialSvg} 
-        alt="∃" 
-        style={{ 
-            display: 'inline-block', 
-            verticalAlign: '-0.2em', 
-            marginRight: '1px',
-            height: '1.2em',
-            width: 'auto'
-        }} 
-    />
+const QColon = () => (
+    <span style={{ color: '#334155', fontSize: '1.0em', fontWeight: '600', margin: '0 3px', userSelect: 'none', lineHeight: 1 }}>:</span>
 )
 
 /** Props for the `MathStatement` component. */
@@ -140,6 +126,7 @@ export function MathStatement({ address, statement, polarity }: MathStatementPro
     const proofStateLocation = useContext(ProofStateLocationContext)
     const proofStateId = useContext(ProofStateIdContext)
     const [isHovered, setIsHovered] = useState<boolean>(false)
+    const locationRgb = getLocationRgb(proofStateLocation.kind)
 
     // Check if current statement is selected
     const isSelected = selections.some(sel => 
@@ -205,77 +192,60 @@ export function MathStatement({ address, statement, polarity }: MathStatementPro
         />
     }
 
-    // Determine if this is a variable coordinate
-    const isVariable = address.length > 0 && 
+    // Whether this is a quantifier binding variable (universal_var or existential_var)
+    const isQuantifierVar = address.length > 0 &&
         (address[address.length - 1] === "universal_var" || address[address.length - 1] === "existential_var")
 
     // Style for hoverable/selectable segments based on polarity
     const getPolarityStyles = () => {
-        // Special styling for variables
-        if (isVariable && typeof statement === "string") {
-            if (polarity === true && (isHovered || isSelected)) {
-                // True polarity variables: reddish hue
-                return {
-                    color: 'rgba(220, 80, 80, 0.9)',
-                    fontWeight: '500' as const
-                }
-            } else if (polarity === false && (isHovered || isSelected)) {
-                // False polarity variables: purplish hue
-                return {
-                    color: 'rgba(150, 80, 200, 0.9)',
-                    fontWeight: '500' as const
-                }
-            }
-        }
-
-        // Only show polarity effects when hovered or selected
         if (!isHovered && !isSelected) {
-            return {
-                backgroundColor: 'transparent',
-                border: '1px solid transparent',
-                boxShadow: 'none'
-            }
+            return { backgroundColor: 'transparent', border: '1px solid transparent', boxShadow: 'none' }
         }
 
-        // Regular statement styling based on polarity
         if (polarity === true) {
-            // True polarity: orange outward bevel
+            if (isQuantifierVar) {
+                // Quantifier var at positive polarity: reddish outward bevel (variables section shade)
+                return {
+                    backgroundColor: isSelected ? 'rgba(185,28,28,0.13)' : 'rgba(185,28,28,0.06)',
+                    border: isSelected ? '1px solid rgba(185,28,28,0.40)' : '1px solid rgba(185,28,28,0.20)',
+                    boxShadow: isSelected
+                        ? '0 1px 4px rgba(185,28,28,0.20), inset 0 1px 0 rgba(255,255,255,0.30)'
+                        : '0 1px 2px rgba(185,28,28,0.10)',
+                }
+            }
+            // Standard positive: orange outward bevel
             return {
-                backgroundColor: isSelected 
-                    ? 'rgba(255, 165, 0, 0.25)' 
-                    : 'rgba(255, 165, 0, 0.12)',
-                border: isSelected 
-                    ? '1px solid rgba(255, 140, 0, 0.6)' 
-                    : '1px solid rgba(255, 140, 0, 0.35)',
-                boxShadow: isSelected 
-                    ? '0 2px 4px rgba(255, 140, 0, 0.3), inset 0 -1px 2px rgba(0, 0, 0, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.4)' 
-                    : '0 1px 3px rgba(255, 140, 0, 0.2), inset 0 -1px 1px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.3)'
+                backgroundColor: isSelected ? 'rgba(255,140,0,0.15)' : 'rgba(255,140,0,0.07)',
+                border: isSelected ? '1px solid rgba(255,140,0,0.45)' : '1px solid rgba(255,140,0,0.22)',
+                boxShadow: isSelected
+                    ? '0 1px 4px rgba(255,140,0,0.20), inset 0 1px 0 rgba(255,255,255,0.30)'
+                    : '0 1px 2px rgba(255,140,0,0.12)',
             }
         } else if (polarity === false) {
-            // False polarity: inward light blue bevel
+            if (isQuantifierVar) {
+                // Quantifier var at negative polarity: purple inward bevel
+                return {
+                    backgroundColor: isSelected ? 'rgba(126,34,206,0.13)' : 'rgba(126,34,206,0.06)',
+                    border: isSelected ? '1px solid rgba(126,34,206,0.40)' : '1px solid rgba(126,34,206,0.20)',
+                    boxShadow: isSelected
+                        ? 'inset 0 1px 4px rgba(0,0,0,0.14), inset 0 1px 2px rgba(126,34,206,0.20)'
+                        : 'inset 0 1px 2px rgba(0,0,0,0.08)',
+                }
+            }
+            // Standard negative: blue inward bevel
             return {
-                backgroundColor: isSelected 
-                    ? 'rgba(33, 150, 243, 0.2)' 
-                    : 'rgba(33, 150, 243, 0.08)',
-                border: isSelected 
-                    ? '1px solid rgba(33, 150, 243, 0.6)' 
-                    : '1px solid rgba(33, 150, 243, 0.3)',
-                boxShadow: isSelected 
-                    ? 'inset 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(33, 150, 243, 0.3)' 
-                    : 'inset 0 1px 3px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(33, 150, 243, 0.2)'
+                backgroundColor: isSelected ? 'rgba(33,150,243,0.13)' : 'rgba(33,150,243,0.06)',
+                border: isSelected ? '1px solid rgba(33,150,243,0.45)' : '1px solid rgba(33,150,243,0.22)',
+                boxShadow: isSelected
+                    ? 'inset 0 1px 4px rgba(0,0,0,0.14), inset 0 1px 2px rgba(33,150,243,0.20)'
+                    : 'inset 0 1px 2px rgba(0,0,0,0.08)',
             }
         } else {
-            // Null polarity: flat bevel with subtle parent-inherited appearance
+            // Null polarity: flat subtle highlight
             return {
-                backgroundColor: isSelected 
-                    ? 'rgba(158, 158, 158, 0.15)' 
-                    : 'rgba(158, 158, 158, 0.08)',
-                border: isSelected 
-                    ? '1px solid rgba(130, 130, 130, 0.4)' 
-                    : '1px solid rgba(130, 130, 130, 0.25)',
-                boxShadow: isSelected 
-                    ? '0 0 0 1px rgba(130, 130, 130, 0.15)' 
-                    : '0 0 0 1px rgba(130, 130, 130, 0.1)'
+                backgroundColor: isSelected ? 'rgba(130,130,130,0.10)' : 'rgba(130,130,130,0.05)',
+                border: isSelected ? '1px solid rgba(130,130,130,0.30)' : '1px solid rgba(130,130,130,0.15)',
+                boxShadow: 'none',
             }
         }
     }
@@ -388,25 +358,27 @@ export function MathStatement({ address, statement, polarity }: MathStatementPro
 
         case "universal": {
             return (
-                <span 
+                <span
                     style={segmentStyle}
                     onClick={handleClick}
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                 >
-                    <UniversalSymbol />
-                    <MathStatement 
-                        address={[...address, "universal_var"]} 
-                        statement={statement.variable.name} 
-                        polarity={getChildPolarity("universal_var")}
-                    />
-                    <span style={{ margin: '0 4px' }}>:</span>
-                    <MathStatement 
-                        address={[...address, "universal_var_type"]} 
-                        statement={statement.variable.description} 
-                        polarity={getChildPolarity("universal_var_type")}
-                    />
-                    <span style={{ margin: '0 6px' }}>.</span>
+                    <QuantifierGroup rgb={locationRgb}>
+                        <QuantifierSymbol src={universalSvg} alt="∀" label="Forall" />
+                        {' '}
+                        <MathStatement
+                            address={[...address, "universal_var"]}
+                            statement={statement.variable.name}
+                            polarity={getChildPolarity("universal_var")}
+                        />
+                        <QColon />
+                        <MathStatement
+                            address={[...address, "universal_var_type"]}
+                            statement={statement.variable.description}
+                            polarity={getChildPolarity("universal_var_type")}
+                        />
+                    </QuantifierGroup>
                     {renderChild(statement.statement, "universal_body")}
                 </span>
             )
@@ -414,25 +386,27 @@ export function MathStatement({ address, statement, polarity }: MathStatementPro
 
         case "existential": {
             return (
-                <span 
+                <span
                     style={segmentStyle}
                     onClick={handleClick}
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                 >
-                    <ExistentialSymbol />
-                    <MathStatement 
-                        address={[...address, "existential_var"]} 
-                        statement={statement.variable.name} 
-                        polarity={getChildPolarity("existential_var")}
-                    />
-                    <span style={{ margin: '0 4px' }}>:</span>
-                    <MathStatement 
-                        address={[...address, "existential_var_type"]} 
-                        statement={statement.variable.description} 
-                        polarity={getChildPolarity("existential_var_type")}
-                    />
-                    <span style={{ margin: '0 6px' }}>.</span>
+                    <QuantifierGroup rgb={locationRgb}>
+                        <QuantifierSymbol src={existentialSvg} alt="∃" label="Exists" />
+                        {' '}
+                        <MathStatement
+                            address={[...address, "existential_var"]}
+                            statement={statement.variable.name}
+                            polarity={getChildPolarity("existential_var")}
+                        />
+                        <QColon />
+                        <MathStatement
+                            address={[...address, "existential_var_type"]}
+                            statement={statement.variable.description}
+                            polarity={getChildPolarity("existential_var_type")}
+                        />
+                    </QuantifierGroup>
                     {renderChild(statement.statement, "existential_body")}
                 </span>
             )
