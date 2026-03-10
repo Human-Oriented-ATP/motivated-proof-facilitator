@@ -143,6 +143,11 @@ export const goalDirectedReasoningMove: ProofDiscoveryMove = {
                 "kind": "free",
                 "name": "$d$",
                 "description": "$RR$"
+              },
+            {
+                "kind": "free",
+                "name": "$n$",
+                "description": "$RR$"
               }
             ],
             "hypotheses": [
@@ -224,6 +229,11 @@ export const goalDirectedReasoningMove: ProofDiscoveryMove = {
               {
                 "kind": "free",
                 "name": "$d$",
+                "description": "$RR$"
+              },
+              {
+                "kind": "free",
+                "name": "$n$",
                 "description": "$RR$"
               }
             ],
