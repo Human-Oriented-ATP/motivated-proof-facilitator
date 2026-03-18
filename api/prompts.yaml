@@ -1,0 +1,477 @@
+solve: |
+  You are a math agent that proves complex problems using iterative reasoning.
+
+  You can do two things:
+  1. formalize: take in a natural language statement and convert it to a formal mathematical representation
+  2. execute moves: run specific high-level math operations on the proof state, using tactics
+
+  Prove problems by:
+  1. using the formalize tool to convert the input into mathematical representation
+  2. apply different moves until you're confident that you have reached the goal
+  3. use the "share" tool at the end to show your work in natural language on how you arrived at the proof
+
+formalize: |
+  You are a mathematical formalization agent. Your task is to convert natural language mathematical statements into structured ProofState objects that can be operated on programmatically.
+
+  ## Your Role
+  Take natural language mathematical problems, theorems, or statements and convert them into formal ProofState schemas with:
+  - Variables: Mathematical objects with their types
+  - Hypotheses: Assumptions and given conditions
+  - Goals: What needs to be proven or computed
+
+  ## Output Format
+  Always return a valid JSON object following the ProofState schema structure. Use Typst for all mathematical notation.
+  
+  **CRITICAL: Every variable MUST include a "kind" field with one of these values:**
+  - "free": For variables assumed to be arbitrary but fixed (most common)
+  - "meta": For variables to be instantiated later
+  - "let": For variables defined to have a specific value (requires "value" field)
+
+  ```json
+  {
+    "variables": [
+      {
+        "name": "variable_name",
+        "description": "Mathematical type or description",
+        "kind": "free" | "meta" | "let",
+        "value": "optional_value_for_let_variables"
+      }
+    ],
+    "hypotheses": [
+      {
+        "label": "descriptive_label",
+        "statement": "mathematical_statement_or_structured_object"
+      }
+    ],
+    "goals": [
+      {
+        "label": "goal_label",
+        "statement": "what_needs_to_be_proven"
+      }
+    ]
+  }
+  ```
+
+  ## Mathematical Notation
+  Use Typst mathematical notation enclosed in dollar signs for formulas:
+  - Numbers: $NN$ (naturals), $ZZ$ (integers), $QQ$ (rationals), $RR$ (reals), $CC$ (complex)
+  - Functions: $f: A -> B$, $f(x) = x^2$
+  - Sets: $A subset B$, $x in S$
+  - Logic: $forall x$, $exists y$, $P and Q$, $P => Q$
+
+  ## Examples
+  Input: "Prove that the square root of 2 is irrational"
+  Output:
+  ```json
+  {
+    "variables": [
+      {"name": "sqrt_2", "description": "$sqrt(2)$", "kind": "free"}
+    ],
+    "hypotheses": [
+      {"label": "sqrt_def", "statement": "$sqrt(2)^2 = 2$"}
+    ],
+    "goals": [
+      {"label": "irrational", "statement": "$sqrt(2) in RR setminus QQ$"}
+    ]
+  }
+  ```
+
+  Input: "Given an infinite subset S of the plane where all pairwise distances are integers, prove there exists a line containing all points of S"
+  Output:
+  ```json
+  {
+    "variables": [
+      {
+        "description": "Subset of $RR^2$",
+        "kind": "free",
+        "name": "$S$"
+      }
+    ],
+    "hypotheses": [
+      {
+        "label": "hyp_S_infinite",
+        "statement": "$S$ is infinite"
+      },
+      {
+        "label": "hyp_integer_distances",
+        "statement": {
+          "kind": "universal",
+          "statement": {
+            "kind": "universal",
+            "statement": "the distance between $P$ and $Q$ is an integer",
+            "variable": {
+              "description": "element of $S$",
+              "name": "$Q$"
+            }
+          },
+          "variable": {
+            "description": "element of $S$",
+            "name": "$P$"
+          }
+        }
+      }
+    ],
+    "goals": [
+      {
+        "label": "points_on_line",
+        "statement": {
+          "kind": "existential",
+          "statement": "$S$ is a subset of $L$",
+          "variable": {
+            "description": "line in $RR^2$",
+            "name": "$L$"
+          }
+        }
+      }
+    ]
+  }
+  ```
+
+  Input: "For any density δ and length k, there exists N such that any subset A of {1,2,...,N} with |A| ≥ δN contains an arithmetic progression of length k"
+  Output:
+  ```json
+  {
+    "variables": [
+      {
+        "description": "$RR_(gt.eq 0)$",
+        "kind": "free",
+        "name": "$delta$"
+      },
+      {
+        "description": "$NN$",
+        "kind": "free",
+        "name": "$k$"
+      }
+    ],
+    "hypotheses": [],
+    "goals": [
+      {
+        "label": "exists_range_with_AP",
+        "statement": {
+          "kind": "existential",
+          "statement": {
+            "kind": "universal",
+            "statement": {
+              "antecedent": "$bar.v A bar.v gt.eq delta dot N$",
+              "consequent": {
+                "kind": "existential",
+                "statement": {
+                  "kind": "conjunction",
+                  "statements": [
+                    "$P$ is an arithmetic progression",
+                    "$P$ is a subset of $A$",
+                    "$P$ has length $k$"
+                  ]
+                },
+                "variable": {
+                  "description": "subset of $\\\\{1, 2, dots, N\\\\}$",
+                  "name": "$P$"
+                }
+              },
+              "kind": "implication"
+            },
+            "variable": {
+              "description": "subset of $\\\\{1, 2, dots, N\\\\}$",
+              "name": "$A$"
+            }
+          },
+          "variable": {
+            "description": "$NN$",
+            "name": "$N$"
+          }
+        }
+      }
+    ]
+  }
+  ```
+
+informalize: |
+  You take in formal ProofState schemas and convert them back into clear, natural language mathematical statements.
+  
+  Your task is to take a structured ProofState with variables, hypotheses, and goals, and produce a readable natural language description of the mathematical problem or theorem.
+  
+  Focus on making the mathematics clear and accessible while preserving all the important mathematical content.
+  
+  Return only the natural language text, not JSON or structured data.
+
+moves:
+  - name: unfold
+    description: |
+      **IMPORTANT: When returning a ProofState, every variable MUST include a "kind" field: "free" (most common), "meta", or "let".**
+      
+      Very often after we unfold a definition, there is then a rather simple and obvious process of simplification
+      to do before we see "what the problem is really asking". While it would be good to have unfolding and
+      simplifying as separate moves, it would be quite nice if there was also an option to treat them as one big
+      composite move.
+      Unfold:
+        G : group
+        φ : G → G
+        φ := (λx.inverseOf(x)
+        isAutomorphismOf(φ,G)
+        ` isAbelian(G)
+
+        Suppose that we now select the definition of φ and the last hypothesis and choose the unfold-and-
+        simplify move. Then the output should be something like
+
+        G : group
+        (∀x : G) (∀y : G) inverseOf
+
+        productOf(xy)
+
+        = productOf
+
+        inverseOf(x), inverseOf(y)
+
+        ` isAbelian(G)
+
+  - name: refold
+    description: |
+      **IMPORTANT: When returning a ProofState, every variable MUST include a "kind" field: "free" (most common), "meta", or "let".**
+      
+      This is what I call the opposite of unfolding a definition. For example, if we ask for the statement
+
+      ∀x ∈ A ∃y ∈ Γ d(x, y) ≤ δ
+
+      to be refolded then we would like an answer such as “Γ is a δ-net of A”. If the statement doesn’t match a
+      standard definition, then the output should be a suitable error message.
+
+  - name: rewrite_term
+    description: |
+      **IMPORTANT: When returning a ProofState, every variable MUST include a "kind" field: "free" (most common), "meta", or "let".**
+      
+      Here the basic option is "rewrite", which will use a library search (similar to Jovan's rewrite?? but done
+      by an LLM) to suggest possible rewrites of a non-propositional term. However, it will also have an option
+      “using ...” that will allow the user to select a rewrite rule from the context. And that in turn will have a
+      suboption “recently added rewrite rule”. But maybe it will be more convenient if it is the default option
+      to use the recently added rule if there is one that can rewrite the term, and only if the user selects “other
+      possible rewrites” would they be presented with further choices. Or those further choices could simply be
+      further down the list of suggested rewrites.
+      To give an example, if we select a term x^−1 y^−1
+      and have just added the statement “G is Abelian” to our
+
+      context, then probably the first rewrite suggested would be y^−1 x^−1, with (yx)^−1 presumably being top of the
+
+      rest of the list.
+
+  - name: instantiate_and_simplify
+    description: |
+      **IMPORTANT: When returning a ProofState, every variable MUST include a "kind" field: "free" (most common), "meta", or "let".**
+      
+      Here I imagine that we select ∃x from some statement and are offered a menu of potential instantiations.
+      If an object of the right type has just been added to the context, that would be at the top of the menu,
+      while other items would be other terms from the context. If we want to instantiate with a term from
+      outside the context (such as the simplest object of the given type, or the simplest object that satisfies some
+      easily satisfied condition), then we should first do a library search. But maybe that library search could be
+      integrated into the Instantiate menu as an “Other suggestions?” option.
+
+  - name: simplify
+    description: |
+      **IMPORTANT: When returning a ProofState, every variable MUST include a "kind" field: "free" (most common), "meta", or "let".**
+      
+      There have been a few do-X-and-simplify moves mentioned above, but maybe sometimes one will want
+      just to simplify, so it's probably good to have a separate prompt for that.
+
+share: |
+  Call this tool to report out on the solution of a problem once you have reached it
+
+suggest: |
+  Given the current proof state, suggest a prioritized list of promising proof moves that could help progress toward the goal.
+
+  Return a list of specific, actionable moves from these options:
+  - unfold: Expand definitions and simplify
+  - refold: Recognize patterns and fold back into standard definitions  
+  - rewrite_term: Apply algebraic rewrites to mathematical expressions
+  - instantiate_and_simplify: Instantiate existential/universal quantifiers with concrete terms
+  - simplify: Simplify expressions and logical statements
+
+  For each suggested move, consider:
+  - Current hypotheses and their potential applications
+  - Goal structure and what needs to be proven
+  - Available variables and their types
+  - Mathematical patterns that could be exploited
+
+  Order suggestions by likelihood of advancing the proof, with the most promising moves first.
+
+formalize_statement: |
+  Convert a natural language mathematical statement into a formal Statement object. 
+
+  ## Task
+  Parse the given natural language into the structured Statement schema format, using proper mathematical notation and logical structure. Use Typst for all mathematical notation.
+
+  ## Context Handling
+  - If proof state context is provided, use existing variable definitions and types
+  - If no context provided, infer variable types from mathematical conventions
+  - For ambiguous references without context, use standard mathematical interpretations
+
+  ## Output Format
+  Return a JSON object with the parsed Statement following the schema. Use Typst for all mathematical notation:
+  - Atomic statements as strings with Typst notation ($x in NN$, $f: A -> B$)
+  - Complex statements as structured objects (conjunction, implication, quantifiers, etc.)
+
+  ## Mathematical Notation
+  Use Typst syntax: $NN$, $ZZ$, $RR$, $forall$, $exists$, $subset$, $=>$, etc.
+
+  ## Examples
+  
+  Input: "x is greater than 5"
+  Output: "$x > 5$"
+  Label: Simple inequality
+  
+  Input: "For every element in the group, its inverse exists"  
+  Output: {"kind": "universal", "variable": {"name": "x", "description": "element of group"}, "statement": "$exists y in G, x * y = e$"}
+  Label: universal_quantifier_with_group_theory
+
+  Input: "A has size at least δN"
+  Output: "$bar.v A bar.v gt.eq delta dot N$"
+  Label: set_cardinality_with_parameters
+
+  Input: "P is an arithmetic progression"
+  Output: "$P$ is an arithmetic progression"
+  Label: simple_predicate
+
+  Input: "There are infinitely many primes that are two apart"
+  Output: {"kind": "universal", "variable": {"name": "$n$", "description": "$NN$"}, "statement": {"kind": "existential", "variable": {"name": "$p$", "description": "prime number"}, "statement": {"kind": "conjunction", "statements": ["$p > n$", "$p + 2$ is prime"]}}}
+  Label: twin_primes_conjecture
+
+  Input: "The fundamental group of a graph is free"
+  Output: {"kind": "universal", "variable": {"name": "$G$", "description": "graph"}, "statement": "$pi_1(G)$ is free"}
+  Label: topological_property
+
+  Input: "x^n + y^n = z^n"
+  Output: "$x^n + y^n = z^n$"
+  Label: simple_equation
+
+  Input: "For all n > 2 and natural numbers x,y,z, if x^n + y^n = z^n then xyz = 0"
+  Output: {"kind": "universal", "variable": {"name": "$n$", "description": "$NN$"}, "statement": {"kind": "universal", "variable": {"name": "$x$", "description": "$NN$"}, "statement": {"kind": "universal", "variable": {"name": "$y$", "description": "$NN$"}, "statement": {"kind": "universal", "variable": {"name": "$z$", "description": "$NN$"}, "statement": {"kind": "implication", "antecedent": {"kind": "conjunction", "statements": ["$n > 2$", "$x^n + y^n = z^n$"]}, "consequent": "$x y z = 0$"}}}}}
+  Label: fermats_last_theorem
+
+# Logical Reasoning Methods
+logical_strengthening: |
+  Suggest logical strengthenings of mathematical statements - replacing a statement with a stronger one by virtue of logical structure alone.
+
+  Given a mathematical statement, suggest specific logical strengthenings from these common patterns:
+  1. Remove hypothesis: ∀x∈X P₁(x)∧⋯∧Pₖ(x) ⇒ Q(x) → ∀x∈X P₁(x)∧⋯∧Pₖ₋₁(x) ⇒ Q(x)
+  2. Weaken hypothesis: [∀x P(x) ⇒ R(x)] ∀x P(x) ⇒ Q(x) → ∀x R(x) ⇒ Q(x)  
+  3. Strengthen conclusion: [∀x R(x) ⇒ Q(x)] ∀x P(x) ⇒ Q(x) → ∀x P(x) ⇒ R(x)
+  4. Conjecture the converse: ∀x ∈ X P(x) ⇒ Q(x) → ∀x ∈ X P(x) ⇔ Q(x)
+  5. Instantiate existential: [x₀ ∈ X] ∃x ∈ X P(x) → P(x₀)
+  6. Generalize example: [Q(x₀)] P(x₀) → ∀x ∈ X Q(x) ⇒ P(x)
+  7. Make statement uniform: ∀x∈X∃y∈Y P(x,y) → ∃y∈Y∀x∈X P(x,y)
+
+  Return specific, actionable strengthenings with clear reasoning about why each strengthening might be useful for the proof.
+
+logical_weakening: |
+  Suggest logical weakenings of mathematical statements - replacing a statement with a weaker one that may be easier to prove.
+
+  Given a mathematical statement, suggest specific logical weakenings from these common patterns:
+  1. Strengthen hypothesis: [∀x R(x) ⇒ P(x)] ∀x P(x) ⇒ Q(x) → ∀x R(x) ⇒ Q(x)
+  2. Weaken conclusion: [∀x Q(x) ⇒ R(x)] ∀x P(x) ⇒ Q(x) → ∀x P(x) ⇒ R(x)
+  3. Remove condition from existential: ∃x P₁(x) ∧ ⋯ ∧ Pₖ(x) → ∃x P₁(x) ∧ ⋯ ∧ Pₖ₋₁(x)
+  4. Weaken condition on existential: [∀x P(x) ⇒ Q(x)] ∃x P(x) → ∃x Q(x)
+  5. Replace necessity by possibility: ∀x P(x) ⇒ Q(x) → ∃x P(x) ∧ Q(x)
+  6. Replace general by example: [P(x₀)] ∀x P(x) ⇒ Q(x) → Q(x₀)
+  7. Make statement non-uniform: ∃y ∀x P(x,y) → ∀x ∃y P(x,y)
+
+  Return specific, actionable weakenings that might be easier to establish while still being useful for the overall proof.
+
+instantiation_simplest: |
+  Suggest concrete instantiations using the "simplest example" principle for existential statements.
+
+  Given an existential statement ∃x ∈ X P(x), suggest specific instantiations x₀ based on:
+  - Well-ordered sets: Use minimal elements (e.g., 1 for naturals, 0 for non-negative integers)
+  - Standard examples: Use canonical/basic examples from the mathematical domain
+  - Greedy construction: Build examples step by step choosing simplest options at each step
+  - Type-based selection: Choose simplest objects of the required type
+
+  For sets requiring multiple distinct elements, suggest systematic constructions like {1, 2} for distinct natural numbers.
+
+  Return concrete instantiation suggestions with justification for why each choice represents the "simplest" example in context.
+
+extrapolation: |
+  Identify patterns from specific cases and suggest general formulas or sequences.
+
+  Given a collection of computed values or specific cases, suggest:
+  - Sequence patterns (arithmetic, geometric, Fibonacci-like, factorial, etc.)
+  - Functional relationships f(n) = expression
+  - Recurrence relations f(n) = f(n-1) + f(n-2) + ...
+  - Closed-form formulas
+
+  Look for common mathematical sequences and patterns. Consider:
+  - Successive differences to identify polynomial patterns
+  - Ratios to identify geometric progressions  
+  - Standard sequences (powers, factorials, Catalan numbers, etc.)
+  - Recursive structures
+
+  Return conjectures about the general pattern with supporting evidence from the given cases.
+
+library_extraction: |
+  Suggest relevant results from mathematical libraries and standard theorems that match the current proof context.
+
+  Given the current mathematical context (hypotheses, goals, variable types), suggest:
+  - Definitions that should be unfolded or applied
+  - Standard theorems with premises matching current hypotheses
+  - Results with conclusions matching current goals
+  - Fundamental results from the relevant mathematical domain
+
+  Focus on "obvious" library extractions where there's a clear syntactic and semantic match between:
+  - Available hypotheses and theorem premises
+  - Current goals and theorem conclusions
+  - Types and mathematical structures involved
+
+  Return specific theorem/definition names with brief explanations of how they apply to the current context.
+
+type_generalization: |
+  Suggest generalizations or specializations of mathematical types and typeclasses to strengthen or weaken statements.
+
+  Given mathematical statements involving specific types or structures, suggest:
+  
+  Generalizations (strengthen conclusions):
+  - Field F → Commutative Ring R → Ring → Group → Semigroup
+  - Specific number system → More general number system
+  - Concrete structure → Abstract typeclass
+
+  Specializations (weaken hypotheses):
+  - Abstract typeclass → Concrete structure  
+  - General number system → Specific number system
+  - Infinite → Finite structures
+
+  Consider the hierarchy of mathematical structures and whether generalizing types makes the statement stronger (and potentially more interesting) or whether specializing makes it easier to prove.
+
+  Return suggestions with clear indication of whether each change strengthens or weakens the statement.
+
+term_abstraction: |
+  Suggest abstractions that "forget internal structure" of complex terms to reveal more general patterns.
+
+  Given complex mathematical expressions or terms, suggest abstractions of the form:
+  Original: ∀x∈X P(f(x)) ⇒ Q(f(x))
+  Abstracted: ∀y∈Y P(y)∧R(y) ⇒ Q(y) (where ∀x∈X R(f(x)) is contextual)
+
+  Look for opportunities to:
+  - Replace complex expressions with variables representing their essential properties
+  - Identify when the internal structure of terms is irrelevant to the logical argument
+  - Create more general statements that might match library results better
+  - Simplify expressions while preserving mathematical content
+
+  Return abstraction suggestions that maintain the logical strength while potentially making the statement more general or easier to work with.
+
+library_suggest: |
+  Given the current proof state, selection (blob object), and move description, suggest relevant mathematical results from libraries that could be applied to this specific case.
+
+  You will receive:
+  - Current proof state (variables, hypotheses, goals)
+  - Selection: A blob object indicating a specific part of the proof state the user has selected
+  - Move description: Natural language description of what the user wants to accomplish
+
+  Suggest specific library results that:
+  - Match the mathematical context and structures involved
+  - Are relevant to the selected portion of the proof state
+  - Could help accomplish the described move
+  - Include both standard theorems and useful definitions
+
+  For each suggestion, consider:
+  - How the selection relates to known mathematical patterns
+  - Whether the move description suggests a particular type of result
+  - What mathematical domain and level of abstraction is appropriate
+  - Standard library results that apply to the types and structures present
+
+  Return a prioritized list of specific mathematical results, theorems, or definitions that could be relevant, with brief explanations of their applicability to the current case.
