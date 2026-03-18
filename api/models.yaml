@@ -1,0 +1,20 @@
+formalize:
+  model: openai/gpt-5.4
+
+informalize:
+  model: openai/gpt-5.4
+
+moves:
+  model: openai/gpt-5.4
+
+solver:
+  model: openai/gpt-5.4
+
+suggest:
+  model: openai/gpt-5-mini
+
+formalize_statement:
+  model: openai/gpt-5.4
+
+filter:
+  model: openai/gpt-5.3-chat
