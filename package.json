@@ -17,14 +17,16 @@
     "@mui/material": "^7.3.9",
     "@react-sigma/core": "^5.0.4",
     "@xyflow/react": "^12.10.0",
+    "ai": "^6.0.116",
     "axios": "^1.13.1",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
     "graphology": "^0.26.0",
     "graphology-layout-force": "^0.2.4",
     "graphology-types": "^0.24.8",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "sigma": "^3.0.2",
-    "vite-express": "^0.21.1",
     "zod": "^4.1.13"
   }
 }
