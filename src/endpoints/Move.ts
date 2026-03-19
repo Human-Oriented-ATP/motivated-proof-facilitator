@@ -86,7 +86,7 @@ export async function runMove(
   move: ProofDiscoveryMove,
   selections: ProofStateSelection[]
 ): Promise<MoveResponse> {
-  const response = await fetch("https://motivated-proof-facilitator.vercel.app/api/move", {
+  const response = await fetch("/api/move", {
     method: "POST",
     mode: "cors",
     headers: {

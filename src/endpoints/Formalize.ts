@@ -222,7 +222,7 @@ Please adjust your approach to avoid this error.`;
 
 
 export async function formalizeStatement({ problem }: { problem: string }): Promise<ProofState> {
-  const response = await fetch("https://motivated-proof-facilitator.vercel.app/api/formalize", {
+  const response = await fetch("/api/formalize", {
     method: "POST",
     mode: "cors",
     headers: {
