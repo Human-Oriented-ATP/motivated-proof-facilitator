@@ -23,7 +23,7 @@ import {
 } from "@mui/material"
 import { ProofState, ProofStateSchema, ProofStateWithLibraryResult as ProofStateWithLibraryResultType, StatementSchema } from "../src/core/ProofStateZod"
 import { ProofDiscoveryMove, MoveKind, ProofDiscoveryMoveExample } from "../src/core/ProofDiscoveryMove"
-import { queryMove } from "../src/endpoints/Move"
+import { runMove } from "../src/endpoints/Move"
 
 type UIExample = ProofDiscoveryMoveExample & { id: string }
 import { proofDiscoveryStateReducer, nullProofDiscoveryState } from "../src/core/ProofDiscoveryState"
@@ -32,6 +32,7 @@ import ProofStateContextProvider from "./ProofStateContext"
 import { ProofStateSelectionContext, proofStateSelectionReducer } from "../src/core/ProofStateSelectionContext"
 import TypstContextProvider from "../src/components/TypstContext"
 import { ProofStateEditor } from "../src/components/ProofStateEditor"
+import { formalizeStatement } from "../src/endpoints/Formalize"
 
 type WorkflowState = "idle" | "formalizing" | "formalized" | "applying" | "applied"
 
@@ -169,15 +170,7 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
     setIsLoading(true); setError(null); setWorkflowState("formalizing")
 
     try {
-      const response = await fetch("https://atp-backend-rygt.onrender.com/formalize", {
-        method: "POST", mode: "cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ problem: problemDescription }),
-      })
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-      const data: unknown = await response.json()
-      console.log("Formalization response:", data)
-      const proofState = ProofStateSchema.parse([data])
+      const proofState = await formalizeStatement({ problem: problemDescription })
       let proofStateWithLibrary: ProofStateWithLibraryResultType = { proofState }
 
       if (libraryStatement.trim()) {
@@ -212,7 +205,7 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
     setIsLoading(true); setError(null); setWorkflowState("applying")
 
     try {
-      const { proofState: newProofState, reasoning } = await queryMove(
+      const { proofState: newProofState, reasoning } = await runMove(
         currentInputState.proofState,
         { name: moveName, action, kind: moveKind, trigger, examples: [] },
         selections

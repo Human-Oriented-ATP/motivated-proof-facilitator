@@ -11,7 +11,7 @@ import { getCurrentProofState, ProofDiscoveryAction, ProofDiscoveryState } from 
 import { ProofDiscoveryMove, ProofDiscoveryMoveExample } from "../core/ProofDiscoveryMove"
 import { ProofDiscoveryStateContext, ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
 import { ProofStateWithLibraryResult as ProofStateComponent } from "./ProofState"
-import { queryMove } from "../endpoints/Move"
+import { runMove } from "../endpoints/Move"
 import MoveGenerator from "../../tests/MoveGenerator"
 import { moves } from "../prompts/AllMoves"
 
@@ -75,7 +75,7 @@ export async function applyMove(
   dispatchProofDiscoveryAction: React.Dispatch<ProofDiscoveryAction>,
   dispatchSelections: React.Dispatch<any>
 ): Promise<string | undefined> {
-  const { proofState: newProofState, reasoning } = await queryMove(
+  const { proofState: newProofState, reasoning } = await runMove(
     getCurrentProofState(proofDiscoveryState),
     move,
     selections

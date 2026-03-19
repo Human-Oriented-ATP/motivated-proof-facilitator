@@ -4,6 +4,7 @@ import { ProofDiscoveryState, ProofNode, MoveDescription } from "../core/ProofDi
 import { WasmContext, loadWasm } from "./MathExpression"
 import { ProofStateEditor } from "./ProofStateEditor"
 import Graph from "graphology"
+import { formalizeStatement } from "../endpoints/Formalize"
 
 export type ProofStateGeneratorProps = {
   onGenerated: (state: ProofDiscoveryState) => void
@@ -110,22 +111,7 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
     setError(null)
 
     try {
-      const response = await fetch("https://atp-backend-rygt.onrender.com/formalize", {
-        method: "POST",
-        mode: "cors",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ problem: inputStatement }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      console.log("Received response from backend, parsing JSON...", response)
-      const data: unknown = await response.json()
-      console.log("Received formalized proof state:", data)
-      const proofState = ProofStateSchema.parse([data])
+      const proofState = await formalizeStatement({ problem: inputStatement })
 
       const graph = new Graph<ProofNode, MoveDescription>()
       graph.addNode(0, { proofState })

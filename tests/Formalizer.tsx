@@ -4,6 +4,7 @@ import { proofDiscoveryStateReducer, nullProofDiscoveryState, getCurrentProofSta
 import { ProofState as ProofStateComponent, ProofStateWithLibraryResult } from "../src/components/ProofState"
 import { MathStatement } from "../src/components/MathStatement"
 import ProofStateContextProvider from "./ProofStateContext"
+import { formalizeStatement } from "../src/endpoints/Formalize"
 
 /**
  * Formalizer component that allows users to input mathematical statements,
@@ -30,28 +31,8 @@ export default function RenderFormalizer(): JSX.Element {
 
     setIsLoading(true)
     setError(null)
-
     try {
-      const response = await fetch("https://atp-backend-rygt.onrender.com/formalize", {
-        method: "POST",
-        mode: "cors",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ problem: inputStatement }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      console.log("Response: ", response)
-
-      const data: unknown = await response.json()
-
-      console.log("Data: ", data)
-
-      const proofState = ProofStateSchema.parse([data])
+      const proofState = await formalizeStatement({ problem: inputStatement })
 
       // Initialize the proof discovery state with the received proof state
       dispatch({
