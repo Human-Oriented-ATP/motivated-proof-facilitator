@@ -9,5 +9,5 @@
     "strict": true,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["api/**/*.ts", "src/endpoints/**/*.ts", "vite.config.ts"]
+  "include": ["api/**/*.ts", "src/index.ts", "src/endpoints/**/*.ts", "vite.config.ts"]
 }
