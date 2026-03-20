@@ -13,7 +13,7 @@ app.get('/', (_req, res) => {
   res.send('Initializing motivated proof facilitator...')
 })
 
-app.post("/formalize", async (req, res) => {
+app.post("/api/formalize", async (req, res) => {
   console.log("formalizing...", req.body.problem)
   const problem = req.body.problem;
   if (!problem) {
@@ -31,7 +31,7 @@ app.post("/formalize", async (req, res) => {
   }
 })
 
-app.post("/move", async (req, res) => {
+app.post("/api/move", async (req, res) => {
   const { proofState, move, selections } = req.body;
   if (!proofState) {
     console.error("no proof state provided")
@@ -58,7 +58,7 @@ app.post("/move", async (req, res) => {
 })
 
 /**
-app.post("/filter", async (req, res) => {
+app.post("/api/filter", async (req, res) => {
   const { proofState, selections, triggerCriterion } = req.body;
   
   if (!proofState) {
