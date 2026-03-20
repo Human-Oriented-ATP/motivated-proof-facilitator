@@ -6,8 +6,12 @@ import { runMoveServer } from './endpoints/Move';
 
 const app = express()
 
-app.use(cors());
-app.use(bodyParser.json());
+app.use(cors())
+app.use(bodyParser.json())
+
+app.get('/', (_req, res) => {
+  res.send('Initializing motivated proof facilitator...')
+})
 
 app.post("/formalize", async (req, res) => {
   console.log("formalizing...", req.body.problem)
