@@ -6,6 +6,7 @@ import { generateText, Output } from 'ai'
 import { MODELS } from '../src/endpoints/models'
 import  { MoveResponseSchema }  from './endpoints/Move'
 import { ProofStateSelection } from './core/ProofStateSelectionContext'
+import { FilterResponse, FilterResponseSchema } from './endpoints/Filter'
 
 const app = express()
 
@@ -331,6 +332,101 @@ app.post("/api/move", async (req, res) => {
   } catch(err) {
     console.error(err)
     res.send("FAILED: " + err)
+  }
+})
+
+const FILTER_PROMPT = `
+You are a mathematical reasoning filter that determines whether a given proof state and selections meet a specific trigger criterion.
+
+You will be given:
+1. A proof state (mathematical context with hypotheses and goals)
+2. A list of selections (which could be expressions, terms, hypotheses, etc.)
+3. A trigger criterion (a string describing what condition to check for)
+
+Your task is to analyze whether the trigger criterion is satisfied given the proof state and selections.
+
+Consider:
+- The mathematical content and structure of the proof state
+- The nature and content of the selections
+- How the selections relate to the proof state
+- Whether the trigger criterion is met based on logical, mathematical, or structural analysis
+
+Provide:
+- A boolean indicating whether the condition is met
+- Clear reasoning explaining your decision
+
+Be precise in your analysis and consider both the mathematical meaning and structural properties.
+`
+
+export const evaluateFilterCondition = async (
+  proofState: ProofState,
+  selections: any[],
+  triggerCriterion: string
+): Promise<FilterResponse> => {
+  console.log("evaluating filter condition with LLM...", {
+    model: MODELS.filter,
+    triggerCriterion,
+    selectionsCount: selections.length
+  })
+  
+  const input = {
+    proofState,
+    selections,
+    triggerCriterion
+  }
+  
+  const result = await generateText({
+    model: MODELS.filter,
+    system: FILTER_PROMPT,
+    prompt: JSON.stringify(input, null, 2),
+    output: Output.object({
+      schema: FilterResponseSchema
+    }),
+  })
+  
+  return result.output
+}
+
+app.post("/api/filter", async (req, res) => {
+  const { proofState, selections, triggerCriterion } = req.body
+  
+  if (!proofState) {
+    console.error("no proof state provided")
+    res.json({ success: false, error: "no proof state provided" })
+    return
+  }
+  
+  if (!selections) {
+    console.error("no selections provided")
+    res.json({ success: false, error: "no selections provided" })
+    return
+  }
+  
+  if (!triggerCriterion) {
+    console.error("no trigger criterion provided")
+    res.json({ success: false, error: "no trigger criterion provided" })
+    return
+  }
+  
+  try {
+    console.log("filtering with criterion:", triggerCriterion)
+    console.log("selections:", selections)
+    
+    const result = await evaluateFilterCondition(proofState, selections, triggerCriterion)
+    
+    res.json({ 
+      success: true, 
+      meetsCondition: result.meetsCondition,
+      reasoning: result.reasoning,
+      proofState,
+      selections,
+      triggerCriterion 
+    });
+    
+    console.log("filter result:", result.meetsCondition, "reasoning:", result.reasoning)
+  } catch(err) {
+    console.error(err)
+    res.json({ success: false, error: err instanceof Error ? err.message : String(err) })
   }
 })
 

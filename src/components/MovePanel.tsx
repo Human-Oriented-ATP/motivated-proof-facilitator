@@ -14,36 +14,7 @@ import { ProofStateWithLibraryResult as ProofStateComponent } from "./ProofState
 import { runMove } from "../endpoints/Move"
 import MoveGenerator from "../../tests/MoveGenerator"
 import { moves } from "../prompts/AllMoves"
-
-const FilterResponseSchema = z.object({
-  meetsCondition: z.boolean(),
-  reasoning: z.string()
-})
-
-type FilterResponse = z.infer<typeof FilterResponseSchema>
-
-export async function checkMoveValidity(proofState: ProofState, selections: ProofStateSelection[], move: ProofDiscoveryMove, signal?: AbortSignal): Promise<FilterResponse> {
-    const response = await fetch("https://atp-backend-rygt.onrender.com/filter", {
-        method: "POST",
-        mode: "cors",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            proofState,
-            selections,
-            triggerCriterion: move.trigger
-        }),
-        ...(signal && { signal }),
-      })
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    const data: unknown = await response.json()
-    return FilterResponseSchema.parse(data)
-}
+import { checkMoveValidity, FilterResponse } from "../endpoints/Filter"
 
 /** Get all the applicable moves for a given proof state and selections. */
 export async function getApplicableMoves(
