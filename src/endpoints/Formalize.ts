@@ -11,7 +11,7 @@ export async function formalizeStatement({ problem }: { problem: string }): Prom
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      problem,
+      problem
     }),
   })
 
