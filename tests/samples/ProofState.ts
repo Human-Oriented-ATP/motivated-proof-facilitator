@@ -5,7 +5,7 @@ export const sampleProofStates: (ProofStateWithLibraryResult & { description: st
         description: "Every finite group G of order greater than 2 admits a non-trivial automorphism.",
         proofState: [
             {
-                variables: [{ name: "$G$", kind: "free", description: "Group" }],
+                variables: [{ name: "$G$", kind: "free", description: "Group", value: "" }],
                 hypotheses: [{ 
                     label: "hyp_G_order_geq_2", 
                     statement: "$G$ has order greater than $2$" 
@@ -25,7 +25,7 @@ export const sampleProofStates: (ProofStateWithLibraryResult & { description: st
         description: "Let X be an infinite-dimensional Banach space that is isomorphic to all its closed infinite-dimensional subspaces. Then X is isomorphic to $ell_2$.",
         proofState: [
         {
-            variables: [{ name: "$X$",kind: "free", description: "Banach space" }],
+            variables: [{ name: "$X$", kind: "free", description: "Banach space", value: "" }],
             hypotheses: [
                 { 
                     label: "hyp_X_inf_dim", 
@@ -56,8 +56,8 @@ export const sampleProofStates: (ProofStateWithLibraryResult & { description: st
         proofState: [
             {
                 variables: [
-                    { name: "$delta$", kind: "free", description: "$RR_(gt.eq 0)$" },
-                    { name: "$k$", kind: "free", description: "$NN$" }
+                    { name: "$delta$", kind: "free", description: "$RR_(gt.eq 0)$", value: "" },
+                    { name: "$k$", kind: "free", description: "$NN$", value: "" }
                 ],
                 hypotheses: [],
                 goals: [{
@@ -95,11 +95,11 @@ export const sampleProofStates: (ProofStateWithLibraryResult & { description: st
         proofState: [
             {
                 variables: [
-                    { name: "$G$", kind: "free", description: "Group" },
-                    { name: "$H$", kind: "free", description: "Group" },
-                    { name: "$X$", kind: "free", description: "Subgroup of $G$"},
-                    { name: "$Y$", kind: "free", description: "Subset of $G$"},
-                    { name: "$phi$", kind: "free", description: "$G arrow.r H$" }
+                    { name: "$G$", kind: "free", description: "Group", value: "" },
+                    { name: "$H$", kind: "free", description: "Group", value: "" },
+                    { name: "$X$", kind: "free", description: "Subgroup of $G$", value: "" },
+                    { name: "$Y$", kind: "free", description: "Subset of $G$", value: "" },
+                    { name: "$phi$", kind: "free", description: "$G arrow.r H$", value: "" }
                 ],
                 hypotheses: [
                     { 
@@ -127,8 +127,8 @@ export const sampleProofStates: (ProofStateWithLibraryResult & { description: st
         proofState: [
             {
                 variables: [
-                    { name: "$A$", kind: "free", description: "Group" },
-                    { name: "$B$", kind: "free", description: "Group" }
+                    { name: "$A$", kind: "free", description: "Group", value: "" },
+                    { name: "$B$", kind: "free", description: "Group", value: "" }
                 ],
                 hypotheses: [
                     { 
@@ -152,9 +152,9 @@ export const sampleProofStates: (ProofStateWithLibraryResult & { description: st
         proofState: [
             {
                 variables: [
-                    { name: "$a$", kind: "free", description: "$NN$" },
-                    { name: "$b$", kind: "free", description: "$NN$" },
-                    { name: "$N$", kind: "meta", description: "$NN$" }
+                    { name: "$a$", kind: "free", description: "$NN$", value: "" },
+                    { name: "$b$", kind: "free", description: "$NN$", value: "" },
+                    { name: "$N$", kind: "meta", description: "$NN$", value: "" }
                 ],
                 hypotheses: [
                     { 
@@ -208,7 +208,7 @@ export const sampleProofStates: (ProofStateWithLibraryResult & { description: st
             {
                 variables: [
                     { name: "$psi$", kind: "let", description: "$NN arrow.r NN$", value: "$M$ $arrow.r.bar$ the number of powers of $2$ from $1$ to $2^M$ which begin with the digit $1$ in the usual decimal representation" },
-                    { name: "$L$", kind: "meta", description: "$RR$" }
+                    { name: "$L$", kind: "meta", description: "$RR$", value: "" }
                 ],
                 hypotheses: [],
                 goals: [{
@@ -223,7 +223,7 @@ export const sampleProofStates: (ProofStateWithLibraryResult & { description: st
         proofState: [
             {
                 variables: [
-                    { name: "$S$", kind: "free", description: "Subset of $RR^2$" }
+                    { name: "$S$", kind: "free", description: "Subset of $RR^2$", value: "" }
                 ],
                 hypotheses: [
                     { 
@@ -277,8 +277,8 @@ export const sampleProofStates: (ProofStateWithLibraryResult & { description: st
         proofState: [
             {
                 variables: [
-                    { name: "$G$", kind: "free", description: "Group" },
-                    { name: "$H$", kind: "free", description: "Subgroup of $G$" }
+                    { name: "$G$", kind: "free", description: "Group", value: "" },
+                    { name: "$H$", kind: "free", description: "Subgroup of $G$", value: "" }
                 ],
                 hypotheses: [
                     { 
@@ -306,8 +306,8 @@ export const sampleProofStates: (ProofStateWithLibraryResult & { description: st
         proofState: [
             {
                 variables: [
-                    { name: "$G$", kind: "free", description: "Group" },
-                    { name: "$H$", kind: "free", description: "Subgroup of $G$" }
+                    { name: "$G$", kind: "free", description: "Group", value: "" },
+                    { name: "$H$", kind: "free", description: "Subgroup of $G$", value: "" }
                 ],
                 hypotheses: [
                     { 
