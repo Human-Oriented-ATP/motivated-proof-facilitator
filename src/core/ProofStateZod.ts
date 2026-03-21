@@ -49,14 +49,33 @@ export type Variable = z.infer<typeof VariableSchema>
  * - *meta variable*: a variable that is to be instantiated later
  * - *let variable*: a variable that is defined to be a specific value
  */
-export const ContextVariableSchema = z.intersection(
-  z.discriminatedUnion("kind", [
-    z.object({ kind: z.literal("free") }).describe("A free variable is a variable that is assumed to be arbitrary but fixed."),
-    z.object({ kind: z.literal("meta") }).describe("A meta variable is a variable that is to be instantiated later."),
-    z.object({ kind: z.literal("let"), value: AtomicStatementSchema }).describe("A let variable is a variable that is defined to be a specific value.")
-  ]),
-  VariableSchema
-)
+export const ContextVariableSchema = VariableSchema.extend({
+  kind: z.enum(["free", "meta", "let"]).describe(
+    "Variable kind: free (arbitrary but fixed), meta (to be instantiated), or let (defined value)."
+  ),
+  value: AtomicStatementSchema.describe(
+    "For let variables: the defined value. For free/meta variables: use empty string."
+  ),
+}).superRefine((variable, ctx) => {
+  const hasValue = variable.value.trim().length > 0
+
+  if (variable.kind === "let" && !hasValue) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["value"],
+      message: "value is required when kind is let",
+    })
+  }
+
+  if (variable.kind !== "let" && hasValue) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["value"],
+        message: "value must be empty when kind is free or meta",
+    })
+  }
+})
+
 export type ContextVariable = z.infer<typeof ContextVariableSchema>
 
 /** A full statement involving multiple atomic statements joined by logical connectives. */
@@ -145,12 +164,16 @@ export type ProofStateContext = z.infer<typeof ProofStateContextSchema>
 export const ProofStateSchema = z.array(ProofStateContextSchema).describe(`A proof state is the main datastructure that the user interacts with when building a proof. It is made up of one or more proof contexts, each consisting of a list of variables involved in the proof, hypotheses concerning them and goals to be proved.`)
 export type ProofState = z.infer<typeof ProofStateSchema>
 
+export const BundledProofStateSchema = z.object({
+  proofState: ProofStateSchema
+})
+export type BundledProofState = z.infer<typeof BundledProofStateSchema>
+
 /**
  * A proof state bundled together with an optional 
  * highlighted library statement that the user can reference.
  */
-export const ProofStateWithLibraryResultSchema = z.object({
-  proofState: ProofStateSchema,
+export const ProofStateWithLibraryResultSchema = BundledProofStateSchema.extend({
   libraryResult: LabelledStatementSchema.optional().describe(`In addition to the proof state, the user can also reference one library statement that is highlighted for them.`) 
 }).describe(`A proof state bundled together with an optional highlighted library statement that the user can reference.`)
 export type ProofStateWithLibraryResult = z.infer<typeof ProofStateWithLibraryResultSchema>
