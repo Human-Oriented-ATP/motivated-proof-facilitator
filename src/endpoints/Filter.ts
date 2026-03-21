@@ -25,10 +25,15 @@ export async function checkMoveValidity(proofState: ProofState, selections: Proo
         ...(signal && { signal }),
       })
 
+    console.log("Received filter response:", response)
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
     const data: unknown = await response.json()
+
+    console.log("Received filter data:", data)
+
     return FilterResponseSchema.parse(data)
 }

@@ -355,14 +355,23 @@ Provide:
 - A boolean indicating whether the condition is met
 - Clear reasoning explaining your decision
 
+You MUST respond with a JSON object containing exactly these two fields:
+
+\`\`\`json
+{
+  "meetsCondition": boolean,
+  "reasoning": "string explaining your decision"
+}
+\`\`\`
+
 Be precise in your analysis and consider both the mathematical meaning and structural properties.
 `
 
-export const evaluateFilterCondition = async (
+const evaluateFilterCondition = async (
   proofState: ProofState,
   selections: any[],
   triggerCriterion: string
-): Promise<FilterResponse> => {
+) => {
   console.log("evaluating filter condition with LLM...", {
     model: MODELS.filter,
     triggerCriterion,
@@ -384,7 +393,7 @@ export const evaluateFilterCondition = async (
     }),
   })
   
-  return result.output
+  return result
 }
 
 app.post("/api/filter", async (req, res) => {
@@ -414,16 +423,8 @@ app.post("/api/filter", async (req, res) => {
     
     const result = await evaluateFilterCondition(proofState, selections, triggerCriterion)
     
-    res.json({ 
-      success: true, 
-      meetsCondition: result.meetsCondition,
-      reasoning: result.reasoning,
-      proofState,
-      selections,
-      triggerCriterion 
-    });
-    
-    console.log("filter result:", result.meetsCondition, "reasoning:", result.reasoning)
+    return res.send(result.text)
+
   } catch(err) {
     console.error(err)
     res.json({ success: false, error: err instanceof Error ? err.message : String(err) })
@@ -431,99 +432,3 @@ app.post("/api/filter", async (req, res) => {
 })
 
 export default app
-
-/**
-const app = express()
-
-app.use(cors())
-app.use(bodyParser.json())
-
-app.post("/api/formalize", async (req, res) => {
-  console.log("formalizing...", req.body.problem)
-  const problem = req.body.problem;
-  if (!problem) {
-    console.error("no problem provided")
-    res.send("FAILED: no problem provided")
-    return
-  }
-  try {
-    const result = await formalizeStatementServer(problem)
-    console.log("formalized", result)
-    res.send(result)
-  } catch(err) {
-    console.error(err)
-    res.send("FAILED: " + err)
-  }
-})
-
-app.post("/api/move", async (req, res) => {
-  const { proofState, move, selections } = req.body;
-  if (!proofState) {
-    console.error("no proof state provided")
-    res.send("FAILED: no proof state provided")
-    return
-  }
-  if (!move) {
-    console.error("no move provided")
-    res.send("FAILED: no move provided")
-    return
-  }
-  try {
-    console.log("applying move...", move)
-    const result = await runMoveServer({ proofState, move, selections });
-    res.json({
-      reasoning: result.reasoning,
-      proofState: [result.proofState]
-    });
-    console.log("move applied", result.reasoning)
-  } catch(err) {
-    console.error(err)
-    res.send("FAILED: " + err)
-  }
-})
-*/
-
-/**
-app.post("/api/filter", async (req, res) => {
-  const { proofState, selections, triggerCriterion } = req.body;
-  
-  if (!proofState) {
-    console.error("no proof state provided")
-    res.json({ success: false, error: "no proof state provided" })
-    return
-  }
-  
-  if (!selections) {
-    console.error("no selections provided")
-    res.json({ success: false, error: "no selections provided" })
-    return
-  }
-  
-  if (!triggerCriterion) {
-    console.error("no trigger criterion provided")
-    res.json({ success: false, error: "no trigger criterion provided" })
-    return
-  }
-  
-  try {
-    console.log("filtering with criterion:", triggerCriterion)
-    console.log("selections:", selections)
-    
-    const result = await evaluateFilterCondition(proofState, selections, triggerCriterion);
-    
-    res.json({ 
-      success: true, 
-      meetsCondition: result.meetsCondition,
-      reasoning: result.reasoning,
-      proofState,
-      selections,
-      triggerCriterion 
-    });
-    
-    console.log("filter result:", result.meetsCondition, "reasoning:", result.reasoning)
-  } catch(err) {
-    console.error(err)
-    res.json({ success: false, error: err instanceof Error ? err.message : String(err) })
-  }
-})
- */
