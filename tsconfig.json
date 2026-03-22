@@ -38,7 +38,7 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
   },
-  "include": ["src", "tests"],
-  "exclude": ["node_modules"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx"],
+  "exclude": ["node_modules", "src/index.ts", "api"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
