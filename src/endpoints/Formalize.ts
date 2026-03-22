@@ -15,8 +15,10 @@ export async function formalizeStatement({ problem }: { problem: string }): Prom
     }),
   })
 
+  console.log("Received formalize response:", response)
+
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}, ${response.statusText}`)
+    throw new Error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`)
   }
 
   console.log("Received formalize response:", response)

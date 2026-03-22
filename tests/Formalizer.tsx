@@ -77,7 +77,7 @@ export default function RenderFormalizer(): JSX.Element {
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}, ${response.statusText}`)
+        throw new Error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`)
       }
 
       const data = await response.json()
