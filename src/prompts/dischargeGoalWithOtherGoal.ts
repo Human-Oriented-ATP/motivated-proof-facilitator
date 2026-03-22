@@ -13,7 +13,7 @@ export const dischargeGoalWithOtherGoalMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$#text[Proposition]$"
               }
@@ -63,7 +63,7 @@ export const dischargeGoalWithOtherGoalMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$#text[Proposition]$"
               }
@@ -87,7 +87,7 @@ export const dischargeGoalWithOtherGoalMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$n$",
                 "description": "$NN$"
               }
@@ -137,7 +137,7 @@ export const dischargeGoalWithOtherGoalMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$n$",
                 "description": "$NN$"
               }

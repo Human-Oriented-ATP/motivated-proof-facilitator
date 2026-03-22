@@ -13,17 +13,17 @@ export const simplifyExpressionMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$ZZ -> #text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$ZZ$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$y$",
                 "description": "$ZZ$"
               }
@@ -62,17 +62,17 @@ export const simplifyExpressionMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$ZZ -> #text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$ZZ$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$y$",
                 "description": "$ZZ$"
               }
@@ -96,17 +96,17 @@ export const simplifyExpressionMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$G$",
                 "description": "Group"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$a$",
                 "description": "$G$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$b$",
                 "description": "$G$"
               }
@@ -145,17 +145,17 @@ export const simplifyExpressionMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$G$",
                 "description": "Group"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$a$",
                 "description": "$G$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$b$",
                 "description": "$G$"
               }
@@ -179,7 +179,7 @@ export const simplifyExpressionMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$RR$"
               }
@@ -218,7 +218,7 @@ export const simplifyExpressionMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$RR$"
               }

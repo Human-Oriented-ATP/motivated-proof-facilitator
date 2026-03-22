@@ -87,7 +87,7 @@ const FORMALIZE_PROMPT =
     "variables": [
       {
         "description": "Subset of $RR^2$",
-        "kind": "free",
+        "kind": "free", "value": "",
         "name": "$S$"
       }
     ],
@@ -138,12 +138,12 @@ const FORMALIZE_PROMPT =
     "variables": [
       {
         "description": "$RR_(gt.eq 0)$",
-        "kind": "free",
+        "kind": "free", "value": "",
         "name": "$delta$"
       },
       {
         "description": "$NN$",
-        "kind": "free",
+        "kind": "free", "value": "",
         "name": "$k$"
       }
     ],

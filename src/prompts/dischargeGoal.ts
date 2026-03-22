@@ -13,7 +13,7 @@ export const dischargeGoalMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$NN$"
               }
@@ -47,7 +47,7 @@ export const dischargeGoalMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$NN$"
               }

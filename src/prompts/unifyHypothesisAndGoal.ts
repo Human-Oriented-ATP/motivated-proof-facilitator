@@ -13,7 +13,7 @@ export const unifyHypothesisAndGoalMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$#text[Proposition]$"
               }
@@ -64,7 +64,7 @@ export const unifyHypothesisAndGoalMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$#text[Proposition]$"
               }
@@ -88,17 +88,17 @@ export const unifyHypothesisAndGoalMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$NN ->#text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$NN$"
               },
               {
-                "kind": "meta",
+                "kind": "meta", "value": "",
                 "name": "$a$",
                 "description": "$NN$"
               }
@@ -149,12 +149,12 @@ export const unifyHypothesisAndGoalMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$NN ->#text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$NN$"
               },
@@ -184,17 +184,17 @@ export const unifyHypothesisAndGoalMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$NN ->#text[Proposition]$"
               },
               {
-                "kind": "meta",
+                "kind": "meta", "value": "",
                 "name": "$a$",
                 "description": "$NN$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$NN$"
               }

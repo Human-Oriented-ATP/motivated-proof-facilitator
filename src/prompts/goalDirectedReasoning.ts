@@ -13,17 +13,17 @@ export const goalDirectedReasoningMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$X$",
                 "description": "$#text[Topological space]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$U$",
                 "description": "subset of $X$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$V$",
                 "description": "subset of $X$"
               }
@@ -78,17 +78,17 @@ export const goalDirectedReasoningMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$X$",
                 "description": "$#text[Topological space]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$U$",
                 "description": "subset of $X$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$V$",
                 "description": "subset of $X$"
               }
@@ -125,27 +125,27 @@ export const goalDirectedReasoningMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$a$",
                 "description": "$RR$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$b$",
                 "description": "$RR$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$c$",
                 "description": "$RR$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$d$",
                 "description": "$RR$"
               },
             {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$n$",
                 "description": "$RR$"
               }
@@ -212,27 +212,27 @@ export const goalDirectedReasoningMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$a$",
                 "description": "$RR$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$b$",
                 "description": "$RR$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$c$",
                 "description": "$RR$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$d$",
                 "description": "$RR$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$n$",
                 "description": "$RR$"
               }

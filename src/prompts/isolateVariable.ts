@@ -13,12 +13,12 @@ export const isolateVariableMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$RR$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$y$",
                 "description": "$RR$"
               }
@@ -74,12 +74,12 @@ export const isolateVariableMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$RR$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$y$",
                 "description": "$RR$"
               }

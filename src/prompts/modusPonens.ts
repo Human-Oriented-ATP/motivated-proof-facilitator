@@ -13,17 +13,17 @@ export const modusPonensMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$#text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$Q$",
                 "description": "$#text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$R$",
                 "description": "$#text[Proposition]$"
               }
@@ -86,17 +86,17 @@ export const modusPonensMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$#text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$Q$",
                 "description": "$#text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$R$",
                 "description": "$#text[Proposition]$"
               }
@@ -129,17 +129,17 @@ export const modusPonensMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$#text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$Q$",
                 "description": "$#text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$R$",
                 "description": "$#text[Proposition]$"
               }
@@ -200,17 +200,17 @@ export const modusPonensMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$#text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$Q$",
                 "description": "$#text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$R$",
                 "description": "$#text[Proposition]$"
               }

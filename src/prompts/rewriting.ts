@@ -13,22 +13,22 @@ export const rewritingMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$alpha$",
                 "description": "$#text[Type]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$f$",
                 "description": "$alpha -> alpha$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$a$",
                 "description": "$alpha$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$b$",
                 "description": "$alpha$"
               }
@@ -84,22 +84,22 @@ export const rewritingMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$alpha$",
                 "description": "$#text[Type]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$f$",
                 "description": "$alpha -> alpha$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$a$",
                 "description": "$alpha$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$b$",
                 "description": "$alpha$"
               }
@@ -128,27 +128,27 @@ export const rewritingMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$alpha$",
                 "description": "$#text[Type]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$f$",
                 "description": "$alpha -> alpha$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$alpha -> #text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$a$",
                 "description": "$alpha$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$b$",
                 "description": "$alpha$"
               }
@@ -226,27 +226,27 @@ export const rewritingMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$alpha$",
                 "description": "$#text[Type]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$f$",
                 "description": "$alpha -> alpha$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$alpha -> #text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$a$",
                 "description": "$alpha$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$b$",
                 "description": "$alpha$"
               }

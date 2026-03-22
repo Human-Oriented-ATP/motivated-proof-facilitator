@@ -13,12 +13,12 @@ export const instantiateMetavariablesMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$NN$"
               },
               {
-                "kind": "meta",
+                "kind": "meta", "value": "",
                 "name": "$m$",
                 "description": "$NN$"
               }
@@ -57,7 +57,7 @@ export const instantiateMetavariablesMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$NN$"
               },
@@ -87,12 +87,12 @@ export const instantiateMetavariablesMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "meta",
+                "kind": "meta", "value": "",
                 "name": "$m$",
                 "description": "$NN$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$NN$"
               }
@@ -142,7 +142,7 @@ export const instantiateMetavariablesMove: ProofDiscoveryMove = {
                 "description": "$NN$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$NN$"
               }

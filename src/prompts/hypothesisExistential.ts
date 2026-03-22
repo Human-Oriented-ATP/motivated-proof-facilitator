@@ -14,12 +14,12 @@ export const hypothesisExistentialMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$alpha$",
                 "description": "$#text[Type]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$alpha -> #text[Proposition]$"
               }
@@ -67,17 +67,17 @@ export const hypothesisExistentialMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$alpha$",
                 "description": "$#text[Type]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$alpha -> #text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$alpha$"
               }
@@ -101,12 +101,12 @@ export const hypothesisExistentialMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$alpha$",
                 "description": "$#text[Type]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$alpha -> #text[Proposition]$"
               }
@@ -149,17 +149,17 @@ export const hypothesisExistentialMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$alpha$",
                 "description": "$#text[Type]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$P$",
                 "description": "$alpha -> #text[Proposition]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$alpha$"
               }
@@ -183,17 +183,17 @@ export const hypothesisExistentialMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$alpha$",
                 "description": "$#text[Type]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$f$",
                 "description": "$alpha -> alpha$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$alpha$"
               },
@@ -204,17 +204,17 @@ export const hypothesisExistentialMove: ProofDiscoveryMove = {
                 "value": "$f(x)$"
               },
               {
-                "kind": "meta",
+                "kind": "meta", "value": "",
                 "name": "$m$",
                 "description": "$alpha$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$z$",
                 "description": "$alpha$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$w$",
                 "description": "$alpha$"
               }
@@ -274,17 +274,17 @@ export const hypothesisExistentialMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$alpha$",
                 "description": "$#text[Type]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$f$",
                 "description": "$alpha -> alpha$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$x$",
                 "description": "$alpha$"
               },
@@ -295,22 +295,22 @@ export const hypothesisExistentialMove: ProofDiscoveryMove = {
                 "description": "$alpha$"
               },
               {
-                "kind": "meta",
+                "kind": "meta", "value": "",
                 "name": "$m$",
                 "description": "$alpha$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$a$",
                 "description": "$alpha$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$z$",
                 "description": "$alpha$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$w$",
                 "description": "$alpha$"
               }

@@ -13,7 +13,7 @@ export const unfoldDefinitionMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$n$",
                 "description": "$NN$"
               }
@@ -47,7 +47,7 @@ export const unfoldDefinitionMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$n$",
                 "description": "$NN$"
               }
@@ -78,17 +78,17 @@ export const unfoldDefinitionMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$alpha$",
                 "description": "$#text[Type]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$beta$",
                 "description": "$#text[Type]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$f$",
                 "description": "$alpha ->beta$"
               }
@@ -122,17 +122,17 @@ export const unfoldDefinitionMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$alpha$",
                 "description": "$#text[Type]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$beta$",
                 "description": "$#text[Type]$"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$f$",
                 "description": "$alpha ->beta$"
               }
@@ -174,12 +174,12 @@ export const unfoldDefinitionMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$X$",
                 "description": "metric space"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$U$",
                 "description": "subset of $X$"
               }
@@ -213,12 +213,12 @@ export const unfoldDefinitionMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$X$",
                 "description": "metric space"
               },
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$U$",
                 "description": "subset of $X$"
               }
@@ -242,7 +242,7 @@ export const unfoldDefinitionMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$n$",
                 "description": "$NN$"
               }
@@ -276,7 +276,7 @@ export const unfoldDefinitionMove: ProofDiscoveryMove = {
           {
             "variables": [
               {
-                "kind": "free",
+                "kind": "free", "value": "",
                 "name": "$n$",
                 "description": "$NN$"
               }
