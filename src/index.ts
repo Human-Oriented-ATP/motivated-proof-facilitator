@@ -1,12 +1,12 @@
 import express from 'express'
 import bodyParser from "body-parser"
 import cors from "cors"
-import { BundledProofStateSchema, ProofState } from '../src/core/ProofStateZod'
+import { BundledProofStateSchema, ProofState } from './core/ProofStateZod.js'
 import { generateText, Output } from 'ai'
-import { MODELS } from '../src/endpoints/models'
-import  { MoveResponseSchema }  from './endpoints/Move'
-import { ProofStateSelection } from './core/ProofStateSelectionContext'
-import { FilterResponse, FilterResponseSchema } from './endpoints/Filter'
+import { MODELS } from './endpoints/models.js'
+import  { MoveResponseSchema }  from './endpoints/Move.js'
+import { ProofStateSelection } from './core/ProofStateSelectionContext.js'
+import { FilterResponse, FilterResponseSchema } from './endpoints/Filter.js'
 
 const app = express()
 
