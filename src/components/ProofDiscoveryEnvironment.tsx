@@ -195,7 +195,7 @@ export function ProofDiscoveryEnvironment({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ proofState: currentPS }),
       })
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}, ${response.statusText}`)
       const data = await response.json()
       setInformalizedText(data.naturalLanguage || data.text || JSON.stringify(data))
     } catch (err) {

@@ -28,7 +28,7 @@ export async function checkMoveValidity(proofState: ProofState, selections: Proo
     console.log("Received filter response:", response)
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      throw new Error(`HTTP error! status: ${response.status}, ${response.statusText}`)
     }
 
     const data: unknown = await response.json()

@@ -31,7 +31,7 @@ export async function runMove(
   })
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
+    throw new Error(`HTTP error! status: ${response.status}, ${response.statusText}`)
   }
 
   console.log("Received move response:", response)
