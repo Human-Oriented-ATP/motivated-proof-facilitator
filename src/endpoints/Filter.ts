@@ -1,7 +1,7 @@
 import { z } from "zod"
-import { ProofState } from "../core/ProofStateZod"
-import { ProofStateSelection } from "../core/ProofStateSelectionContext"
-import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
+import { ProofState } from "../core/ProofStateZod.js"
+import { ProofStateSelection } from "../core/ProofStateSelectionContext.js"
+import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove.js"
 
 export const FilterResponseSchema = z.object({
   meetsCondition: z.boolean(),

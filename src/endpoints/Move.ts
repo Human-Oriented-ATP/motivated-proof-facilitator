@@ -1,9 +1,9 @@
 import { z } from "zod"
-import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
-import { ProofStateSelection } from "../core/ProofStateSelectionContext"
-import { ProofState, ProofStateSchema } from "../core/ProofStateZod"
+import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove.js"
+import { ProofStateSelection } from "../core/ProofStateSelectionContext.js"
+import { ProofState, ProofStateSchema } from "../core/ProofStateZod.js"
 import { generateText, Output } from "ai"
-import { MODELS } from "./models"
+import { MODELS } from "./models.js"
 
 export const MoveResponseSchema = z.object({
   reasoning: z.string().describe("A clear reasoning trace explaining what the move is trying to accomplish, how it transforms the current proof state, and why this move makes sense in the context of proving the goal."),
