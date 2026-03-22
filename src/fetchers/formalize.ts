@@ -1,7 +1,4 @@
-import { generateText, GenerateTextResult, Output, ToolSet } from "ai"
-import { MODELS } from "../endpoints/models"
-import { BundledProofState, BundledProofStateSchema, ProofState, ProofStateSchema } from "../core/ProofStateZod"
-import z from "zod"
+import { BundledProofStateSchema, ProofState } from "../core/ProofStateZod"
 
 export async function formalizeStatement({ problem }: { problem: string }): Promise<ProofState> {
   const response = await fetch("/api/formalize", {

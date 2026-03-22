@@ -2,7 +2,7 @@ import { generateText, Output } from "ai"
 import { MODELS } from "./models"
 import { ProofState } from "../core/ProofStateZod"
 import { ProofStateSelection } from "../core/ProofStateSelectionContext"
-import { MoveResponseSchema } from "../fetchers/Move"
+import { MoveResponseSchema } from "../fetchers/move"
 
 export const runMove = async ({
   proofState,

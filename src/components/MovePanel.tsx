@@ -11,10 +11,10 @@ import { getCurrentProofState, ProofDiscoveryAction, ProofDiscoveryState } from 
 import { ProofDiscoveryMove, ProofDiscoveryMoveExample } from "../core/ProofDiscoveryMove"
 import { ProofDiscoveryStateContext, ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
 import { ProofStateWithLibraryResult as ProofStateComponent } from "./ProofState"
-import { runMove } from "../fetchers/Move"
+import { runMove } from "../fetchers/move"
 import MoveGenerator from "../../tests/MoveGenerator"
 import { moves } from "../prompts/AllMoves"
-import { checkMoveValidity, FilterResponse } from "../fetchers/Filter"
+import { checkMoveValidity, FilterResponse } from "../fetchers/filter"
 
 /** Get all the applicable moves for a given proof state and selections. */
 export async function getApplicableMoves(

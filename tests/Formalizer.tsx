@@ -4,7 +4,7 @@ import { proofDiscoveryStateReducer, nullProofDiscoveryState, getCurrentProofSta
 import { ProofState as ProofStateComponent, ProofStateWithLibraryResult } from "../src/components/ProofState"
 import { MathStatement } from "../src/components/MathStatement"
 import ProofStateContextProvider from "./ProofStateContext"
-import { formalizeStatement } from "../src/fetchers/Formalize"
+import { formalizeStatement } from "../src/fetchers/formalize"
 
 /**
  * Formalizer component that allows users to input mathematical statements,

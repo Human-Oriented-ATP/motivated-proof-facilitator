@@ -2,7 +2,7 @@ import { generateText, Output } from "ai"
 import { MODELS } from "./models"
 import { ProofState } from "../core/ProofStateZod"
 import { ProofStateSelection } from "../core/ProofStateSelectionContext"
-import { FilterResponseSchema } from "../fetchers/Filter"
+import { FilterResponseSchema } from "../fetchers/filter"
 
 const FILTER_PROMPT = `
 You are a mathematical reasoning filter that determines whether a given proof state and selections meet a specific trigger criterion.
