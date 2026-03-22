@@ -190,7 +190,6 @@ const FORMALIZE_PROMPT =
   \'\'\'
   `
 
-  //Promise<GenerateTextResult<ToolSet, z.infer<typeof BundledProofStateSchema>>> 
 const formalizeStatement = async (naturalLanguageStatement: string) => {
   console.log("formalizing statement with model", MODELS.formalize)
   
