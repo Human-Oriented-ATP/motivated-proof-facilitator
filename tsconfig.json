@@ -39,6 +39,5 @@
     "skipLibCheck": true,
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx"],
-  "exclude": ["node_modules", "src/index.ts"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "exclude": ["node_modules", "src/endpoints", "src/index.ts"]
 }
