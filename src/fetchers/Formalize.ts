@@ -1,5 +1,5 @@
 import { generateText, GenerateTextResult, Output, ToolSet } from "ai"
-import { MODELS } from "./models"
+import { MODELS } from "../endpoints/models"
 import { BundledProofState, BundledProofStateSchema, ProofState, ProofStateSchema } from "../core/ProofStateZod"
 import z from "zod"
 
