@@ -3,10 +3,10 @@ import bodyParser from "body-parser"
 import cors from "cors"
 import { BundledProofStateSchema, ProofState } from './core/ProofStateZod.js'
 import { generateText, Output } from 'ai'
-import { MODELS } from './endpoints/models.js'
-import  { MoveResponseSchema }  from './endpoints/Move.js'
+import { MODELS } from './fetchers/models.js'
+import  { MoveResponseSchema }  from './fetchers/Move.js'
 import { ProofStateSelection } from './core/ProofStateSelectionContext.js'
-import { FilterResponse, FilterResponseSchema } from './endpoints/Filter.js'
+import { FilterResponse, FilterResponseSchema } from './fetchers/Filter.js'
 
 const app = express()
 

@@ -23,7 +23,7 @@ import {
 } from "@mui/material"
 import { ProofState, ProofStateSchema, ProofStateWithLibraryResult as ProofStateWithLibraryResultType, StatementSchema } from "../src/core/ProofStateZod"
 import { ProofDiscoveryMove, MoveKind, ProofDiscoveryMoveExample } from "../src/core/ProofDiscoveryMove"
-import { runMove } from "../src/endpoints/Move"
+import { runMove } from "../src/fetchers/Move"
 
 type UIExample = ProofDiscoveryMoveExample & { id: string }
 import { proofDiscoveryStateReducer, nullProofDiscoveryState } from "../src/core/ProofDiscoveryState"
@@ -32,7 +32,7 @@ import ProofStateContextProvider from "./ProofStateContext"
 import { ProofStateSelectionContext, proofStateSelectionReducer } from "../src/core/ProofStateSelectionContext"
 import TypstContextProvider from "../src/components/TypstContext"
 import { ProofStateEditor } from "../src/components/ProofStateEditor"
-import { formalizeStatement } from "../src/endpoints/Formalize"
+import { formalizeStatement } from "../src/fetchers/Formalize"
 
 type WorkflowState = "idle" | "formalizing" | "formalized" | "applying" | "applied"
 

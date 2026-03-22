@@ -4,7 +4,7 @@ import { ProofDiscoveryState, ProofNode, MoveDescription } from "../core/ProofDi
 import { WasmContext, loadWasm } from "./MathExpression"
 import { ProofStateEditor } from "./ProofStateEditor"
 import Graph from "graphology"
-import { formalizeStatement } from "../endpoints/Formalize"
+import { formalizeStatement } from "../fetchers/Formalize"
 
 export type ProofStateGeneratorProps = {
   onGenerated: (state: ProofDiscoveryState) => void
