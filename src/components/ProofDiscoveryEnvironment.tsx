@@ -15,6 +15,7 @@ import {
 } from '@mui/material'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
 import { formalizeStatement } from '../fetchers/formalize-statement'
+import { informalizeProofState } from '../fetchers/informalize'
 
 // Local theme for the library "add" form — matches the amber/yellow panel colours
 const libraryTheme = createTheme({
@@ -191,14 +192,8 @@ export function ProofDiscoveryEnvironment({
     setIsInformalizeLoading(true)
     try {
       const currentPS = proofDiscoveryState.graph.getNodeAttribute(proofDiscoveryState.currentNodeId, 'proofState')
-      const response = await fetch("https://atp-backend-rygt.onrender.com/informalize", {
-        method: "POST", mode: "cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proofState: currentPS }),
-      })
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`)
-      const data = await response.json()
-      setInformalizedText(data.naturalLanguage || data.text || JSON.stringify(data))
+      const description = await informalizeProofState(currentPS)
+      setInformalizedText(description)
     } catch (err) {
       setInformalizedText(err instanceof Error ? `Failed to informalize: ${err.message}` : "An unknown error occurred")
     } finally {
