@@ -1,7 +1,7 @@
 import express from 'express'
 import bodyParser from "body-parser"
 import cors from "cors"
-import {formalizeStatement} from  "./endpoints/formalize.js"
+import { formalizeProblem } from  "./endpoints/formalize.js"
 import { runMove } from './endpoints/move.js'
 import { evaluateFilterCondition } from './endpoints/filter.js'
 
@@ -12,14 +12,14 @@ app.use(bodyParser.json())
 
 app.post("/api/formalize", async (req, res) => {
   console.log("formalizing...", req.body.problem)
-  const problem = req.body.problem;
+  const problem: string = req.body.problem
   if (!problem) {
     console.error("no problem provided")
     res.send("FAILED: no problem provided")
     return
   }
   try {
-    const result = await formalizeStatement(problem)
+    const result = await formalizeProblem(problem)
     console.log("formalized", result)
     res.send(result.text)
   } catch(err) {
@@ -29,7 +29,7 @@ app.post("/api/formalize", async (req, res) => {
 })
 
 app.post("/api/move", async (req, res) => {
-  const { proofState, move, selections } = req.body;
+  const { proofState, move, selections } = req.body
   if (!proofState) {
     console.error("no proof state provided")
     res.send("FAILED: no proof state provided")

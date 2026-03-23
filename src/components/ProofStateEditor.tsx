@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, JSX } from "react"
 import { ProofState, ProofStateSchema, ContextVariable, Statement, StatementSchema } from "../core/ProofStateZod"
 import { StatementBuilder } from "./StatementBuilder"
+import { formalizeStatement } from "../fetchers/formalize-statement"
 
 export interface ProofStateEditorProps {
   proofState: ProofState
@@ -166,17 +167,6 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
     if (editTarget?.section === "variable" && editTarget.idx === idx) setEditTarget(null)
   }
 
-  const formalizeStatement = async (text: string): Promise<Statement> => {
-    const resp = await fetch("https://atp-backend-rygt.onrender.com/formalize-statement", {
-      method: "POST",
-      mode: "cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ statement: text }),
-    })
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
-    return StatementSchema.parse(await resp.json())
-  }
-
   const handleSaveHypothesis = async () => {
     if (!hypLabel.trim()) return
     setHypError(null)
@@ -184,7 +174,7 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
     if (hypMode === "formalize") {
       if (!hypText.trim()) return
       setHypLoading(true)
-      try { statement = await formalizeStatement(hypText) }
+      try { statement = await formalizeStatement({ statement: hypText }) }
       catch (err) { setHypError(err instanceof Error ? err.message : "Failed to formalize"); setHypLoading(false); return }
       setHypLoading(false)
     } else {
@@ -217,7 +207,7 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
     if (goalMode === "formalize") {
       if (!goalText.trim()) return
       setGoalLoading(true)
-      try { statement = await formalizeStatement(goalText) }
+      try { statement = await formalizeStatement({ statement: goalText }) }
       catch (err) { setGoalError(err instanceof Error ? err.message : "Failed to formalize"); setGoalLoading(false); return }
       setGoalLoading(false)
     } else {

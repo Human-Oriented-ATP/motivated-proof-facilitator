@@ -11,12 +11,12 @@ export const runMove = async ({
 }: {
   proofState: ProofState,
   move: string,
-  selections?: ProofStateSelection[]
+  selections: ProofStateSelection[]
 }) => {
   console.log('Applying move', move)
   const promptData = {
     proofState,
-    ...(selections && { selections })
+    selections
   };
   
   let enhancedMove = `${move}

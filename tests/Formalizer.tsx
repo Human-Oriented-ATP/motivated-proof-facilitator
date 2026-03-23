@@ -4,7 +4,7 @@ import { proofDiscoveryStateReducer, nullProofDiscoveryState, getCurrentProofSta
 import { ProofState as ProofStateComponent, ProofStateWithLibraryResult } from "../src/components/ProofState"
 import { MathStatement } from "../src/components/MathStatement"
 import ProofStateContextProvider from "./ProofStateContext"
-import { formalizeStatement } from "../src/fetchers/formalize"
+import { formalizeProblem } from "../src/fetchers/formalize"
 
 /**
  * Formalizer component that allows users to input mathematical statements,
@@ -32,7 +32,7 @@ export default function RenderFormalizer(): JSX.Element {
     setIsLoading(true)
     setError(null)
     try {
-      const proofState = await formalizeStatement({ problem: inputStatement })
+      const proofState = await formalizeProblem({ problem: inputStatement })
 
       // Initialize the proof discovery state with the received proof state
       dispatch({

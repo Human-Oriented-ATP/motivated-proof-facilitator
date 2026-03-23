@@ -4,7 +4,7 @@ import { ProofDiscoveryState, ProofNode, MoveDescription } from "../core/ProofDi
 import { WasmContext, loadWasm } from "./MathExpression"
 import { ProofStateEditor } from "./ProofStateEditor"
 import Graph from "graphology"
-import { formalizeStatement } from "../fetchers/formalize"
+import { formalizeProblem } from "../fetchers/formalize"
 
 export type ProofStateGeneratorProps = {
   onGenerated: (state: ProofDiscoveryState) => void
@@ -111,7 +111,7 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
     setError(null)
 
     try {
-      const proofState = await formalizeStatement({ problem: inputStatement })
+      const proofState = await formalizeProblem({ problem: inputStatement })
 
       const graph = new Graph<ProofNode, MoveDescription>()
       graph.addNode(0, { proofState })

@@ -14,6 +14,7 @@ import {
   Dialog, DialogContent, DialogActions, Tooltip,
 } from '@mui/material'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
+import { formalizeStatement } from '../fetchers/formalize-statement'
 
 // Local theme for the library "add" form — matches the amber/yellow panel colours
 const libraryTheme = createTheme({
@@ -211,14 +212,7 @@ export function ProofDiscoveryEnvironment({
     setNewLibraryLoading(true)
     setNewLibraryError(null)
     try {
-      const resp = await fetch("https://atp-backend-rygt.onrender.com/formalize-statement", {
-        method: "POST", mode: "cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ statement: newLibraryText }),
-      })
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
-      const json = await resp.json()
-      const stmt = StatementSchema.parse(json)
+      const stmt = await formalizeStatement({ statement: newLibraryText.trim() })
       
       dispatchProofDiscoveryAction({ action: 'addToLibrary', statement: { label: newLibraryLabel.trim(), statement: stmt } })
       setIsAddLibraryOpen(false); setNewLibraryLabel(''); setNewLibraryStatement(''); setNewLibraryText(''); setIsLibraryExpanded(true)

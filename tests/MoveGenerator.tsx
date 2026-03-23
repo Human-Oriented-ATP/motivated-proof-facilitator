@@ -32,7 +32,8 @@ import ProofStateContextProvider from "./ProofStateContext"
 import { ProofStateSelectionContext, proofStateSelectionReducer } from "../src/core/ProofStateSelectionContext"
 import TypstContextProvider from "../src/components/TypstContext"
 import { ProofStateEditor } from "../src/components/ProofStateEditor"
-import { formalizeStatement } from "../src/fetchers/formalize"
+import { formalizeProblem } from "../src/fetchers/formalize"
+import { formalizeStatement } from "../src/fetchers/formalize-statement"
 
 type WorkflowState = "idle" | "formalizing" | "formalized" | "applying" | "applied"
 
@@ -170,19 +171,12 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
     setIsLoading(true); setError(null); setWorkflowState("formalizing")
 
     try {
-      const proofState = await formalizeStatement({ problem: problemDescription })
+      const proofState = await formalizeProblem({ problem: problemDescription })
       let proofStateWithLibrary: ProofStateWithLibraryResultType = { proofState }
 
       if (libraryStatement.trim()) {
-        const libraryResponse = await fetch("https://atp-backend-rygt.onrender.com/formalize-statement", {
-          method: "POST", mode: "cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ statement: libraryStatement }),
-        })
-        if (!libraryResponse.ok) throw new Error(`HTTP error from formalize-statement! status: ${libraryResponse.status}`)
-        const libraryData: unknown = await libraryResponse.json()
-        console.log("Formalized library statement:", libraryData)
-        proofStateWithLibrary.libraryResult = { label: "", statement: StatementSchema.parse(libraryData) }
+        const libraryStatementData = await formalizeStatement({ statement: libraryStatement })
+        proofStateWithLibrary.libraryResult = { label: "", statement: StatementSchema.parse(libraryStatementData) }
       }
 
       dispatch({ action: "initialize", statement: problemDescription, proofState: proofStateWithLibrary.proofState })

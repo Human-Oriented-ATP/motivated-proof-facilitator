@@ -178,8 +178,8 @@ const FORMALIZE_PROMPT =
   \'\'\'
   `
 
-export const formalizeStatement = async (naturalLanguageStatement: string) => {
-  console.log("formalizing statement with model", MODELS.formalize)
+export const formalizeProblem = async (naturalLanguageStatement: string) => {
+  console.log("formalizing problem with model", MODELS.formalize)
   
   let enhancedPrompt = FORMALIZE_PROMPT
   
