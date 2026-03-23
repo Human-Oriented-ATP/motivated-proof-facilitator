@@ -4,6 +4,8 @@ import cors from "cors"
 import { formalizeProblem } from  "./endpoints/formalize.js"
 import { runMove } from './endpoints/move.js'
 import { evaluateFilterCondition } from './endpoints/filter.js'
+import { formalizeStatement } from './endpoints/formalize-statement.js'
+import { informalizeProofState } from './endpoints/informalize.js'
 
 const app = express()
 
@@ -80,6 +82,42 @@ app.post("/api/filter", async (req, res) => {
   } catch(err) {
     console.error(err)
     res.json({ success: false, error: err instanceof Error ? err.message : String(err) })
+  }
+})
+
+app.post("/formalize-statement", async (req, res) => {
+  const { statement, context } = req.body
+  if (!statement) {
+    console.error("no statement provided")
+    res.send("FAILED: no statement provided")
+    return
+  }
+  try {
+    console.log("formalizing statement...", statement)
+    const result = await formalizeStatement(statement, context)
+    res.send(result.output.statement)
+    console.log("formalized statement", result.output)
+  } catch(err) {
+    console.error(err)
+    res.send("FAILED: " + err)
+  }
+})
+
+app.post("/informalize", async (req, res) => {
+  const proofState = req.body.proofState || req.body
+  if (!proofState) {
+    console.error("no proof state provided")
+    res.send("FAILED: no proof state provided")
+    return
+  }
+  try {
+    console.log("informalizing proof state...")
+    const result = await informalizeProofState(proofState)
+    res.send(result)
+    console.log("informalized", result)
+  } catch(err) {
+    console.error(err)
+    res.send("FAILED: " + err)
   }
 })
 
