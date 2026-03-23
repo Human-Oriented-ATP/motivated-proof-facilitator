@@ -6,6 +6,7 @@ import { runMove } from './endpoints/move.js'
 import { evaluateFilterCondition } from './endpoints/filter.js'
 import { formalizeStatement } from './endpoints/formalize-statement.js'
 import { informalizeProofState } from './endpoints/informalize.js'
+import { suggestStatements } from './endpoints/suggest.js'
 
 const app = express()
 
@@ -116,6 +117,18 @@ app.post("/informalize", async (req, res) => {
     res.send(result)
     console.log("informalized", result)
   } catch(err) {
+    console.error(err)
+    res.send("FAILED: " + err)
+  }
+})
+
+app.post("/api/suggest", async (req, res) => {
+  try {
+    console.log("generating suggestions...")
+    const result = await suggestStatements(req.body)
+    res.send(result)
+    console.log("suggestions generated")
+  } catch (err) {
     console.error(err)
     res.send("FAILED: " + err)
   }
