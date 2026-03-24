@@ -102,7 +102,7 @@ export const suggestStatements = async(req: SuggestRequest) => {
         model: MODELS.suggest,
         system: SUGGEST_PROMPT,
         prompt: JSON.stringify(req, null, 2),
-        output: Output.array(SuggestResultsSchema),
+        output: Output.object({ schema: SuggestResultsSchema }),
         maxRetries: 3
     })
     return result
