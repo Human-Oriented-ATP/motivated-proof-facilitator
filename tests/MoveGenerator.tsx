@@ -199,11 +199,11 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
     setIsLoading(true); setError(null); setWorkflowState("applying")
 
     try {
-      const { proofState: newProofState, reasoning } = await runMove(
-        currentInputState.proofState,
-        { name: moveName, action, kind: moveKind, trigger, examples: [] },
+      const { proofState: newProofState, reasoning } = await runMove({
+        proofState: currentInputState.proofState,
+        move: { name: moveName, action, kind: moveKind, trigger, examples: [] },
         selections
-      )
+      })
       setCurrentOutputState({ proofState: newProofState, libraryResult: currentInputState.libraryResult })
       setReasoningTrace(reasoning)
       setWorkflowState("applied")

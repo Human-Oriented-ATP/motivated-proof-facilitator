@@ -1,8 +1,6 @@
 import { generateText, Output } from "ai"
 import { MODELS } from "./models"
-import { ProofState } from "../core/ProofStateZod"
-import { ProofStateSelection } from "../core/ProofStateSelectionContext"
-import { FilterResponseSchema } from "../fetchers/filter"
+import { FilterRequest, FilterResponseSchema } from "../fetchers/filter"
 
 const FILTER_PROMPT = `
 You are a mathematical reasoning filter that determines whether a given proof state and selections meet a specific trigger criterion.
@@ -36,31 +34,15 @@ You MUST respond with a JSON object containing exactly these two fields:
 Be precise in your analysis and consider both the mathematical meaning and structural properties.
 `
 
-export const evaluateFilterCondition = async (
-  proofState: ProofState,
-  selections: ProofStateSelection[],
-  triggerCriterion: string
-) => {
-  console.log("evaluating filter condition with LLM...", {
-    model: MODELS.filter,
-    triggerCriterion,
-    selectionsCount: selections.length
-  })
+export const evaluateFilterCondition = async (req: FilterRequest) => {
+  console.log("evaluating filter condition with LLM...", req)
   
-  const input = {
-    proofState,
-    selections,
-    triggerCriterion
-  }
-  
-  const result = await generateText({
+  return await generateText({
     model: MODELS.filter,
     system: FILTER_PROMPT,
-    prompt: JSON.stringify(input, null, 2),
+    prompt: JSON.stringify(req, null, 2),
     output: Output.object({
       schema: FilterResponseSchema
-    }),
-  })
-  
-  return result
+    })
+  }) 
 }

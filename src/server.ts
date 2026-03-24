@@ -55,7 +55,7 @@ app.post("/api/move", async (req, res) => {
 })
 
 app.post("/api/filter", async (req, res) => {
-  const { proofState, selections, triggerCriterion } = req.body
+  const { proofState, selections, name, triggerCriterion } = req.body
   
   if (!proofState) {
     console.error("no proof state provided")
@@ -76,7 +76,7 @@ app.post("/api/filter", async (req, res) => {
     console.log("filtering with criterion:", triggerCriterion)
     console.log("selections:", selections)
     
-    const result = await evaluateFilterCondition(proofState, selections, triggerCriterion)
+    const result = await evaluateFilterCondition({ proofState, selections, name, triggerCriterion })
     
     return res.send(result.text)
 

@@ -7,22 +7,14 @@ export async function formalizeProblem({ problem }: { problem: string }): Promis
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      problem
-    }),
+    body: problem
   })
 
   console.log("Received formalize response:", response)
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`)
-  }
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
 
   console.log("Received formalize response:", response)
 
-  const data: unknown = await response.json()
-
-  console.log("Received formalize response:", data)
-
-  return BundledProofStateSchema.parse(data).proofState
+  return BundledProofStateSchema.parse(await response.json()).proofState
 }

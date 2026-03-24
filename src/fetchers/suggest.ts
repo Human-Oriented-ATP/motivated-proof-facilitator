@@ -28,11 +28,7 @@ export async function suggestStatements(req: SuggestRequest): Promise<SuggestRes
         body: JSON.stringify(req)
     })
 
-    if (!result.ok) {
-      throw new Error(`HTTP error! status: ${result.status}, statusText: ${result.statusText}`)
-    }
+    if (!result.ok) throw new Error(`HTTP error! status: ${result.status}`)
 
-    const data: unknown = await result.json()
-
-    return SuggestResultsSchema.parse(data)
+    return SuggestResultsSchema.parse(await result.json())
 }

@@ -25,7 +25,12 @@ export async function getApplicableMoves(
   const results = await Promise.all(
     moves.map(async (move) => {
       try {
-        const filterResponse = await checkMoveValidity(getCurrentProofState(proofDiscoveryState), selections, move, signal)
+        const filterResponse = await checkMoveValidity({ 
+          proofState: getCurrentProofState(proofDiscoveryState), 
+          selections, 
+          name: move.name, 
+          triggerCriterion: move.trigger 
+        }, signal)
         return filterResponse.meetsCondition ? { move, filterResponse } : null
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') throw error
@@ -46,11 +51,11 @@ export async function applyMove(
   dispatchProofDiscoveryAction: React.Dispatch<ProofDiscoveryAction>,
   dispatchSelections: React.Dispatch<any>
 ): Promise<string | undefined> {
-  const { proofState: newProofState, reasoning } = await runMove(
-    getCurrentProofState(proofDiscoveryState),
+  const { proofState: newProofState, reasoning } = await runMove({
+    proofState: getCurrentProofState(proofDiscoveryState),
     move,
     selections
-  )
+})
 
   dispatchProofDiscoveryAction({
     action: "transition",
@@ -58,8 +63,8 @@ export async function applyMove(
     move: {
       kind: move.kind,
       description: move.name,
-      reasoning,
-    },
+      reasoning
+    }
   })
   dispatchSelections({ type: 'CLEAR_ALL_SELECTIONS' })
 
@@ -839,11 +844,12 @@ function AllMovesList(): JSX.Element {
     if (!skipCheck) {
       setRunState({ phase: 'checking' })
       try {
-        const filterResponse = await checkMoveValidity(
-          getCurrentProofState(proofDiscoveryState),
+        const filterResponse = await checkMoveValidity({
+          proofState: getCurrentProofState(proofDiscoveryState),
           selections,
-          move
-        )
+          name: move.name,
+          triggerCriterion: move.trigger
+        })
         if (!filterResponse.meetsCondition) {
           setRunState({ phase: 'warning', warningReasoning: filterResponse.reasoning })
           return

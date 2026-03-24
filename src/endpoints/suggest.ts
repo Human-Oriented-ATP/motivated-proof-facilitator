@@ -1,6 +1,4 @@
 import { generateText, Output } from "ai"
-import { ProofStateSelection } from "../core/ProofStateSelectionContext"
-import { ContextVariable, LabelledStatementSchema } from "../core/ProofStateZod"
 import { SuggestRequest, SuggestResultsSchema } from "../fetchers/suggest"
 import { MODELS } from "./models"
 
@@ -67,8 +65,26 @@ essentially plain strings that can include mathematical notation in Typst.
 In some cases, you may be required to output a statement that is relevant to the selections,
 along with a general theorem statement that relates the two.
 
-For 
-
+For example, if the main selection is $ 5 divides a dot b $ and an auxilliary selection is $ 5 divides.not a $, 
+a relevant suggestion could be $ 5 divides b $ along with the general theorem statement 
+\`\`\`
+{
+    label: "divisibility_by_prime",
+    statement: {
+        kind: "universal", variable: { name: "p", description: "$NN$" }, statement: {
+        kind: "universal", variable: { name: "a", description: "$NN$" }, statement: {
+        kind: "universal", variable: { name: "b", description: "$NN$" }, statement: {
+        kind: "implication", antecedent: { kind: "conjunction", statements: [
+            "$p divides a dot b$",
+            "$p$ is prime"
+        ]}, consequent: {kind: "disjunction", statements: [
+            "$p$ divides $a$",
+            "$p$ divides $b$"
+        ]}
+}}}}}
+\`\`\`
+    }
+\`\`\`
 
 Output up to 5 suggestions that could be relevant to the selections.
 If there are fewer than 5 suggestions that could be relevant, return only those.0

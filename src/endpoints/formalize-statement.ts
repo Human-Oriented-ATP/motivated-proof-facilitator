@@ -111,14 +111,12 @@ export const formalizeStatement = async (
     `\n\nCurrent proof context:\n${JSON.stringify(context, null, 2)}` : 
     ""
   
-  const result = await generateText({
+  return await generateText({
     model: MODELS.formalize_statement,
     system: FORMALIZE_STATEMENT_PROMPT,
     prompt: naturalLanguageStatement + contextString,
     output: Output.object({
       schema: LabelledStatementSchema
-    }),
-  })
-  
-  return result
+    })
+  }) 
 }

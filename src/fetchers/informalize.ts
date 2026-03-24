@@ -6,8 +6,8 @@ const response = await fetch("/api/informalize", {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ proofState: proofState }),
     })
-    if (!response.ok) 
-        throw new Error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`)
-    const data = await response.text()
-    return data
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+    
+    return await response.text()
 }
