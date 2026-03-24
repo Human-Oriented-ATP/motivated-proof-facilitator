@@ -1,13 +1,17 @@
 import { ProofState } from "../core/ProofStateZod"
 
 export async function informalizeProofState(proofState: ProofState): Promise<string> {
-const response = await fetch("/api/informalize", {
-    method: "POST", mode: "cors",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ proofState: proofState }),
+    const response = await fetch("/api/informalize", {
+        method: "POST", mode: "cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proofState: proofState }),
     })
+
+    console.log("Received informalize response:", response)
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
     
-    return await response.text()
+    const result = await response.json()
+    console.log("Received informalize response:", result)
+    return typeof result === 'string' ? result : result.text
 }

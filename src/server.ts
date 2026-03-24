@@ -86,7 +86,7 @@ app.post("/api/filter", async (req, res) => {
   }
 })
 
-app.post("/formalize-statement", async (req, res) => {
+app.post("/api/formalize-statement", async (req, res) => {
   const { statement, context } = req.body
   if (!statement) {
     console.error("no statement provided")
@@ -104,7 +104,7 @@ app.post("/formalize-statement", async (req, res) => {
   }
 })
 
-app.post("/informalize", async (req, res) => {
+app.post("/api/informalize", async (req, res) => {
   const proofState = req.body.proofState || req.body
   if (!proofState) {
     console.error("no proof state provided")
