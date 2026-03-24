@@ -35,6 +35,11 @@ export const VariableSchema = z.object({
   For type variables, use "$#text[Type]", and for propositions, use "$#text[Proposition]$".
   Avoid phrases such as "element of" or "belongs to" in the type signature; they are understood.
   Avoid making the types too complicated. It is always better to introduce extra hypotheses rather than having a complicated type.
+  
+  For example, if $alpha$ is a linear map from $V$ to $W$ with a trivial kernel, it is better to write:
+  { name: "alpha", description: "$V -> W$" } and then have hypotheses "$alpha$ is a linear map" and "the kernel of $alpha$ is trivial",
+  rather than writing { name: "alpha", description: "$V -> W$ linear map with trivial kernel$" }. 
+
   Surround text in $#text[...]$ and use [Typst](https://typst.app/) syntax within dollar quotes ($ ... $).`)
 }).describe(`Some examples are:
  - { name: "n", description: "$NN$" }
