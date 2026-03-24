@@ -171,7 +171,7 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
     setIsLoading(true); setError(null); setWorkflowState("formalizing")
 
     try {
-      const proofState = await formalizeProblem({ problem: problemDescription })
+      const proofState = await formalizeProblem( problemDescription )
       let proofStateWithLibrary: ProofStateWithLibraryResultType = { proofState }
 
       if (libraryStatement.trim()) {

@@ -111,7 +111,7 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
     setError(null)
 
     try {
-      const proofState = await formalizeProblem({ problem: inputStatement })
+      const proofState = await formalizeProblem( inputStatement )
 
       const graph = new Graph<ProofNode, MoveDescription>()
       graph.addNode(0, { proofState })

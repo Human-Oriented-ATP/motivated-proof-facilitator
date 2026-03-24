@@ -1,6 +1,6 @@
 import { BundledProofStateSchema, ProofState } from "../core/ProofStateZod"
 
-export async function formalizeProblem({ problem }: { problem: string }): Promise<ProofState> {
+export async function formalizeProblem(problem: string): Promise<ProofState> {
   const response = await fetch("/api/formalize", {
     method: "POST",
     mode: "cors",

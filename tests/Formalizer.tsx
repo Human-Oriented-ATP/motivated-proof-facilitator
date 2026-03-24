@@ -33,7 +33,7 @@ export default function RenderFormalizer(): JSX.Element {
     setIsLoading(true)
     setError(null)
     try {
-      const proofState = await formalizeProblem({ problem: inputStatement })
+      const proofState = await formalizeProblem( inputStatement )
 
       // Initialize the proof discovery state with the received proof state
       dispatch({
