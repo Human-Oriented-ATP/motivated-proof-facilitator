@@ -5,7 +5,7 @@ import {
   Accordion, AccordionSummary, AccordionDetails,
   Select, MenuItem, Dialog, DialogContent, Tooltip,
 } from "@mui/material"
-import { ProofStateSelection, ProofStateSelectionContext } from "../core/ProofStateSelectionContext"
+import { ProofStateSelection, ProofStateSelectionContext, toProofStateSelectionWithPolarity } from "../core/ProofStateSelectionContext"
 import { ProofState } from "../core/ProofStateZod"
 import { getCurrentProofState, ProofDiscoveryAction, ProofDiscoveryState } from "../core/ProofDiscoveryState"
 import { ProofDiscoveryMove, ProofDiscoveryMoveExample } from "../core/ProofDiscoveryMove"
@@ -27,7 +27,7 @@ export async function getApplicableMoves(
       try {
         const filterResponse = await checkMoveValidity({ 
           proofState: getCurrentProofState(proofDiscoveryState), 
-          selections, 
+          selections: selections.map(toProofStateSelectionWithPolarity), 
           name: move.name, 
           triggerCriterion: move.trigger 
         }, signal)
@@ -54,7 +54,7 @@ export async function applyMove(
   const { proofState: newProofState, reasoning } = await runMove({
     proofState: getCurrentProofState(proofDiscoveryState),
     move,
-    selections
+    selections: selections.map(toProofStateSelectionWithPolarity)
 })
 
   dispatchProofDiscoveryAction({
@@ -846,7 +846,7 @@ function AllMovesList(): JSX.Element {
       try {
         const filterResponse = await checkMoveValidity({
           proofState: getCurrentProofState(proofDiscoveryState),
-          selections,
+          selections: selections.map(toProofStateSelectionWithPolarity),
           name: move.name,
           triggerCriterion: move.trigger
         })
