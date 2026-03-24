@@ -51,6 +51,8 @@ export type ProofStateSelection = {
 	selection: Statement | SubExpressionCoreWithIndex
 }
 
+export type ProofStateSelectionWithPolarity = ProofStateSelection & { polarity: boolean | null }
+
 function areProofStateSelectionsEqual(a: ProofStateSelection, b: ProofStateSelection): boolean {
     return areProofStateIdsEqual(a.proofStateId, b.proofStateId) &&
       a.location.kind === b.location.kind &&
@@ -98,6 +100,17 @@ export function addressPolarity(init: boolean | null, address: StatementAddress)
       return polarity !== coordPolarity
     }
   }, init)
+}
+
+export function selectionPolarity(selection: ProofStateSelection): boolean | null {
+    return addressPolarity(locationPolarity(selection.location), selection.address)
+}
+
+export function toProofStateSelectionWithPolarity(selection: ProofStateSelection): ProofStateSelectionWithPolarity {
+    return {
+        ...selection,
+        polarity: selectionPolarity(selection)
+    }
 }
 
 type ProofStateSelectionAction = {

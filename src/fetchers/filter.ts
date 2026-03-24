@@ -1,11 +1,11 @@
 import { z } from "zod"
 import { ProofState } from "../core/ProofStateZod.js"
-import { ProofStateSelection } from "../core/ProofStateSelectionContext.js"
+import { ProofStateSelectionWithPolarity } from "../core/ProofStateSelectionContext.js"
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove.js"
 
 export interface FilterRequest {
     proofState: ProofState
-    selections: ProofStateSelection[]
+    selections: ProofStateSelectionWithPolarity[]
     name: string
     triggerCriterion: string
 }

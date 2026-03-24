@@ -1,12 +1,12 @@
 import { z } from "zod"
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove.js"
-import { ProofStateSelection } from "../core/ProofStateSelectionContext.js"
+import { ProofStateSelectionWithPolarity } from "../core/ProofStateSelectionContext.js"
 import { ProofState, ProofStateSchema } from "../core/ProofStateZod.js"
 
 export type MoveRequest = {
   proofState: ProofState
   move: ProofDiscoveryMove
-  selections: ProofStateSelection[]
+  selections: ProofStateSelectionWithPolarity[]
 }
 
 export const MoveResponseSchema = z.object({
@@ -17,6 +17,7 @@ export const MoveResponseSchema = z.object({
 export type MoveResponse = z.infer<typeof MoveResponseSchema>
 
 export async function runMove(req: MoveRequest): Promise<MoveResponse> {
+  console.log('Applying move', req)
   const response = await fetch("/api/move", {
     method: "POST",
     mode: "cors",

@@ -1,11 +1,11 @@
 import { z } from "zod"
-import { ProofStateSelection } from "../core/ProofStateSelectionContext"
+import { ProofStateSelection, ProofStateSelectionWithPolarity } from "../core/ProofStateSelectionContext"
 import { ContextVariable, LabelledStatementSchema, StatementSchema } from "../core/ProofStateZod"
 
 export interface SuggestRequest {
     variables: ContextVariable[]
-    mainSelections: ProofStateSelection[]
-    additionalSelections: ProofStateSelection[]
+    mainSelections: ProofStateSelectionWithPolarity[]
+    additionalSelections: ProofStateSelectionWithPolarity[]
     instructions: string
 }
 
