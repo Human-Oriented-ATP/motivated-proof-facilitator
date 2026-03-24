@@ -13,5 +13,5 @@ export async function informalizeProofState(proofState: ProofState): Promise<str
     
     const result = await response.json()
     console.log("Received informalize response:", result)
-    return typeof result === 'string' ? result : result.text
+    return result._output
 }

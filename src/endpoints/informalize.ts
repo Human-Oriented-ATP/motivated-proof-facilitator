@@ -10,7 +10,8 @@ const INFORMALIZE_PROMPT =
   
   Focus on making the mathematics clear and accessible while preserving all the important mathematical content.
   
-  Return only the natural language text, not JSON or structured data.
+  Return only the natural language text, not JSON or structured data. 
+  Use Typst for mathematical notation where appropriate, enclosed in dollar quotes ($ ... $).
   `
 
 export const informalizeProofState = async (proofState: ProofState) => {
