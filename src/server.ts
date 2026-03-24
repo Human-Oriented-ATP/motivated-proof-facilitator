@@ -15,7 +15,7 @@ app.use(bodyParser.json())
 
 app.post("/api/formalize", async (req, res) => {
   console.log("formalizing...", req.body.problem)
-  const problem = req.body
+  const problem: string = req.body.problem
   if (!problem) {
     console.error("no problem provided")
     res.send("FAILED: no problem provided")

@@ -7,7 +7,7 @@ export async function formalizeProblem(problem: string): Promise<ProofState> {
     headers: {
       "Content-Type": "application/json",
     },
-    body: problem
+    body: JSON.stringify({ problem })
   })
 
   console.log("Received formalize response:", response)
