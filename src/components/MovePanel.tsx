@@ -57,6 +57,8 @@ export async function applyMove(
     selections: selections.map(toProofStateSelectionWithPolarity)
 })
 
+  if (!newProofState) throw new Error(`Failed to apply move ${move.name}: ${reasoning}`)
+
   dispatchProofDiscoveryAction({
     action: "transition",
     newProofState,
