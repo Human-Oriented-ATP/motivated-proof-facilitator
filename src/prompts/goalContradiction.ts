@@ -13,7 +13,7 @@ export const goalContradictionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -37,7 +37,7 @@ export const goalContradictionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [
                             {
@@ -65,8 +65,8 @@ export const goalContradictionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$P$", kind: "free", description: "$NN -> #text[Proposition]$" },
-                            { name: "$Q$", kind: "free", description: "$NN -> #text[Proposition]$" }
+                            { name: "$P$", kind: "free", value: "", description: "$NN -> #text[Proposition]$" },
+                            { name: "$Q$", kind: "free", value: "", description: "$NN -> #text[Proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -106,8 +106,8 @@ export const goalContradictionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$P$", kind: "free", description: "$NN -> #text[Proposition]$" },
-                            { name: "$Q$", kind: "free", description: "$NN -> #text[Proposition]$" }
+                            { name: "$P$", kind: "free", value: "", description: "$NN -> #text[Proposition]$" },
+                            { name: "$Q$", kind: "free", value: "", description: "$NN -> #text[Proposition]$" }
                         ],
                         hypotheses: [
                             {
@@ -142,7 +142,7 @@ export const goalContradictionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$f$", kind: "free", description: "$RR -> RR$" }
+                            { name: "$f$", kind: "free", value: "", description: "$RR -> RR$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -174,7 +174,7 @@ export const goalContradictionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$f$", kind: "free", description: "$RR -> RR$" }
+                            { name: "$f$", kind: "free", value: "", description: "$RR -> RR$" }
                         ],
                         hypotheses: [
                             {
@@ -205,9 +205,9 @@ export const goalContradictionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$C$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$C$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -239,9 +239,9 @@ export const goalContradictionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$C$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$C$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [
                             {
@@ -261,9 +261,9 @@ export const goalContradictionMove: ProofDiscoveryMove = {
                     },
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$C$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$C$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [

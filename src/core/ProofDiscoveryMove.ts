@@ -6,7 +6,7 @@ export type MoveKind = "strengthening" | "weakening" | "equivalence" | "other"
 export interface ProofDiscoveryMoveExample {
     description: string 
     inputState: ProofStateWithLibraryResult
-    selections: ProofStateSelectionWithPolarity[]
+    selections: ProofStateSelection[]
     outputState: ProofStateWithLibraryResult | null
     comment?: string
     kind: "example" | "non-example"
