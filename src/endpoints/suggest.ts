@@ -13,12 +13,14 @@ You may consult the list of variables to properly interpret the selections.
 
 You are required to produce a list of statements related to the selections, following the instructions provided.
 
-Please keep the suggestions simple, direct and relevant, avoiding wordy phrasing.
-
-Include general library results only if the statement suggested is non-trivially related to the selections, and omit them otherwise. 
+Please keep the suggestions simple, precise, structured, direct and relevant, avoiding wordy phrasing.
 
 In some cases, you may be required to output a statement that is relevant to the selections,
 along with a general theorem statement that relates the two.
+
+Include general library results only if the statement suggested is non-trivially related to the selections, 
+or if you have been explicitly asked to include them, and omit them otherwise. 
+
 
 For example, if the main selection is $ 5 divides a dot b $ and an auxilliary selection is $ 5 divides.not a $, 
 a relevant suggestion could be $ 5 divides b $ along with the general theorem statement 
@@ -42,11 +44,13 @@ a relevant suggestion could be $ 5 divides b $ along with the general theorem st
 \`\`\`
 
 Output up to 5 suggestions that could be relevant to the selections.
-If there are fewer than 5 suggestions that could be relevant, return only those.0
+If there are fewer than 5 suggestions that could be relevant, return only those.
 Ensure that there are no duplicate suggestions. 
 
 Please order the suggestions from most relevant to least relevant, where relevance is determined
 by the relevance of the statement to the main selections, similarity to the additional selections, and simplicity.
+
+Please keep the suggestions simple, precise, structured, direct and relevant
 `
 
 
