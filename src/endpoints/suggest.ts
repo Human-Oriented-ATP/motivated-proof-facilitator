@@ -14,7 +14,7 @@ You may consult the list of variables to properly interpret the selections.
 You are required to produce a list of statements related to the selections, following the instructions provided.
 
 Please keep the suggestions simple, precise, structured, direct and relevant, avoiding wordy phrasing.
-Do not introduce any concept or terminology that is not already present in the selections or variable context.
+Avoid introducing any concept or terminology that is not already present in the selections or variable context.
 Prefer generating structured statements composed of simpler sentences with logical connectives over
 long and convoluted atomic statements.
 
@@ -54,7 +54,6 @@ Please order the suggestions from most relevant to least relevant, where relevan
 by the relevance of the statement to the main selections, similarity to the additional selections, and simplicity.
 
 Please keep the suggestions simple, precise, structured, direct and relevant.
-Do not introduce any concept or terminology that is not already present in the selections or variable context.
 `
 
 
