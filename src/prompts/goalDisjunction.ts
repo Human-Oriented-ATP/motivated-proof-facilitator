@@ -13,8 +13,8 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -41,8 +41,8 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -62,10 +62,10 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$C$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$D$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$C$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$D$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -96,10 +96,10 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$C$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$D$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$C$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$D$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -123,7 +123,7 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$X$", kind: "free", description: "topological space" }
+                            { name: "$X$", kind: "free", value: "", description: "topological space" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -153,7 +153,7 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$X$", kind: "free", description: "topological space" }
+                            { name: "$X$", kind: "free", value: "", description: "topological space" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -173,7 +173,7 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -203,8 +203,8 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -237,9 +237,9 @@ export const goalDisjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$C$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$C$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [
                             {

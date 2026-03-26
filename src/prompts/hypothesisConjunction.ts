@@ -13,9 +13,9 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" }, 
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$C$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" }, 
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$C$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [
                             {
@@ -47,8 +47,8 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" }, 
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" }, 
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [
                             {
@@ -77,10 +77,10 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$C$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$D$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$C$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$D$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [
                             {
@@ -111,10 +111,10 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$C$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$D$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$C$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$D$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [
                             {   
@@ -145,7 +145,7 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
             inputState: {
               proofState: [
                   {
-                      variables: [{ name: "$X$", kind: "free", description: "topological space" }],
+                      variables: [{ name: "$X$", kind: "free", value: "", description: "topological space" }],
                       hypotheses: [
                           {   label: "X_compact_hausdorff",
                               statement: {
@@ -176,7 +176,7 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
             outputState: {
                 proofState: [
                    {
-                        variables: [{ name: "$X$", kind: "free", description: "topological space" }],
+                        variables: [{ name: "$X$", kind: "free", value: "", description: "topological space" }],
                         hypotheses: [
                             { label: "X_compact", statement: "$X$ is compact" },
                             { label: "X_hausdorff", statement: "$X$ is Hausdorff" }
@@ -198,7 +198,7 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [
                             {
@@ -228,7 +228,7 @@ export const hypothesisConjunctionMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" }
                         ],
                         hypotheses: [],
                         goals: [

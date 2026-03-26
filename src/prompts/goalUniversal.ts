@@ -13,7 +13,7 @@ export const goalUniversalMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" }
+                            { name: "$P$", kind: "free", value: "", description: "$NN -> \"Proposition\"$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -45,8 +45,8 @@ export const goalUniversalMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" },
-                            { name: "$a$", kind: "free", description: "$NN$" }
+                            { name: "$P$", kind: "free", value: "", description: "$NN -> \"Proposition\"$" },
+                            { name: "$a$", kind: "free", value: "", description: "$NN$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -66,7 +66,7 @@ export const goalUniversalMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" }
+                            { name: "$P$", kind: "free", value: "", description: "$NN -> \"Proposition\"$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -94,8 +94,8 @@ export const goalUniversalMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" },
-                            { name: "$a$", kind: "free", description: "$NN$" }
+                            { name: "$P$", kind: "free", value: "", description: "$NN -> \"Proposition\"$" },
+                            { name: "$a$", kind: "free", value: "", description: "$NN$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -115,8 +115,8 @@ export const goalUniversalMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$Q$", kind: "free", description: "$NN -> \"Proposition\"$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$Q$", kind: "free", value: "", description: "$NN -> \"Proposition\"$" }
                         ],
                         hypotheses: [
                             {
@@ -153,9 +153,9 @@ export const goalUniversalMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$Q$", kind: "free", description: "$NN -> \"Proposition\"$" },
-                            { name: "$a$", kind: "free", description: "$NN$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$Q$", kind: "free", value: "", description: "$NN -> \"Proposition\"$" },
+                            { name: "$a$", kind: "free", value: "", description: "$NN$" }
                         ],
                         hypotheses: [
                             {
@@ -180,10 +180,10 @@ export const goalUniversalMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$C$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$C$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$P$", kind: "free", value: "", description: "$NN -> \"Proposition\"$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -223,11 +223,11 @@ export const goalUniversalMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$C$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" },
-                            { name: "$a$", kind: "free", description: "$NN$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$C$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$P$", kind: "free", value: "", description: "$NN -> \"Proposition\"$" },
+                            { name: "$a$", kind: "free", value: "", description: "$NN$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -239,10 +239,10 @@ export const goalUniversalMove: ProofDiscoveryMove = {
                     },
                     {
                         variables: [
-                            { name: "$A$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$B$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$C$", kind: "free", description: "$#text[Proposition]$" },
-                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" }
+                            { name: "$A$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$B$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$C$", kind: "free", value: "", description: "$#text[Proposition]$" },
+                            { name: "$P$", kind: "free", value: "", description: "$NN -> \"Proposition\"$" }
                         ],
                         hypotheses: [],
                         goals: [
@@ -294,8 +294,8 @@ export const goalUniversalMove: ProofDiscoveryMove = {
                 proofState: [
                     {
                         variables: [
-                            { name: "$a$", kind: "free", description: "$NN$" },
-                            { name: "$P$", kind: "free", description: "$NN -> \"Proposition\"$" }
+                            { name: "$a$", kind: "free", value: "", description: "$NN$" },
+                            { name: "$P$", kind: "free", value: "", description: "$NN -> \"Proposition\"$" }
                         ],
                         hypotheses: [
                             {

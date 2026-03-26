@@ -1,19 +1,6 @@
-export { default } from '../src/index'
-
-/**
-
-import express from 'express'
-import bodyParser from "body-parser"
-import cors from "cors"
-import { BundledProofStateSchema } from '../src/core/ProofStateZod'
-import { generateText, Output } from 'ai'
-import { MODELS } from '../src/endpoints/models'
-
-const app = express()
-
-app.use(cors())
-app.use(bodyParser.json())
-
+import { generateText, Output } from "ai"
+import { MODELS } from "./models"
+import { BundledProofStateSchema } from "../core/ProofStateZod"
 
 const FORMALIZE_PROMPT = 
 `You are a mathematical formalization agent. Your task is to convert natural language mathematical statements into structured ProofState objects that can be operated on programmatically.
@@ -30,7 +17,7 @@ const FORMALIZE_PROMPT =
   **CRITICAL: Every variable MUST include a "kind" field with one of these values:**
   - "free": For variables assumed to be arbitrary but fixed (most common)
   - "meta": For variables to be instantiated later
-  - "let": For variables defined to have a specific value (requires "value" field)
+  - "let": For variables defined to have a specific value
 
   \'\'\'json
   {
@@ -39,7 +26,7 @@ const FORMALIZE_PROMPT =
         "name": "variable_name",
         "description": "Mathematical type or description",
         "kind": "free" | "meta" | "let",
-        "value": "optional_value_for_let_variables"
+        "value": "empty for free/meta, specific value for let"
       }
     ],
     "hypotheses": [
@@ -70,7 +57,7 @@ const FORMALIZE_PROMPT =
   \'\'\'json
   {
     "variables": [
-      {"name": "sqrt_2", "description": "$sqrt(2)$", "kind": "free"}
+      {"name": "sqrt_2", "description": "$sqrt(2)$", "kind": "free", "value": ""}
     ],
     "hypotheses": [
       {"label": "sqrt_def", "statement": "$sqrt(2)^2 = 2$"}
@@ -191,60 +178,16 @@ const FORMALIZE_PROMPT =
   \'\'\'
   `
 
-  //Promise<GenerateTextResult<ToolSet, z.infer<typeof BundledProofStateSchema>>> 
-const formalizeStatement = async (naturalLanguageStatement: string) => {
-  console.log("formalizing statement with model", MODELS.formalize)
+export const formalizeProblem = async (naturalLanguageStatement: string) => {
+  console.log("formalizing problem with model", MODELS.formalize)
   
-  let enhancedPrompt = FORMALIZE_PROMPT
-  
-  const maxRetries = 3;
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const result = await generateText({
-        model: MODELS.formalize,
-        system: enhancedPrompt,
-        prompt: naturalLanguageStatement,
-        output: Output.object({
-          schema: BundledProofStateSchema
-        }),
-      })
-      return result
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      console.log(`Formalize attempt ${attempt} failed:`, errorMessage);
-      
-      if (attempt < maxRetries) {
-        // Enhance prompt with previous error information for retry
-        enhancedPrompt = `${FORMALIZE_PROMPT}
-
-ERROR CORRECTION: Your previous attempt failed with error: ${errorMessage}
-Please adjust your approach to avoid this error.`
-        
-        console.log(`Retrying formalization (attempt ${attempt + 1}/${maxRetries})...`)
-        continue
-      }
-    }
-  }
-
-  throw new Error("Failed to formalize statement after multiple attempts.")
+  return await generateText({
+    model: MODELS.formalize,
+    system: FORMALIZE_PROMPT,
+    prompt: naturalLanguageStatement,
+    output: Output.object({
+      schema: BundledProofStateSchema
+    }),
+    maxRetries: 3
+  })
 }
-
-app.post("/api/formalize", async (req, res) => {
-  console.log("formalizing...", req.body.problem)
-  const problem = req.body.problem;
-  if (!problem) {
-    console.error("no problem provided")
-    res.send("FAILED: no problem provided")
-    return
-  }
-  try {
-    const result = await formalizeStatement(problem)
-    console.log("formalized", result)
-    res.send(result)
-  } catch(err) {
-    console.error(err)
-    res.send("FAILED: " + err)
-  }
-})
-
-*/

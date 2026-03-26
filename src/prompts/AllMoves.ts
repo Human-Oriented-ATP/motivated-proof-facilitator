@@ -13,32 +13,46 @@ import { instantiateMetavariablesMove } from "../prompts/instantiateMetavariable
 import { unfoldDefinitionMove } from "../prompts/unfoldDefinition"
 import { simplifyExpressionMove } from "../prompts/simplifyExpression"
 import { isolateVariableMove } from "../prompts/isolateVariable"
-import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
+import { ProofDiscoveryMove, ProofDiscoverySuggestionMove } from "../core/ProofDiscoveryMove"
 import { dischargeGoalMove } from "./dischargeGoal"
 import { goalDirectedReasoningMove } from "./goalDirectedReasoning"
 import { dischargeGoalWithOtherGoalMove } from "./dischargeGoalWithOtherGoal"
 import { unifyHypothesisAndGoalMove } from "./unifyHypothesisAndGoal"
 import { modusPonensMove } from "./modusPonens"
+import { goalBackwardsReasoningPrompt } from "./goalBackwardsReasoning"
+import { hypothesisFowardsReasoningPrompt } from "./hypothesisForwardsReasoning"
+import { equivalentStatementsPrompt } from "./equivalentStatements"
 
-export const moves: ProofDiscoveryMove[] = [
+export const suggestionMoves: ProofDiscoverySuggestionMove[] = [
+    equivalentStatementsPrompt,
+    hypothesisFowardsReasoningPrompt,
+    goalBackwardsReasoningPrompt
+]
+
+export const logicalMoves: ProofDiscoveryMove[] = [
     goalConjunctionMove,
     goalDisjunctionMove,
     goalEquivalenceMove,
     goalExistentialMove,
     goalImplicationMove,
-    goalContradictionMove,
     goalUniversalMove,
     hypothesisConjunctionMove,
     hypothesisDisjunctionMove,
     hypothesisExistentialMove,
-    rewritingMove,
     instantiateMetavariablesMove,
+    unifyHypothesisAndGoalMove,
+    modusPonensMove
+]
+       
+export const generalMoves: ProofDiscoveryMove[] = [
+    goalContradictionMove,
+    rewritingMove,
     unfoldDefinitionMove,
     simplifyExpressionMove,
     isolateVariableMove,
     dischargeGoalMove,
     goalDirectedReasoningMove,
     dischargeGoalWithOtherGoalMove,
-    unifyHypothesisAndGoalMove,
-    modusPonensMove
 ]
+
+export const moves = [...generalMoves, ...logicalMoves]

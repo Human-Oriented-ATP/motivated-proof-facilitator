@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "composite": true,
     "skipLibCheck": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
@@ -10,5 +9,5 @@
     "noUncheckedIndexedAccess": true,
     "types": ["node"]
   },
-  "include": ["api/**/*.ts", "src/**/*.ts", "vite.config.ts"]
+  "include": ["src/**/*.ts", "vite.config.ts"]
 }

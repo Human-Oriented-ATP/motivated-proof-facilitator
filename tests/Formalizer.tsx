@@ -4,7 +4,8 @@ import { proofDiscoveryStateReducer, nullProofDiscoveryState, getCurrentProofSta
 import { ProofState as ProofStateComponent, ProofStateWithLibraryResult } from "../src/components/ProofState"
 import { MathStatement } from "../src/components/MathStatement"
 import ProofStateContextProvider from "./ProofStateContext"
-import { formalizeStatement } from "../src/endpoints/Formalize"
+import { formalizeProblem } from "../src/fetchers/formalize"
+import { informalizeProofState } from "../src/fetchers/informalize"
 
 /**
  * Formalizer component that allows users to input mathematical statements,
@@ -32,7 +33,7 @@ export default function RenderFormalizer(): JSX.Element {
     setIsLoading(true)
     setError(null)
     try {
-      const proofState = await formalizeStatement({ problem: inputStatement })
+      const proofState = await formalizeProblem( inputStatement )
 
       // Initialize the proof discovery state with the received proof state
       dispatch({
@@ -67,21 +68,8 @@ export default function RenderFormalizer(): JSX.Element {
     try {
       const currentProofState = getCurrentProofState(proofDiscoveryState)
 
-      const response = await fetch("https://atp-backend-rygt.onrender.com/informalize", {
-        method: "POST",
-        mode: "cors",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ proofState: currentProofState }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`)
-      }
-
-      const data = await response.json()
-      setInformalizedText(data.naturalLanguage || data.text || JSON.stringify(data))
+      const informalizedDescription = await informalizeProofState(currentProofState)
+      setInformalizedText(informalizedDescription)
       setIsInformalizePopupOpen(true)
     } catch (err) {
       if (err instanceof Error) {

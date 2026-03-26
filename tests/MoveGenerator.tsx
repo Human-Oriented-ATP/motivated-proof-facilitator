@@ -23,7 +23,7 @@ import {
 } from "@mui/material"
 import { ProofState, ProofStateSchema, ProofStateWithLibraryResult as ProofStateWithLibraryResultType, StatementSchema } from "../src/core/ProofStateZod"
 import { ProofDiscoveryMove, MoveKind, ProofDiscoveryMoveExample } from "../src/core/ProofDiscoveryMove"
-import { runMove } from "../src/endpoints/Move"
+import { runMove } from "../src/fetchers/move"
 
 type UIExample = ProofDiscoveryMoveExample & { id: string }
 import { proofDiscoveryStateReducer, nullProofDiscoveryState } from "../src/core/ProofDiscoveryState"
@@ -32,7 +32,8 @@ import ProofStateContextProvider from "./ProofStateContext"
 import { ProofStateSelectionContext, proofStateSelectionReducer } from "../src/core/ProofStateSelectionContext"
 import TypstContextProvider from "../src/components/TypstContext"
 import { ProofStateEditor } from "../src/components/ProofStateEditor"
-import { formalizeStatement } from "../src/endpoints/Formalize"
+import { formalizeProblem } from "../src/fetchers/formalize"
+import { formalizeStatement } from "../src/fetchers/formalize-statement"
 
 type WorkflowState = "idle" | "formalizing" | "formalized" | "applying" | "applied"
 
@@ -170,19 +171,12 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
     setIsLoading(true); setError(null); setWorkflowState("formalizing")
 
     try {
-      const proofState = await formalizeStatement({ problem: problemDescription })
+      const proofState = await formalizeProblem( problemDescription )
       let proofStateWithLibrary: ProofStateWithLibraryResultType = { proofState }
 
       if (libraryStatement.trim()) {
-        const libraryResponse = await fetch("https://atp-backend-rygt.onrender.com/formalize-statement", {
-          method: "POST", mode: "cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ statement: libraryStatement }),
-        })
-        if (!libraryResponse.ok) throw new Error(`HTTP error from formalize-statement! status: ${libraryResponse.status}`)
-        const libraryData: unknown = await libraryResponse.json()
-        console.log("Formalized library statement:", libraryData)
-        proofStateWithLibrary.libraryResult = { label: "", statement: StatementSchema.parse(libraryData) }
+        const libraryStatementData = await formalizeStatement({ statement: libraryStatement })
+        proofStateWithLibrary.libraryResult = { label: "", statement: StatementSchema.parse(libraryStatementData) }
       }
 
       dispatch({ action: "initialize", statement: problemDescription, proofState: proofStateWithLibrary.proofState })
@@ -205,11 +199,11 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
     setIsLoading(true); setError(null); setWorkflowState("applying")
 
     try {
-      const { proofState: newProofState, reasoning } = await runMove(
-        currentInputState.proofState,
-        { name: moveName, action, kind: moveKind, trigger, examples: [] },
+      const { proofState: newProofState, reasoning } = await runMove({
+        proofState: currentInputState.proofState,
+        move: { name: moveName, action, kind: moveKind, trigger, examples: [] },
         selections
-      )
+      })
       setCurrentOutputState({ proofState: newProofState, libraryResult: currentInputState.libraryResult })
       setReasoningTrace(reasoning)
       setWorkflowState("applied")

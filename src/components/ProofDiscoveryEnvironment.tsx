@@ -14,6 +14,8 @@ import {
   Dialog, DialogContent, DialogActions, Tooltip,
 } from '@mui/material'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
+import { formalizeStatement } from '../fetchers/formalize-statement'
+import { informalizeProofState } from '../fetchers/informalize'
 
 // Local theme for the library "add" form — matches the amber/yellow panel colours
 const libraryTheme = createTheme({
@@ -190,14 +192,8 @@ export function ProofDiscoveryEnvironment({
     setIsInformalizeLoading(true)
     try {
       const currentPS = proofDiscoveryState.graph.getNodeAttribute(proofDiscoveryState.currentNodeId, 'proofState')
-      const response = await fetch("https://atp-backend-rygt.onrender.com/informalize", {
-        method: "POST", mode: "cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proofState: currentPS }),
-      })
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`)
-      const data = await response.json()
-      setInformalizedText(data.naturalLanguage || data.text || JSON.stringify(data))
+      const description = await informalizeProofState(currentPS)
+      setInformalizedText(description)
     } catch (err) {
       setInformalizedText(err instanceof Error ? `Failed to informalize: ${err.message}` : "An unknown error occurred")
     } finally {
@@ -211,14 +207,7 @@ export function ProofDiscoveryEnvironment({
     setNewLibraryLoading(true)
     setNewLibraryError(null)
     try {
-      const resp = await fetch("https://atp-backend-rygt.onrender.com/formalize-statement", {
-        method: "POST", mode: "cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ statement: newLibraryText }),
-      })
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
-      const json = await resp.json()
-      const stmt = StatementSchema.parse(json)
+      const stmt = await formalizeStatement({ statement: newLibraryText.trim() })
       
       dispatchProofDiscoveryAction({ action: 'addToLibrary', statement: { label: newLibraryLabel.trim(), statement: stmt } })
       setIsAddLibraryOpen(false); setNewLibraryLabel(''); setNewLibraryStatement(''); setNewLibraryText(''); setIsLibraryExpanded(true)
