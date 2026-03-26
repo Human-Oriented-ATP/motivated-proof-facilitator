@@ -731,7 +731,7 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
                 {mainSelections.map((s, i) => renderSelectionCard(s, i))}
               </Box>
               <Typography sx={{ fontSize: '0.75rem', color: P.med, lineHeight: 1.5 }}>
-                Select any additional context in the proof state, then generate suggestions.
+                Make additional selections in the proof state to provide extra context if necessary, then generate suggestions.
               </Typography>
               {additionalSelections.length > 0 && (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
