@@ -14,7 +14,7 @@ import { ProofStateWithLibraryResult as ProofStateComponent } from "./ProofState
 import { MathStatement } from "./MathStatement"
 import { runMove } from "../fetchers/move"
 import MoveGenerator from "../../tests/MoveGenerator"
-import { moves, suggestionMoves, logicalMoves, generalMoves } from "../prompts/AllMoves"
+import { moves, suggestionMoves, logicalMoves } from "../prompts/AllMoves"
 import { checkMoveValidity, FilterResponse } from "../fetchers/filter"
 import { suggestStatements, SuggestResult, SuggestResults } from "../fetchers/suggest"
 
@@ -25,25 +25,26 @@ export async function getApplicableMoves(
   signal?: AbortSignal,
   movesToCheck: ProofDiscoveryMove[] = moves
 ): Promise<{ move: ProofDiscoveryMove, filterResponse: FilterResponse }[]> {
-  const results = await Promise.all(
-    movesToCheck.map(async (move) => {
-      try {
-        const filterResponse = await checkMoveValidity({ 
-          proofState: getCurrentProofState(proofDiscoveryState), 
-          selections: selections.map(toProofStateSelectionWithPolarity), 
-          name: move.name, 
-          triggerCriterion: move.trigger 
-        }, signal)
-        return filterResponse.meetsCondition ? { move, filterResponse } : null
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') throw error
-        console.error(`Error checking move validity for move ${move.name}:`, error)
-        return null
-      }
-    })
-  )
-  
-  return results.filter((result): result is { move: ProofDiscoveryMove, filterResponse: FilterResponse } => result !== null)
+  return []
+  // const results = await Promise.all(
+  //   movesToCheck.map(async (move) => {
+  //     try {
+  //       const filterResponse = await checkMoveValidity({ 
+  //         proofState: getCurrentProofState(proofDiscoveryState), 
+  //         selections: selections.map(toProofStateSelectionWithPolarity), 
+  //         name: move.name, 
+  //         triggerCriterion: move.trigger 
+  //       }, signal)
+  //       return filterResponse.meetsCondition ? { move, filterResponse } : null
+  //     } catch (error) {
+  //       if (error instanceof DOMException && error.name === 'AbortError') throw error
+  //       console.error(`Error checking move validity for move ${move.name}:`, error)
+  //       return null
+  //     }
+  //   })
+  // )
+
+  // return results.filter((result): result is { move: ProofDiscoveryMove, filterResponse: FilterResponse } => result !== null)
 }
 
 /** Apply a move to the current proof state. */
@@ -259,7 +260,6 @@ const SpinnerBox = ({ size = 20, trackColor, spinColor }: { size?: number, track
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 type MovePanelStatus = "idle" | "loading" | "loaded" | "error"
-type MoveCategory = "suggestion" | "general" | "logical"
 type ApplicableMove = { move: ProofDiscoveryMove, filterResponse: FilterResponse }
 type ApplicableSuggestionMove = { move: ProofDiscoverySuggestionMove, filterResponse: FilterResponse }
 
@@ -418,17 +418,13 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
   const [expandedExamples, setExpandedExamples] = useState<Set<number>>(new Set())
   const [showAllMovesModal, setShowAllMovesModal] = useState(false)
   const [lastMoveReasoning, setLastMoveReasoning] = useState<string | null>(null)
-  const [applicableSuggestionMoves, setApplicableSuggestionMoves] = useState<ApplicableSuggestionMove[]>([])
   const [suggestionWorkflow, setSuggestionWorkflow] = useState<SuggestionWorkflow | null>(null)
   const [expandedGeneralResults, setExpandedGeneralResults] = useState<Set<number>>(new Set())
-  const [enabledCategories, setEnabledCategories] = useState<Set<MoveCategory>>(new Set(["suggestion"]))
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const lastFetchedSelectionsRef = useRef<string>("")
   const lastGraphOrderRef = useRef<number>(proofDiscoveryState.graph.order)
-  const enabledCategoriesRef = useRef<Set<MoveCategory>>(enabledCategories)
-  enabledCategoriesRef.current = enabledCategories
 
   const selectionsKey = JSON.stringify(selections)
 
@@ -439,7 +435,6 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
       lastGraphOrderRef.current = currentOrder
       setStatus("idle")
       setApplicableMoves([])
-      setApplicableSuggestionMoves([])
       setSuggestionWorkflow(null)
       setExpandedReasoning(new Set())
       setExpandedExamples(new Set())
@@ -461,17 +456,8 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
     if (debounceRef.current) clearTimeout(debounceRef.current)
     setStatus("idle")
     setApplicableMoves([])
-    setApplicableSuggestionMoves([])
     lastFetchedSelectionsRef.current = ""
   }, [customInputActive])
-
-  // Re-fetch when enabled categories change while selections are present
-  useEffect(() => {
-    if (selections.length > 0 && suggestionWorkflow === null && !customInputActive) {
-      void fetchMoves()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabledCategories])
 
   // Debounce auto-fetch on selection change (skip while in suggestion workflow or custom input active)
   useEffect(() => {
@@ -488,7 +474,6 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
         lastFetchedSelectionsRef.current = selectionsKey
         setStatus("idle")
         setApplicableMoves([])
-        setApplicableSuggestionMoves([])
         setExpandedReasoning(new Set())
         setExpandedExamples(new Set())
         setInfoIndex(null)
@@ -510,21 +495,8 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
     setExpandedExamples(new Set())
     setInfoIndex(null)
     try {
-      const cats = enabledCategoriesRef.current
-      const movesToCheck = [
-        ...(cats.has("general") ? generalMoves : []),
-        ...(cats.has("logical") ? logicalMoves : []),
-      ]
-      const [regularMoves, suggestMoves] = await Promise.all([
-        movesToCheck.length > 0
-          ? getApplicableMoves(proofDiscoveryState, selections, controller.signal, movesToCheck)
-          : Promise.resolve([]),
-        cats.has("suggestion")
-          ? getApplicableSuggestionMoves(proofDiscoveryState, selections, controller.signal)
-          : Promise.resolve([]),
-      ])
+      const regularMoves = await getApplicableMoves(proofDiscoveryState, selections, controller.signal)
       setApplicableMoves(regularMoves)
-      setApplicableSuggestionMoves(suggestMoves)
       setStatus("loaded")
       lastFetchedSelectionsRef.current = selectionsKey
     } catch (err) {
@@ -563,10 +535,6 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
   const toggleExamples = (idx: number) => {
     setExpandedExamples(prev => { const n = new Set(prev); n.has(idx) ? n.delete(idx) : n.add(idx); return n })
   }
-  const toggleCategory = (cat: MoveCategory) => {
-    setEnabledCategories(prev => { const n = new Set(prev); n.has(cat) ? n.delete(cat) : n.add(cat); return n })
-  }
-
   const logicalMoveNames = new Set(logicalMoves.map(m => m.name))
 
   const renderMoveCard = (am: ApplicableMove, idx: number) => {
@@ -665,9 +633,9 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
     return selections.filter(s => !mainKeys.has(JSON.stringify(s)))
   }
 
-  const enterSuggestionMode = (asm: ApplicableSuggestionMove) => {
+  const enterSuggestionMode = (move: ProofDiscoverySuggestionMove) => {
     const mainSelections = [...selections]
-    setSuggestionWorkflow({ move: asm.move, mainSelections, phase: "ready" })
+    setSuggestionWorkflow({ move, mainSelections, phase: "ready" })
   }
 
   const refreshSuggestions = async () => {
@@ -697,7 +665,6 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
       setSuggestionWorkflow(null)
       setStatus("idle")
       setApplicableMoves([])
-      setApplicableSuggestionMoves([])
       lastFetchedSelectionsRef.current = ""
     } catch (err) {
       setSuggestionWorkflow(prev => prev ? { move: prev.move, mainSelections: prev.mainSelections, phase: "error", error: err instanceof Error ? err.message : "Failed to apply suggestion" } : null)
@@ -896,7 +863,53 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
 
 // ── Render suggestions ──────────────────────────────────────────────────────
 
+  const renderSuggestionMovesList = () => (
+    <Box sx={{ px: 1, pt: 1, pb: 0.25 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', px: 0.5, py: 0.625, mb: 0.5 }}>
+        <svg style={{ width: 13, height: 13, color: P.med, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+        </svg>
+        <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.med }}>
+          Suggestion moves
+        </Typography>
+        <Box sx={{ flex: 1, height: '1px', background: P.border }} />
+      </Box>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.625 }}>
+        {suggestionMoves.map((move, idx) => (
+          <Paper key={idx} elevation={0} sx={{
+            display: 'flex', flexDirection: 'column',
+            background: 'white', border: `1px solid ${P.border}`,
+            borderRadius: '10px', overflow: 'hidden',
+            transition: 'box-shadow 0.15s',
+            '&:hover': { boxShadow: '0 2px 8px rgba(139,92,246,0.12)' },
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', p: '6px 6px 6px 8px' }}>
+              <Button onClick={() => void enterSuggestionMode(move)}
+                sx={{
+                  flex: 1, display: 'flex', alignItems: 'center', gap: 1,
+                  p: '7px 10px', fontSize: '0.83rem', fontWeight: 600,
+                  color: P.dark, background: P.bg,
+                  border: `1.5px solid ${P.border}`, borderRadius: '8px',
+                  textTransform: 'none', justifyContent: 'flex-start',
+                  '&:hover': { background: P.light, borderColor: P.bright },
+                }}
+              >
+                <Box sx={{ color: P.bright, display: 'flex', flexShrink: 0 }}>
+                  <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                  </svg>
+                </Box>
+                <Box sx={{ flex: 1, textAlign: 'left' }}>{move.name}</Box>
+              </Button>
+            </Box>
+          </Paper>
+        ))}
+      </Box>
+    </Box>
+  )
+
   const renderMoveSuggestions = () => {
+    // After a move is applied with no selection: show reasoning trace
     if ((status === "idle" || status === "error") && selections.length === 0 && lastMoveReasoning) {
       return (
         <Box sx={{ display: 'flex', flexDirection: 'column', p: 1.5, flex: 1, minHeight: 0, gap: 1 }}>
@@ -921,168 +934,94 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
       )
     }
 
-    if (selections.length === 0 && status !== "loaded") {
-      return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, p: '2.5rem 1.5rem', textAlign: 'center', flex: 1 }}>
-          <svg style={{ width: 32, height: 32, color: '#B0BEC5' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-          </svg>
-          <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, color: '#546E7A', fontFamily: "'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace" }}>No selection</Typography>
-          <Typography sx={{ fontSize: '0.78rem', color: '#90A4AE', maxWidth: 260, lineHeight: 1.5 }}>
-            Click on hypotheses, goals, or sub-expressions to generate suggestions
-          </Typography>
-        </Box>
-      )
+    const proofMovesSection = () => {
+      if (selections.length === 0) {
+        return (
+          <Box sx={{ px: 2, py: 1.5, mt: 0.5 }}>
+            <Typography sx={{ fontSize: '0.75rem', color: '#90A4AE', lineHeight: 1.5 }}>
+              Select a term to see applicable proof moves.
+            </Typography>
+          </Box>
+        )
+      }
+      if (status === "loading") {
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, px: 2, py: 1.5 }}>
+            <SpinnerBox size={16} />
+            <Typography sx={{ color: G.dark, fontSize: '0.8rem', fontWeight: 500 }}>Checking applicable moves…</Typography>
+          </Box>
+        )
+      }
+      if (status === "error") {
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.75, px: 2, py: 1.5 }}>
+            <Typography sx={{ fontSize: '0.8rem', color: '#C62828', fontWeight: 600 }}>Error checking moves</Typography>
+            <Button size="small" variant="outlined" onClick={() => void fetchMoves()}
+              sx={{ color: '#C62828', borderColor: '#FFCDD2', fontSize: '0.75rem', fontWeight: 600, textTransform: 'none', borderRadius: '8px', '&:hover': { background: '#FFF5F5', borderColor: '#E53935' } }}>
+              Retry
+            </Button>
+          </Box>
+        )
+      }
+      if (status === "loaded") {
+        if (applicableMoves.length === 0) {
+          return (
+            <Typography sx={{ px: 2, py: 1.5, fontSize: '0.8rem', color: '#78909C', fontStyle: 'italic' }}>
+              No applicable proof moves for this selection.
+            </Typography>
+          )
+        }
+        const generalIndexed = applicableMoves.map((am, idx) => ({ am, idx })).filter(({ am }) => !logicalMoveNames.has(am.move.name))
+        const logicalIndexed = applicableMoves.map((am, idx) => ({ am, idx })).filter(({ am }) => logicalMoveNames.has(am.move.name))
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', p: 1, pt: 0.5, gap: 0.75 }}>
+            {lastMoveReasoning && (
+              <Accordion disableGutters elevation={0} sx={{
+                borderRadius: '8px !important', background: '#F9FBF2',
+                border: `1px solid ${G.border}`, '&:before': { display: 'none' },
+              }}>
+                <AccordionSummary
+                  expandIcon={<Box sx={{ color: G.med, display: 'flex' }}><ChevronIcon /></Box>}
+                  sx={{ minHeight: 36, px: 1.5, py: 0, '& .MuiAccordionSummary-content': { my: 0.625 } }}
+                >
+                  <Typography sx={{ fontSize: '0.78rem', fontWeight: 600, color: G.med }}>Reasoning from last move</Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ px: 1.5, pb: 1.25, pt: 0 }}>
+                  <Box component="pre" sx={{ fontSize: '0.75rem', color: G.dark, whiteSpace: 'pre-wrap', m: 0, p: 1.25, background: 'white', borderRadius: '6px', border: `1px solid ${G.border}`, lineHeight: 1.55, fontFamily: 'inherit' }}>
+                    {lastMoveReasoning}
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
+            )}
+            {generalIndexed.length > 0 && (
+              <>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', px: 0.5, pt: 0.5 }}>
+                  <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: G.med }}>Proof moves</Typography>
+                  <Box sx={{ flex: 1, height: '1px', background: G.border }} />
+                </Box>
+                {generalIndexed.map(({ am, idx }) => renderMoveCard(am, idx))}
+              </>
+            )}
+            {logicalIndexed.length > 0 && (
+              <>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', px: 0.5, pt: generalIndexed.length > 0 ? 0.5 : 0 }}>
+                  <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: L.med }}>Logical moves</Typography>
+                  <Box sx={{ flex: 1, height: '1px', background: L.border }} />
+                </Box>
+                {logicalIndexed.map(({ am, idx }) => renderMoveCard(am, idx))}
+              </>
+            )}
+          </Box>
+        )
+      }
+      return null
     }
 
-    if (status === "idle") {
-      return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, p: '2rem 1.5rem', textAlign: 'center', flex: 1 }}>
-          <svg style={{ width: 28, height: 28, color: G.bright }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          <Typography sx={{ fontSize: '0.88rem', fontWeight: 600, color: G.dark }}>Generating suggestions…</Typography>
-          <Typography sx={{ fontSize: '0.75rem', color: '#78909C', maxWidth: 260, lineHeight: 1.5 }}>
-            Suggestions will appear automatically when you make a selection
-          </Typography>
-        </Box>
-      )
-    }
-
-    if (status === "loading") {
-      return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, p: '2rem 1.5rem', flex: 1 }}>
-          <SpinnerBox size={24} />
-          <Typography sx={{ color: G.dark, fontSize: '0.85rem', fontWeight: 500 }}>Checking applicable moves…</Typography>
-        </Box>
-      )
-    }
-
-    if (status === "error") {
-      return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, p: '2rem 1.5rem', flex: 1 }}>
-          <svg style={{ width: 28, height: 28, color: '#E53935' }} viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-          </svg>
-          <Typography sx={{ fontSize: '0.85rem', color: '#C62828', fontWeight: 600 }}>Error</Typography>
-          <Typography sx={{ fontSize: '0.78rem', color: '#C62828', textAlign: 'center' }}>{errorMessage}</Typography>
-          <Button size="small" variant="outlined" onClick={() => void fetchMoves()}
-            sx={{ color: '#C62828', borderColor: '#FFCDD2', fontSize: '0.78rem', fontWeight: 600, textTransform: 'none', borderRadius: '8px', '&:hover': { background: '#FFF5F5', borderColor: '#E53935' } }}>
-            Retry
-          </Button>
-        </Box>
-      )
-    }
-
-    // Loaded
     return (
       <>
-        {/* Last move reasoning — collapsed Accordion */}
-        {lastMoveReasoning && (
-          <Accordion disableGutters elevation={0} sx={{
-            mx: 1, mt: 1, borderRadius: '8px !important',
-            background: '#F9FBF2',
-            border: `1px solid ${G.border}`,
-            '&:before': { display: 'none' },
-          }}>
-            <AccordionSummary
-              expandIcon={<Box sx={{ color: G.med, display: 'flex' }}><ChevronIcon /></Box>}
-              sx={{ minHeight: 36, px: 1.5, py: 0, '& .MuiAccordionSummary-content': { my: 0.625 } }}
-            >
-              <Typography sx={{ fontSize: '0.78rem', fontWeight: 600, color: G.med }}>
-                Reasoning from last move
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ px: 1.5, pb: 1.25, pt: 0 }}>
-              <Box component="pre" sx={{
-                fontSize: '0.75rem', color: G.dark, whiteSpace: 'pre-wrap',
-                m: 0, p: 1.25, background: 'white', borderRadius: '6px',
-                border: `1px solid ${G.border}`, lineHeight: 1.55,
-                fontFamily: 'inherit',
-              }}>
-                {lastMoveReasoning}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
-        )}
-
-        {/* Suggestion moves — shown first */}
-        {applicableSuggestionMoves.length > 0 && (
-          <Box sx={{ px: 1, pt: 1, pb: 0.25 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', px: 0.5, py: 0.625, mb: 0.5 }}>
-              <svg style={{ width: 13, height: 13, color: P.med, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-              </svg>
-              <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.med }}>
-                Suggestion Moves
-              </Typography>
-              <Box sx={{ flex: 1, height: '1px', background: P.border }} />
-            </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.625 }}>
-              {applicableSuggestionMoves.map((asm, idx) => (
-                <Paper key={idx} elevation={0} sx={{
-                  display: 'flex', flexDirection: 'column',
-                  background: 'white', border: `1px solid ${P.border}`,
-                  borderRadius: '10px', overflow: 'hidden',
-                  transition: 'box-shadow 0.15s',
-                  '&:hover': { boxShadow: '0 2px 8px rgba(139,92,246,0.12)' },
-                }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', p: '6px 6px 6px 8px' }}>
-                    <Button onClick={() => void enterSuggestionMode(asm)}
-                      sx={{
-                        flex: 1, display: 'flex', alignItems: 'center', gap: 1,
-                        p: '7px 10px', fontSize: '0.83rem', fontWeight: 600,
-                        color: P.dark, background: P.bg,
-                        border: `1.5px solid ${P.border}`, borderRadius: '8px',
-                        textTransform: 'none', justifyContent: 'flex-start',
-                        '&:hover': { background: P.light, borderColor: P.bright },
-                      }}
-                    >
-                      <Box sx={{ color: P.bright, display: 'flex', flexShrink: 0 }}>
-                        <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                        </svg>
-                      </Box>
-                      <Box sx={{ flex: 1, textAlign: 'left' }}>{asm.move.name}</Box>
-                    </Button>
-                  </Box>
-                </Paper>
-              ))}
-            </Box>
-          </Box>
-        )}
-
-        {/* Proof moves (general) and logical moves */}
-        {applicableMoves.length === 0 && applicableSuggestionMoves.length === 0 ? (
-          <Typography sx={{ p: '2.5rem 1.5rem', textAlign: 'center', fontSize: '0.85rem', color: '#78909C', fontStyle: 'italic' }}>
-            No applicable moves for the current selection.
-          </Typography>
-        ) : (() => {
-          const generalIndexed = applicableMoves.map((am, idx) => ({ am, idx })).filter(({ am }) => !logicalMoveNames.has(am.move.name))
-          const logicalIndexed = applicableMoves.map((am, idx) => ({ am, idx })).filter(({ am }) => logicalMoveNames.has(am.move.name))
-          return (
-            <Box sx={{ display: 'flex', flexDirection: 'column', p: 1, pt: 0.5, gap: 0.75 }}>
-              {generalIndexed.length > 0 && (
-                <>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', px: 0.5, pt: 0.5 }}>
-                    <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: G.med }}>Proof moves</Typography>
-                    <Box sx={{ flex: 1, height: '1px', background: G.border }} />
-                  </Box>
-                  {generalIndexed.map(({ am, idx }) => renderMoveCard(am, idx))}
-                </>
-              )}
-              {logicalIndexed.length > 0 && (
-                <>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', px: 0.5, pt: generalIndexed.length > 0 ? 0.5 : 0 }}>
-                    <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: L.med }}>Logical moves</Typography>
-                    <Box sx={{ flex: 1, height: '1px', background: L.border }} />
-                  </Box>
-                  {logicalIndexed.map(({ am, idx }) => renderMoveCard(am, idx))}
-                </>
-              )}
-            </Box>
-          )
-        })()}
+        {renderSuggestionMovesList()}
+        <Box sx={{ mx: 1, my: 0.5, height: '1px', background: '#e8eef4' }} />
+        {proofMovesSection()}
       </>
     )
   }
@@ -1104,7 +1043,7 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
             {suggestionWorkflow
               ? "Suggestions"
               : status === "loaded"
-                ? `${applicableMoves.length} Move${applicableMoves.length !== 1 ? 's' : ''} + ${applicableSuggestionMoves.length} Suggestion Move${applicableSuggestionMoves.length !== 1 ? 's' : ''}`
+                ? `${applicableMoves.length} Move${applicableMoves.length !== 1 ? 's' : ''}`
                 : "Move Suggestions"}
           </Typography>
         </Box>
@@ -1124,41 +1063,6 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
         </Box>
       </Box>
 
-      {/* Filter bar — hidden while suggestion workflow is open */}
-      {!suggestionWorkflow && (
-        <Box sx={{
-          display: 'flex', alignItems: 'center', gap: 0.625,
-          px: 1.5, py: 0.625, flexShrink: 0,
-          borderBottom: '1px solid #e8eef4',
-          background: '#f8fafb',
-        }}>
-          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#90A4AE', mr: 0.25 }}>
-            Show
-          </Typography>
-          {([
-            { key: "suggestion" as MoveCategory, label: "Suggestion moves", active: P, inactive: { bg: 'white', border: '#e0e0e0', text: '#90A4AE', hover: '#faf5ff' } },
-            { key: "general"    as MoveCategory, label: "General moves", active: G, inactive: { bg: 'white', border: '#e0e0e0', text: '#90A4AE', hover: '#f6fbf9' } },
-            { key: "logical"    as MoveCategory, label: "Logical moves",     active: L, inactive: { bg: 'white', border: '#e0e0e0', text: '#90A4AE', hover: '#f9fafb' } },
-          ] as const).map(({ key, label, active, inactive }) => {
-            const on = enabledCategories.has(key)
-            return (
-              <Chip key={key} label={label} size="small" onClick={() => toggleCategory(key)}
-                sx={{
-                  height: 20, fontSize: '0.65rem', fontWeight: on ? 700 : 500,
-                  cursor: 'pointer',
-                  background: on ? active.bg : inactive.bg,
-                  color: on ? active.dark : inactive.text,
-                  border: `1px solid ${on ? active.border : inactive.border}`,
-                  borderRadius: '10px',
-                  transition: 'background 0.12s, border-color 0.12s',
-                  '& .MuiChip-label': { px: '7px' },
-                  '&:hover': { background: on ? (active as any).light ?? active.bg : inactive.hover, borderColor: on ? active.bright : '#bdbdbd' },
-                }}
-              />
-            )
-          })}
-        </Box>
-      )}
 
       {/* Scrollable suggestions / suggestion workflow */}
       <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
