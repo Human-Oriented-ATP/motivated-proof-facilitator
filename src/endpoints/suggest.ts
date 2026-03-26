@@ -15,6 +15,8 @@ You are required to produce a list of statements related to the selections, foll
 
 Please keep the suggestions simple, precise, structured, direct and relevant, avoiding wordy phrasing.
 Do not introduce any concept or terminology that is not already present in the selections or variable context.
+Prefer generating structured statements composed of simpler sentences with logical connectives over
+long and convoluted atomic statements.
 
 In some cases, you may be required to output a statement that is relevant to the selections,
 along with a general theorem statement that relates the two.
