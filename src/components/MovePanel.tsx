@@ -14,7 +14,7 @@ import { ProofStateWithLibraryResult as ProofStateComponent } from "./ProofState
 import { MathStatement } from "./MathStatement"
 import { runMove } from "../fetchers/move"
 import MoveGenerator from "../../tests/MoveGenerator"
-import { moves, suggestionMoves, logicalMoves } from "../prompts/AllMoves"
+import { moves, suggestionMoves, logicalMoves, generalMoves } from "../prompts/AllMoves"
 import { checkMoveValidity, FilterResponse } from "../fetchers/filter"
 import { suggestStatements, SuggestResult, SuggestResults } from "../fetchers/suggest"
 
@@ -22,10 +22,11 @@ import { suggestStatements, SuggestResult, SuggestResults } from "../fetchers/su
 export async function getApplicableMoves(
   proofDiscoveryState: ProofDiscoveryState,
   selections: ProofStateSelection[],
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  movesToCheck: ProofDiscoveryMove[] = moves
 ): Promise<{ move: ProofDiscoveryMove, filterResponse: FilterResponse }[]> {
   const results = await Promise.all(
-    moves.map(async (move) => {
+    movesToCheck.map(async (move) => {
       try {
         const filterResponse = await checkMoveValidity({ 
           proofState: getCurrentProofState(proofDiscoveryState), 
@@ -258,6 +259,7 @@ const SpinnerBox = ({ size = 20, trackColor, spinColor }: { size?: number, track
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 type MovePanelStatus = "idle" | "loading" | "loaded" | "error"
+type MoveCategory = "suggestion" | "general" | "logical"
 type ApplicableMove = { move: ProofDiscoveryMove, filterResponse: FilterResponse }
 type ApplicableSuggestionMove = { move: ProofDiscoverySuggestionMove, filterResponse: FilterResponse }
 
@@ -419,11 +421,14 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
   const [applicableSuggestionMoves, setApplicableSuggestionMoves] = useState<ApplicableSuggestionMove[]>([])
   const [suggestionWorkflow, setSuggestionWorkflow] = useState<SuggestionWorkflow | null>(null)
   const [expandedGeneralResults, setExpandedGeneralResults] = useState<Set<number>>(new Set())
+  const [enabledCategories, setEnabledCategories] = useState<Set<MoveCategory>>(new Set(["suggestion"]))
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const lastFetchedSelectionsRef = useRef<string>("")
   const lastGraphOrderRef = useRef<number>(proofDiscoveryState.graph.order)
+  const enabledCategoriesRef = useRef<Set<MoveCategory>>(enabledCategories)
+  enabledCategoriesRef.current = enabledCategories
 
   const selectionsKey = JSON.stringify(selections)
 
@@ -459,6 +464,14 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
     setApplicableSuggestionMoves([])
     lastFetchedSelectionsRef.current = ""
   }, [customInputActive])
+
+  // Re-fetch when enabled categories change while selections are present
+  useEffect(() => {
+    if (selections.length > 0 && suggestionWorkflow === null && !customInputActive) {
+      void fetchMoves()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabledCategories])
 
   // Debounce auto-fetch on selection change (skip while in suggestion workflow or custom input active)
   useEffect(() => {
@@ -497,9 +510,18 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
     setExpandedExamples(new Set())
     setInfoIndex(null)
     try {
+      const cats = enabledCategoriesRef.current
+      const movesToCheck = [
+        ...(cats.has("general") ? generalMoves : []),
+        ...(cats.has("logical") ? logicalMoves : []),
+      ]
       const [regularMoves, suggestMoves] = await Promise.all([
-        getApplicableMoves(proofDiscoveryState, selections, controller.signal),
-        getApplicableSuggestionMoves(proofDiscoveryState, selections, controller.signal),
+        movesToCheck.length > 0
+          ? getApplicableMoves(proofDiscoveryState, selections, controller.signal, movesToCheck)
+          : Promise.resolve([]),
+        cats.has("suggestion")
+          ? getApplicableSuggestionMoves(proofDiscoveryState, selections, controller.signal)
+          : Promise.resolve([]),
       ])
       setApplicableMoves(regularMoves)
       setApplicableSuggestionMoves(suggestMoves)
@@ -540,6 +562,9 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
   }
   const toggleExamples = (idx: number) => {
     setExpandedExamples(prev => { const n = new Set(prev); n.has(idx) ? n.delete(idx) : n.add(idx); return n })
+  }
+  const toggleCategory = (cat: MoveCategory) => {
+    setEnabledCategories(prev => { const n = new Set(prev); n.has(cat) ? n.delete(cat) : n.add(cat); return n })
   }
 
   const logicalMoveNames = new Set(logicalMoves.map(m => m.name))
@@ -1098,6 +1123,42 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
           </Tooltip>
         </Box>
       </Box>
+
+      {/* Filter bar — hidden while suggestion workflow is open */}
+      {!suggestionWorkflow && (
+        <Box sx={{
+          display: 'flex', alignItems: 'center', gap: 0.625,
+          px: 1.5, py: 0.625, flexShrink: 0,
+          borderBottom: '1px solid #e8eef4',
+          background: '#f8fafb',
+        }}>
+          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#90A4AE', mr: 0.25 }}>
+            Show
+          </Typography>
+          {([
+            { key: "suggestion" as MoveCategory, label: "Suggestion moves", active: P, inactive: { bg: 'white', border: '#e0e0e0', text: '#90A4AE', hover: '#faf5ff' } },
+            { key: "general"    as MoveCategory, label: "General moves", active: G, inactive: { bg: 'white', border: '#e0e0e0', text: '#90A4AE', hover: '#f6fbf9' } },
+            { key: "logical"    as MoveCategory, label: "Logical moves",     active: L, inactive: { bg: 'white', border: '#e0e0e0', text: '#90A4AE', hover: '#f9fafb' } },
+          ] as const).map(({ key, label, active, inactive }) => {
+            const on = enabledCategories.has(key)
+            return (
+              <Chip key={key} label={label} size="small" onClick={() => toggleCategory(key)}
+                sx={{
+                  height: 20, fontSize: '0.65rem', fontWeight: on ? 700 : 500,
+                  cursor: 'pointer',
+                  background: on ? active.bg : inactive.bg,
+                  color: on ? active.dark : inactive.text,
+                  border: `1px solid ${on ? active.border : inactive.border}`,
+                  borderRadius: '10px',
+                  transition: 'background 0.12s, border-color 0.12s',
+                  '& .MuiChip-label': { px: '7px' },
+                  '&:hover': { background: on ? (active as any).light ?? active.bg : inactive.hover, borderColor: on ? active.bright : '#bdbdbd' },
+                }}
+              />
+            )
+          })}
+        </Box>
+      )}
 
       {/* Scrollable suggestions / suggestion workflow */}
       <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
