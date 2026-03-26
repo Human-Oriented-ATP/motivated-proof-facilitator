@@ -1,6 +1,6 @@
 import { generateText, Output } from "ai"
-import { MODELS } from "./models"
-import { MoveRequest, MoveResponseSchema } from "../fetchers/move"
+import { MODELS } from "./models.js"
+import { MoveRequest, MoveResponseSchema } from "../fetchers/move.js"
 
 const MOVE_PROMPT =
 `

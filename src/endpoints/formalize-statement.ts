@@ -1,6 +1,6 @@
 import { generateText, Output } from "ai"
-import { MODELS } from "./models";
-import { LabelledStatementSchema, ProofState } from "../core/ProofStateZod";
+import { MODELS } from "./models.js"
+import { LabelledStatementSchema, ProofState } from "../core/ProofStateZod.js"
 
 const FORMALIZE_STATEMENT_PROMPT: string = 
 `

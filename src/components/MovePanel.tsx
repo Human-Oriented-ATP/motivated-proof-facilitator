@@ -402,11 +402,12 @@ function ExamplePreview({ example, idx }: { example: ProofDiscoveryMoveExample, 
 
 // ─── Move Panel Component ─────────────────────────────────────────────────────
 
-function MovePanelContent(): JSX.Element {
+function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: boolean) => void }): JSX.Element {
   const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
   const { selections, dispatch: dispatchSelections } = useContext(ProofStateSelectionContext)
 
   const [status, setStatus] = useState<MovePanelStatus>("idle")
+  const [customInputActive, setCustomInputActive] = useState(false)
   const [applicableMoves, setApplicableMoves] = useState<ApplicableMove[]>([])
   const [errorMessage, setErrorMessage] = useState("")
   const [expandedReasoning, setExpandedReasoning] = useState<Set<number>>(new Set())
@@ -442,9 +443,27 @@ function MovePanelContent(): JSX.Element {
     }
   }, [proofDiscoveryState.graph.order])
 
-  // Debounce auto-fetch on selection change (skip while in suggestion workflow)
+  // Notify parent when loading state changes
+  useEffect(() => {
+    onLoadingChange?.(status === "loading")
+  }, [status, onLoadingChange])
+
+  // Abort in-flight suggestion fetch when user starts typing in the custom move box
+  useEffect(() => {
+    if (!customInputActive) return
+    abortControllerRef.current?.abort()
+    abortControllerRef.current = null
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    setStatus("idle")
+    setApplicableMoves([])
+    setApplicableSuggestionMoves([])
+    lastFetchedSelectionsRef.current = ""
+  }, [customInputActive])
+
+  // Debounce auto-fetch on selection change (skip while in suggestion workflow or custom input active)
   useEffect(() => {
     if (suggestionWorkflow !== null) return
+    if (customInputActive) return
     if (selectionsKey !== lastFetchedSelectionsRef.current) {
       if (debounceRef.current) clearTimeout(debounceRef.current)
       if (selections.length > 0) {
@@ -464,7 +483,7 @@ function MovePanelContent(): JSX.Element {
     }
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectionsKey, suggestionWorkflow])
+  }, [selectionsKey, suggestionWorkflow, customInputActive])
 
   const fetchMoves = useCallback(async () => {
     // Cancel any in-flight request
@@ -665,13 +684,32 @@ function MovePanelContent(): JSX.Element {
   const renderSuggestionWorkflow = () => {
     if (!suggestionWorkflow) return null
     const { move, mainSelections, phase } = suggestionWorkflow
-    const additionalCount = getAdditionalSelections(mainSelections).length
+    const additionalSelections = getAdditionalSelections(mainSelections)
+
+    const selectionStatement = (s: ProofStateSelection): Statement =>
+      typeof s.selection !== 'string' && 'text' in s.selection
+        ? `$${s.selection.text}$`
+        : s.selection as Statement
+
+    const renderSelectionCard = (s: ProofStateSelection, i: number) => {
+      const locLabel = s.location.kind === 'goal' ? 'Goal' : (s.location.label ?? s.location.kind)
+      return (
+        <Box key={i} sx={{ background: P.light, border: `1px solid ${P.border}`, borderRadius: '6px', px: 0.875, py: 0.375 }}>
+          <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: P.med, mb: 0.25 }}>{locLabel}</Typography>
+          <Box sx={{ fontSize: '0.8rem', lineHeight: 1.4 }}><StaticStatement statement={selectionStatement(s)} /></Box>
+        </Box>
+      )
+    }
+
+    const exitWorkflow = () => { setSuggestionWorkflow(null); dispatchSelections({ type: 'SET_SELECTIONS', selections: mainSelections }) }
+    const backToSelecting = () => setSuggestionWorkflow({ move, mainSelections, phase: "ready" })
+    const onBack = phase === "ready" ? exitWorkflow : backToSelecting
 
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, px: 1.5, py: 0.875, borderBottom: `1px solid ${P.border}`, background: P.bg, flexShrink: 0 }}>
-          <IconButton size="small" onClick={() => setSuggestionWorkflow(null)}
+          <IconButton size="small" onClick={onBack}
             sx={{ width: 28, height: 28, borderRadius: '7px', border: `1px solid ${P.border}`, color: P.med, background: 'white', flexShrink: 0, '&:hover': { background: P.light } }}>
             <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
@@ -680,42 +718,32 @@ function MovePanelContent(): JSX.Element {
           <Typography sx={{ flex: 1, fontSize: '0.75rem', fontWeight: 700, color: P.dark, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {move.name}
           </Typography>
-          <Tooltip title={additionalCount > 0 ? `Refresh with ${additionalCount} additional selection${additionalCount !== 1 ? 's' : ''}` : "Refresh suggestions"}>
-            <span>
-              <IconButton size="small" onClick={() => void refreshSuggestions()}
-                disabled={phase === "loading" || phase === "applying"}
-                sx={{ width: 28, height: 28, borderRadius: '7px', border: `1px solid ${P.border}`, color: P.med, background: 'white', flexShrink: 0, '&:hover': { background: P.light }, '&:disabled': { opacity: 0.4 } }}>
-                <RefreshIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
         </Box>
 
-        {/* Additional context banner */}
-        {additionalCount > 0 && (
-          <Box sx={{ px: 1.5, py: 0.75, background: P.bg, borderBottom: `1px solid ${P.border}`, flexShrink: 0 }}>
-            <Typography sx={{ fontSize: '0.7rem', color: P.med, fontStyle: 'italic' }}>
-              {additionalCount} additional context selection{additionalCount !== 1 ? 's' : ''} — refresh to include them
-            </Typography>
-          </Box>
-        )}
-
-        {/* Suggestions */}
+        {/* Content */}
         <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
           {phase === "ready" && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, p: '2rem 1.5rem', textAlign: 'center' }}>
-              <svg style={{ width: 28, height: 28, color: P.bright }} viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-              </svg>
-              <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: P.dark }}>
-                {move.name}
-              </Typography>
-              <Typography sx={{ fontSize: '0.75rem', color: P.med, maxWidth: 240, lineHeight: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', p: '1.25rem 1.5rem', gap: 1.25 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.med }}>
+                  Main selections
+                </Typography>
+                {mainSelections.map((s, i) => renderSelectionCard(s, i))}
+              </Box>
+              <Typography sx={{ fontSize: '0.75rem', color: P.med, lineHeight: 1.5 }}>
                 Select any additional context in the proof state, then generate suggestions.
               </Typography>
+              {additionalSelections.length > 0 && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.med }}>
+                    Additional context
+                  </Typography>
+                  {additionalSelections.map((s, i) => renderSelectionCard(s, i))}
+                </Box>
+              )}
               <Button onClick={() => void refreshSuggestions()}
                 sx={{
-                  mt: 0.5, px: 2, py: 0.875, fontSize: '0.82rem', fontWeight: 700,
+                  alignSelf: 'flex-start', px: 2, py: 0.875, fontSize: '0.82rem', fontWeight: 700,
                   color: 'white', background: P.med, borderRadius: '20px',
                   textTransform: 'none', border: `1.5px solid ${P.bright}`,
                   '&:hover': { background: P.dark },
@@ -753,7 +781,6 @@ function MovePanelContent(): JSX.Element {
               ) : suggestionWorkflow.results.suggestions.map((result, idx) => {
                 const isApplying = phase === "applying" && suggestionWorkflow.applyingIdx === idx
                 const isDisabled = phase === "applying"
-                // Collapse generalResult by default when suggestion is also present
                 const hasBoth = result.suggestion !== null && result.generalResult !== null
                 const isGeneralExpanded = expandedGeneralResults.has(idx)
                 const toggleGeneral = () => setExpandedGeneralResults(prev => {
@@ -962,7 +989,7 @@ function MovePanelContent(): JSX.Element {
                 <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
               </svg>
               <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.med }}>
-                Find library results
+                Suggestion Moves
               </Typography>
               <Box sx={{ flex: 1, height: '1px', background: P.border }} />
             </Box>
@@ -1079,7 +1106,7 @@ function MovePanelContent(): JSX.Element {
 
       {/* Custom move section */}
       <Box sx={{ flexShrink: 0 }}>
-        <CustomMoveSection />
+        <CustomMoveSection onHasText={setCustomInputActive} />
       </Box>
 
       {/* All moves modal */}
@@ -1115,7 +1142,7 @@ function MovePanelContent(): JSX.Element {
 
 // ─── Custom Move Section ──────────────────────────────────────────────────────
 
-function CustomMoveSection(): JSX.Element {
+function CustomMoveSection({ onHasText }: { onHasText?: (hasText: boolean) => void }): JSX.Element {
   const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
   const { selections, dispatch: dispatchSelections } = useContext(ProofStateSelectionContext)
   const [description, setDescription] = useState("")
@@ -1137,6 +1164,7 @@ function CustomMoveSection(): JSX.Element {
     try {
       await applyMove(proofDiscoveryState, selections, customMove, dispatchProofDiscoveryAction, dispatchSelections)
       setDescription("")
+      onHasText?.(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to apply move")
     } finally {
@@ -1175,7 +1203,10 @@ function CustomMoveSection(): JSX.Element {
       <Box
         component="textarea"
         value={description}
-        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+          setDescription(e.target.value)
+          onHasText?.(e.target.value.trim().length > 0)
+        }}
         placeholder="Describe a move to apply..."
         rows={2}
         sx={{
@@ -1517,6 +1548,6 @@ function AllMovesList(): JSX.Element {
 
 // ─── Public Move Panel ────────────────────────────────────────────────────────
 
-export function MovePanel(): JSX.Element {
-  return <MovePanelContent />
+export function MovePanel({ onLoadingChange }: { onLoadingChange?: (isLoading: boolean) => void }): JSX.Element {
+  return <MovePanelContent onLoadingChange={onLoadingChange} />
 }

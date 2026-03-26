@@ -1,6 +1,6 @@
 import { generateText, Output } from "ai"
-import { SuggestRequest, SuggestResultsSchema } from "../fetchers/suggest"
-import { MODELS } from "./models"
+import { SuggestRequest, SuggestResultsSchema } from "../fetchers/suggest.js"
+import { MODELS } from "./models.js"
 
 const SUGGEST_PROMPT = 
 `
@@ -13,54 +13,9 @@ You may consult the list of variables to properly interpret the selections.
 
 You are required to produce a list of statements related to the selections, following the instructions provided.
 
-Here is the definition of the statement datastructure:
+Please keep the suggestions simple, direct and relevant, avoiding wordy phrasing.
 
-\`\`\`
-{
-label: "A label for the statement. This should be a short string written in snake case that uniquely identifies the statement.",
-statement: "A statement (see format details below)"
-}
-
-/** A basic statement within the proof state
- *  written in natural language interspersed with [Typst](https://typst.app/) formulas
- *  enclosed within dollar quotes ($ ... $).
- * 
- * Examples are:
- * - "The function $f$ is injective"
- * - "The group $G$ is abelian"
- * - "$x^2 + 1$ is an irreducible polynomial over $RR$"
- */
-type AtomicStatement = string
-
-/** A variable in the proof state.
- *  The description contains the type information of the variable.
- * 
- * Examples are:
- * - { name: "n", description: "$NN$" }
- * - { name: "G", description: "Group" }
- * - { name: "f", description: "$A -> B$" }
- */
-type Variable = {
-name: string
-description: AtomicStatement
-}
-
-/** A full statement involving multiple atomic statements joined by logical connectives. */
-type Statement =
-| AtomicStatement
-| { kind: "conjunction"; statements: Statement[] }
-| { kind: "disjunction"; statements: Statement[] }
-| { kind: "negation"   ; statement: Statement }
-| { kind: "implication"; antecedent: Statement; consequent: Statement }
-| { kind: "equivalence"; left: Statement; right: Statement }
-| { kind: "universal"  ; variable: Variable; statement: Statement }
-| { kind: "existential"; variable: Variable; statement: Statement }
-| { kind: "highlight"; statement: Statement }
-
-\`\`\`
-
-In some cases, you may be required to produce only atomic statements, which are
-essentially plain strings that can include mathematical notation in Typst.
+Include general library results only if the statement suggested is non-trivially related to the selections, and omit them otherwise. 
 
 In some cases, you may be required to output a statement that is relevant to the selections,
 along with a general theorem statement that relates the two.

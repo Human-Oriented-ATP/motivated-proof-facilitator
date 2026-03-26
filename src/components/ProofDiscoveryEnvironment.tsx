@@ -175,6 +175,11 @@ export function ProofDiscoveryEnvironment({
     }
   }, [proofDiscoveryState])
 
+  // Expand the graph whenever the current proof state changes
+  useEffect(() => {
+    setIsGraphExpanded(true)
+  }, [proofDiscoveryState.currentNodeId])
+
   const currentProofState = proofDiscoveryState.graph.getNodeAttribute(proofDiscoveryState.currentNodeId, 'proofState')
 
   const handleCopyProofState = () => {
@@ -519,7 +524,7 @@ export function ProofDiscoveryEnvironment({
         }}>
           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
             <ProofDiscoveryStateContext.Provider value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}>
-              <MovePanel />
+              <MovePanel onLoadingChange={(isLoading) => { if (isLoading) setIsGraphExpanded(false) }} />
             </ProofDiscoveryStateContext.Provider>
           </Box>
         </Box>
