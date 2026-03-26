@@ -1,6 +1,6 @@
 import { generateText, Output } from "ai"
-import { MODELS } from "./models"
-import { FilterRequest, FilterResponseSchema } from "../fetchers/filter"
+import { MODELS } from "./models.js"
+import { FilterRequest, FilterResponseSchema } from "../fetchers/filter.js"
 
 const FILTER_PROMPT = `
 You are a mathematical reasoning filter that determines whether a given proof state and selections meet a specific trigger criterion.

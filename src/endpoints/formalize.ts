@@ -1,6 +1,6 @@
 import { generateText, Output } from "ai"
-import { MODELS } from "./models"
-import { BundledProofStateSchema } from "../core/ProofStateZod"
+import { MODELS } from "./models.js"
+import { BundledProofStateSchema } from "../core/ProofStateZod.js"
 
 const FORMALIZE_PROMPT = 
 `You are a mathematical formalization agent. Your task is to convert natural language mathematical statements into structured ProofState objects that can be operated on programmatically.

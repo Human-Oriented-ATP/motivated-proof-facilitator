@@ -1,6 +1,6 @@
 import { generateText } from "ai"
-import { MODELS } from "./models"
-import { ProofState } from "../core/ProofStateZod"
+import { MODELS } from "./models.js"
+import { ProofState } from "../core/ProofStateZod.js"
 
 const INFORMALIZE_PROMPT = 
   `

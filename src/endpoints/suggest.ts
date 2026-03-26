@@ -1,6 +1,6 @@
 import { generateText, Output } from "ai"
-import { SuggestRequest, SuggestResultsSchema } from "../fetchers/suggest"
-import { MODELS } from "./models"
+import { SuggestRequest, SuggestResultsSchema } from "../fetchers/suggest.js"
+import { MODELS } from "./models.js"
 
 const SUGGEST_PROMPT = 
 `
