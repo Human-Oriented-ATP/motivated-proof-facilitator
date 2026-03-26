@@ -589,7 +589,7 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
             <Typography sx={{ fontSize: '0.78rem', mb: 0.5 }}><strong>Kind:</strong> <MoveKindBadge kind={am.move.kind} /></Typography>
             <Typography sx={{ fontSize: '0.78rem', mb: 0.5, lineHeight: 1.5, wordBreak: 'break-word' }}><strong>Trigger:</strong> {am.move.trigger}</Typography>
             <Typography sx={{ fontSize: '0.78rem', mb: 0.5, lineHeight: 1.5, wordBreak: 'break-word' }}><strong>Action:</strong> {am.move.action}</Typography>
-            {am.move.examples.length > 0 && (
+            {am.move.examples && am.move.examples.length > 0 && (
               <>
                 <Button size="small" onClick={() => toggleExamples(idx)}
                   endIcon={<Box sx={{ display: 'flex', transition: 'transform 0.2s', transform: expandedExamples.has(idx) ? 'rotate(180deg)' : 'rotate(0deg)' }}><ChevronIcon /></Box>}
@@ -1451,7 +1451,7 @@ function AllMovesList(): JSX.Element {
                   </Box>
                 )}
 
-                {selected.examples.length > 0 && (
+                {selected.examples && selected.examples.length > 0 && (
                   <>
                     <Button
                       size="small"

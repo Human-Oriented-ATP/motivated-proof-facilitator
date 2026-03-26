@@ -28,7 +28,7 @@ export interface ProofDiscoveryMove {
     trigger: string
     /** The action specifies how the move is supposed to transform the proof state. */
     action: string
-    examples: ProofDiscoveryMoveExample[]
+    examples?: ProofDiscoveryMoveExample[]
 }
 
 /**
