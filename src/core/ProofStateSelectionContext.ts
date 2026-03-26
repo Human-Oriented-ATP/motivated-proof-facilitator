@@ -121,6 +121,9 @@ type ProofStateSelectionAction = {
 } | {
     type: 'CLEAR_PROOF_STATE_SELECTIONS'
     proofStateId: ProofStateId
+} | {
+    type: 'SET_SELECTIONS'
+    selections: ProofStateSelection[]
 }
 
 export function proofStateSelectionReducer(state: ProofStateSelection[], action: ProofStateSelectionAction): ProofStateSelection[] {
@@ -139,6 +142,9 @@ export function proofStateSelectionReducer(state: ProofStateSelection[], action:
         }
         case 'CLEAR_ALL_SELECTIONS': {
             return []
+        }
+        case 'SET_SELECTIONS': {
+            return action.selections
         }
         case 'CLEAR_PROOF_STATE_SELECTIONS': {
             return state.filter(s => !areProofStateIdsEqual(s.proofStateId, action.proofStateId))
