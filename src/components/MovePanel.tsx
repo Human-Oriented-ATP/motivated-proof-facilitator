@@ -234,7 +234,7 @@ const RefreshIcon = () => (
   </svg>
 )
 
-const SpinnerBox = ({ size = 20 }: { size?: number }) => {
+const SpinnerBox = ({ size = 20, trackColor, spinColor }: { size?: number, trackColor?: string, spinColor?: string }) => {
   useEffect(() => {
     const id = "move-panel-spin"
     if (!document.getElementById(id)) {
@@ -247,8 +247,8 @@ const SpinnerBox = ({ size = 20 }: { size?: number }) => {
   return (
     <Box sx={{
       width: size, height: size, flexShrink: 0,
-      border: `2.5px solid ${G.border}`,
-      borderTopColor: G.bright,
+      border: `2.5px solid ${trackColor ?? G.border}`,
+      borderTopColor: spinColor ?? G.bright,
       borderRadius: '50%',
       animation: 'move-panel-spin 0.8s linear infinite',
     }} />
@@ -265,6 +265,7 @@ type SuggestionWorkflow = {
   move: ProofDiscoverySuggestionMove
   mainSelections: ProofStateSelection[]
 } & (
+  | { phase: "ready" }
   | { phase: "loading" }
   | { phase: "loaded"; results: SuggestResults }
   | { phase: "applying"; results: SuggestResults; applyingIdx: number }
@@ -416,6 +417,7 @@ function MovePanelContent(): JSX.Element {
   const [lastMoveReasoning, setLastMoveReasoning] = useState<string | null>(null)
   const [applicableSuggestionMoves, setApplicableSuggestionMoves] = useState<ApplicableSuggestionMove[]>([])
   const [suggestionWorkflow, setSuggestionWorkflow] = useState<SuggestionWorkflow | null>(null)
+  const [expandedGeneralResults, setExpandedGeneralResults] = useState<Set<number>>(new Set())
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -619,15 +621,9 @@ function MovePanelContent(): JSX.Element {
     return selections.filter(s => !mainKeys.has(JSON.stringify(s)))
   }
 
-  const enterSuggestionMode = async (asm: ApplicableSuggestionMove) => {
+  const enterSuggestionMode = (asm: ApplicableSuggestionMove) => {
     const mainSelections = [...selections]
-    setSuggestionWorkflow({ move: asm.move, mainSelections, phase: "loading" })
-    try {
-      const results = await fetchSuggestions(proofDiscoveryState, asm.move, mainSelections, [])
-      setSuggestionWorkflow(prev => prev ? { move: prev.move, mainSelections: prev.mainSelections, phase: "loaded", results } : null)
-    } catch (err) {
-      setSuggestionWorkflow(prev => prev ? { move: prev.move, mainSelections: prev.mainSelections, phase: "error", error: err instanceof Error ? err.message : "Failed to fetch suggestions" } : null)
-    }
+    setSuggestionWorkflow({ move: asm.move, mainSelections, phase: "ready" })
   }
 
   const refreshSuggestions = async () => {
@@ -635,6 +631,7 @@ function MovePanelContent(): JSX.Element {
     const { move, mainSelections } = suggestionWorkflow
     const additional = getAdditionalSelections(mainSelections)
     setSuggestionWorkflow({ move, mainSelections, phase: "loading" })
+    setExpandedGeneralResults(new Set())
     try {
       const results = await fetchSuggestions(proofDiscoveryState, move, mainSelections, additional)
       setSuggestionWorkflow({ move, mainSelections, phase: "loaded", results })
@@ -705,9 +702,33 @@ function MovePanelContent(): JSX.Element {
 
         {/* Suggestions */}
         <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+          {phase === "ready" && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, p: '2rem 1.5rem', textAlign: 'center' }}>
+              <svg style={{ width: 28, height: 28, color: P.bright }} viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+              </svg>
+              <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: P.dark }}>
+                {move.name}
+              </Typography>
+              <Typography sx={{ fontSize: '0.75rem', color: P.med, maxWidth: 240, lineHeight: 1.5 }}>
+                Select any additional context in the proof state, then generate suggestions.
+              </Typography>
+              <Button onClick={() => void refreshSuggestions()}
+                sx={{
+                  mt: 0.5, px: 2, py: 0.875, fontSize: '0.82rem', fontWeight: 700,
+                  color: 'white', background: P.med, borderRadius: '20px',
+                  textTransform: 'none', border: `1.5px solid ${P.bright}`,
+                  '&:hover': { background: P.dark },
+                }}
+              >
+                Generate suggestions
+              </Button>
+            </Box>
+          )}
+
           {phase === "loading" && (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, p: '2rem 1.5rem' }}>
-              <SpinnerBox size={24} />
+              <SpinnerBox size={24} trackColor={P.border} spinColor={P.bright} />
               <Typography sx={{ color: P.dark, fontSize: '0.85rem', fontWeight: 500 }}>Fetching suggestions…</Typography>
             </Box>
           )}
@@ -732,6 +753,12 @@ function MovePanelContent(): JSX.Element {
               ) : suggestionWorkflow.results.suggestions.map((result, idx) => {
                 const isApplying = phase === "applying" && suggestionWorkflow.applyingIdx === idx
                 const isDisabled = phase === "applying"
+                // Collapse generalResult by default when suggestion is also present
+                const hasBoth = result.suggestion !== null && result.generalResult !== null
+                const isGeneralExpanded = expandedGeneralResults.has(idx)
+                const toggleGeneral = () => setExpandedGeneralResults(prev => {
+                  const n = new Set(prev); n.has(idx) ? n.delete(idx) : n.add(idx); return n
+                })
                 return (
                   <Paper key={idx} elevation={0} sx={{
                     display: 'flex', flexDirection: 'column',
@@ -749,22 +776,45 @@ function MovePanelContent(): JSX.Element {
                         </Box>
                       )}
                       {result.generalResult !== null && (
-                        <Box sx={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: '7px', p: '7px 10px' }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.375 }}>
-                            <svg style={{ width: 12, height: 12, color: P.med, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
+                        hasBoth && !isGeneralExpanded ? (
+                          <Button size="small" onClick={toggleGeneral}
+                            endIcon={<Box sx={{ display: 'flex' }}><ChevronIcon /></Box>}
+                            sx={{
+                              alignSelf: 'flex-start', fontSize: '0.7rem', fontWeight: 600, textTransform: 'none',
+                              color: P.med, background: P.bg, border: `1px solid ${P.border}`,
+                              borderRadius: '6px', px: 1, py: 0.375,
+                              '&:hover': { background: P.light, borderColor: P.bright },
+                            }}
+                          >
+                            <svg style={{ width: 11, height: 11, marginRight: 4, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
                               <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                             </svg>
-                            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: P.med }}>
-                              General result — saved to library
+                            General result
+                          </Button>
+                        ) : (
+                          <Box sx={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: '7px', p: '7px 10px' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.375 }}>
+                              <svg style={{ width: 12, height: 12, color: P.med, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                              </svg>
+                              <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: P.med, flex: 1 }}>
+                                General result — saved to library
+                              </Typography>
+                              {hasBoth && (
+                                <IconButton size="small" onClick={toggleGeneral}
+                                  sx={{ width: 18, height: 18, p: 0, color: P.med, '&:hover': { color: P.dark } }}>
+                                  <ChevronIcon rotated />
+                                </IconButton>
+                              )}
+                            </Box>
+                            <Typography sx={{ fontSize: '0.7rem', color: P.dark, fontWeight: 600, mb: 0.375 }}>
+                              {result.generalResult.label}
                             </Typography>
+                            <Box sx={{ fontSize: '0.8rem', lineHeight: 1.5 }}>
+                              <StaticStatement statement={result.generalResult.statement} />
+                            </Box>
                           </Box>
-                          <Typography sx={{ fontSize: '0.7rem', color: P.dark, fontWeight: 600, mb: 0.375 }}>
-                            {result.generalResult.label}
-                          </Typography>
-                          <Box sx={{ fontSize: '0.8rem', lineHeight: 1.5 }}>
-                            <StaticStatement statement={result.generalResult.statement} />
-                          </Box>
-                        </Box>
+                        )
                       )}
                     </Box>
                     <Box sx={{ borderTop: `1px solid ${P.border}`, p: '6px 8px', display: 'flex', justifyContent: 'flex-end' }}>
@@ -778,7 +828,7 @@ function MovePanelContent(): JSX.Element {
                           '&:disabled': { opacity: 0.5 },
                         }}
                       >
-                        {isApplying ? <SpinnerBox size={12} /> : <PlayIcon />}
+                        {isApplying ? <SpinnerBox size={12} trackColor={P.border} spinColor={P.bright} /> : <PlayIcon />}
                         Apply
                       </Button>
                     </Box>
@@ -918,23 +968,33 @@ function MovePanelContent(): JSX.Element {
             </Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.625 }}>
               {applicableSuggestionMoves.map((asm, idx) => (
-                <Button key={idx} onClick={() => void enterSuggestionMode(asm)}
-                  sx={{
-                    display: 'flex', alignItems: 'center', gap: 1,
-                    p: '7px 10px', fontSize: '0.83rem', fontWeight: 600,
-                    color: P.dark, background: P.bg,
-                    border: `1.5px solid ${P.border}`, borderRadius: '8px',
-                    textTransform: 'none', justifyContent: 'flex-start', width: '100%',
-                    '&:hover': { background: P.light, borderColor: P.bright },
-                  }}
-                >
-                  <Box sx={{ color: P.bright, display: 'flex', flexShrink: 0 }}>
-                    <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                    </svg>
+                <Paper key={idx} elevation={0} sx={{
+                  display: 'flex', flexDirection: 'column',
+                  background: 'white', border: `1px solid ${P.border}`,
+                  borderRadius: '10px', overflow: 'hidden',
+                  transition: 'box-shadow 0.15s',
+                  '&:hover': { boxShadow: '0 2px 8px rgba(139,92,246,0.12)' },
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', p: '6px 6px 6px 8px' }}>
+                    <Button onClick={() => void enterSuggestionMode(asm)}
+                      sx={{
+                        flex: 1, display: 'flex', alignItems: 'center', gap: 1,
+                        p: '7px 10px', fontSize: '0.83rem', fontWeight: 600,
+                        color: P.dark, background: P.bg,
+                        border: `1.5px solid ${P.border}`, borderRadius: '8px',
+                        textTransform: 'none', justifyContent: 'flex-start',
+                        '&:hover': { background: P.light, borderColor: P.bright },
+                      }}
+                    >
+                      <Box sx={{ color: P.bright, display: 'flex', flexShrink: 0 }}>
+                        <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                        </svg>
+                      </Box>
+                      <Box sx={{ flex: 1, textAlign: 'left' }}>{asm.move.name}</Box>
+                    </Button>
                   </Box>
-                  <Box sx={{ flex: 1, textAlign: 'left' }}>{asm.move.name}</Box>
-                </Button>
+                </Paper>
               ))}
             </Box>
           </Box>
