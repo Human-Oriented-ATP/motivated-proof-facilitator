@@ -5,7 +5,7 @@ import {
   Accordion, AccordionSummary, AccordionDetails,
   Select, MenuItem, Dialog, DialogContent, Tooltip,
 } from "@mui/material"
-import { ProofStateSelection, ProofStateSelectionContext, ProofStateLocationContext, toProofStateSelectionWithPolarity } from "../core/ProofStateSelectionContext"
+import { ProofStateSelection, ProofStateSelectionContext, ProofStateLocationContext, toProofStateSelectionWithPolarity, selectionPolarity } from "../core/ProofStateSelectionContext"
 import { ContextVariable, ProofState, Statement } from "../core/ProofStateZod"
 import { getCurrentProofState, ProofDiscoveryAction, ProofDiscoveryState } from "../core/ProofDiscoveryState"
 import { ProofDiscoveryMove, ProofDiscoveryMoveExample, ProofDiscoverySuggestionMove } from "../core/ProofDiscoveryMove"
@@ -16,7 +16,7 @@ import { runMove } from "../fetchers/move"
 import MoveGenerator from "../../tests/MoveGenerator"
 import { moves, suggestionMoves, logicalMoves } from "../prompts/AllMoves"
 import { checkMoveValidity, FilterResponse } from "../fetchers/filter"
-import { suggestStatements, SuggestResult, SuggestResults } from "../fetchers/suggest"
+import { suggestStatements, SuggestResult, SuggestResults, selectionToSelectionWithPolarity } from "../fetchers/suggest"
 
 /** Get all the applicable moves for a given proof state and selections. */
 export async function getApplicableMoves(
@@ -128,8 +128,8 @@ export async function fetchSuggestions(
 ): Promise<SuggestResults> {
   return suggestStatements({
     variables: getVariablesInProofState(getCurrentProofState(proofDiscoveryState)),
-    mainSelections: mainSelections.map(toProofStateSelectionWithPolarity),
-    additionalSelections: additionalSelections.map(toProofStateSelectionWithPolarity),
+    mainSelections: mainSelections.map(selectionToSelectionWithPolarity),
+    additionalSelections: additionalSelections.map(selectionToSelectionWithPolarity),
     instructions: move.suggestionPrompt
   })
 }
