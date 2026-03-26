@@ -1,4 +1,4 @@
-import { ProofState } from "../core/ProofStateZod"
+import { ProofState } from "../core/ProofStateZod.js"
 
 export async function informalizeProofState(proofState: ProofState): Promise<string> {
     const response = await fetch("/api/informalize", {

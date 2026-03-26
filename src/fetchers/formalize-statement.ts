@@ -1,5 +1,4 @@
-import { ProofState } from "../core/ProofStateZod"
-import { Statement, StatementSchema } from "../core/ProofStateZod"
+import { ProofState, Statement, StatementSchema } from "../core/ProofStateZod.js"
 
 export async function formalizeStatement({ statement, context }: { statement: string; context?: ProofState }): Promise<Statement> {
     const response = await fetch("/api/formalize-statement", {

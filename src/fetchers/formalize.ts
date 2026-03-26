@@ -1,4 +1,4 @@
-import { BundledProofStateSchema, ProofState } from "../core/ProofStateZod"
+import { BundledProofStateSchema, ProofState } from "../core/ProofStateZod.js"
 
 export async function formalizeProblem(problem: string): Promise<ProofState> {
   const response = await fetch("/api/formalize", {

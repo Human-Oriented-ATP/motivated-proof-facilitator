@@ -1,6 +1,6 @@
 import { z } from "zod"
-import { ProofStateSelectionWithPolarity } from "../core/ProofStateSelectionContext"
-import { AtomicStatementSchema, ContextVariable, LabelledStatementSchema, StatementSchema } from "../core/ProofStateZod"
+import { ProofStateSelectionWithPolarity } from "../core/ProofStateSelectionContext.js"
+import { AtomicStatementSchema, ContextVariable, LabelledStatementSchema, StatementSchema } from "../core/ProofStateZod.js"
 
 export interface SuggestRequest {
     variables: ContextVariable[]
