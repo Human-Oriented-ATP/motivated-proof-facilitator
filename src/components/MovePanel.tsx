@@ -402,11 +402,12 @@ function ExamplePreview({ example, idx }: { example: ProofDiscoveryMoveExample, 
 
 // ─── Move Panel Component ─────────────────────────────────────────────────────
 
-function MovePanelContent(): JSX.Element {
+function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: boolean) => void }): JSX.Element {
   const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
   const { selections, dispatch: dispatchSelections } = useContext(ProofStateSelectionContext)
 
   const [status, setStatus] = useState<MovePanelStatus>("idle")
+  const [customInputActive, setCustomInputActive] = useState(false)
   const [applicableMoves, setApplicableMoves] = useState<ApplicableMove[]>([])
   const [errorMessage, setErrorMessage] = useState("")
   const [expandedReasoning, setExpandedReasoning] = useState<Set<number>>(new Set())
@@ -442,9 +443,27 @@ function MovePanelContent(): JSX.Element {
     }
   }, [proofDiscoveryState.graph.order])
 
-  // Debounce auto-fetch on selection change (skip while in suggestion workflow)
+  // Notify parent when loading state changes
+  useEffect(() => {
+    onLoadingChange?.(status === "loading")
+  }, [status, onLoadingChange])
+
+  // Abort in-flight suggestion fetch when user starts typing in the custom move box
+  useEffect(() => {
+    if (!customInputActive) return
+    abortControllerRef.current?.abort()
+    abortControllerRef.current = null
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    setStatus("idle")
+    setApplicableMoves([])
+    setApplicableSuggestionMoves([])
+    lastFetchedSelectionsRef.current = ""
+  }, [customInputActive])
+
+  // Debounce auto-fetch on selection change (skip while in suggestion workflow or custom input active)
   useEffect(() => {
     if (suggestionWorkflow !== null) return
+    if (customInputActive) return
     if (selectionsKey !== lastFetchedSelectionsRef.current) {
       if (debounceRef.current) clearTimeout(debounceRef.current)
       if (selections.length > 0) {
@@ -464,7 +483,7 @@ function MovePanelContent(): JSX.Element {
     }
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectionsKey, suggestionWorkflow])
+  }, [selectionsKey, suggestionWorkflow, customInputActive])
 
   const fetchMoves = useCallback(async () => {
     // Cancel any in-flight request
@@ -1079,7 +1098,7 @@ function MovePanelContent(): JSX.Element {
 
       {/* Custom move section */}
       <Box sx={{ flexShrink: 0 }}>
-        <CustomMoveSection />
+        <CustomMoveSection onHasText={setCustomInputActive} />
       </Box>
 
       {/* All moves modal */}
@@ -1115,7 +1134,7 @@ function MovePanelContent(): JSX.Element {
 
 // ─── Custom Move Section ──────────────────────────────────────────────────────
 
-function CustomMoveSection(): JSX.Element {
+function CustomMoveSection({ onHasText }: { onHasText?: (hasText: boolean) => void }): JSX.Element {
   const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
   const { selections, dispatch: dispatchSelections } = useContext(ProofStateSelectionContext)
   const [description, setDescription] = useState("")
@@ -1137,6 +1156,7 @@ function CustomMoveSection(): JSX.Element {
     try {
       await applyMove(proofDiscoveryState, selections, customMove, dispatchProofDiscoveryAction, dispatchSelections)
       setDescription("")
+      onHasText?.(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to apply move")
     } finally {
@@ -1175,7 +1195,10 @@ function CustomMoveSection(): JSX.Element {
       <Box
         component="textarea"
         value={description}
-        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+          setDescription(e.target.value)
+          onHasText?.(e.target.value.trim().length > 0)
+        }}
         placeholder="Describe a move to apply..."
         rows={2}
         sx={{
@@ -1517,6 +1540,6 @@ function AllMovesList(): JSX.Element {
 
 // ─── Public Move Panel ────────────────────────────────────────────────────────
 
-export function MovePanel(): JSX.Element {
-  return <MovePanelContent />
+export function MovePanel({ onLoadingChange }: { onLoadingChange?: (isLoading: boolean) => void }): JSX.Element {
+  return <MovePanelContent onLoadingChange={onLoadingChange} />
 }
