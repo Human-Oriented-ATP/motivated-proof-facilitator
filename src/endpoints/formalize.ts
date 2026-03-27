@@ -12,7 +12,7 @@ const FORMALIZE_PROMPT =
   - Goals: What needs to be proven or computed
 
   ## Output Format
-  Always return a valid JSON object following the ProofState schema structure. Use Typst for all mathematical notation.
+  Always return a valid JSON object following the ProofState schema structure. Use LaTeX for all mathematical notation.
   
   **CRITICAL: Every variable MUST include a "kind" field with one of these values:**
   - "free": For variables assumed to be arbitrary but fixed (most common)
@@ -45,11 +45,11 @@ const FORMALIZE_PROMPT =
   \'\'\'
 
   ## Mathematical Notation
-  Use Typst mathematical notation enclosed in dollar signs for formulas:
-  - Numbers: $NN$ (naturals), $ZZ$ (integers), $QQ$ (rationals), $RR$ (reals), $CC$ (complex)
-  - Functions: $f: A -> B$, $f(x) = x^2$
-  - Sets: $A subset B$, $x in S$
-  - Logic: $forall x$, $exists y$, $P and Q$, $P => Q$
+  Use LaTeX mathematical notation enclosed in dollar signs for formulas:
+  - Numbers: $\mathbb{N}$ (naturals), $\mathbb{Z}$ (integers), $\mathbb{Q}$ (rationals), $\mathbb{R}$ (reals), $\mathbb{C}$ (complex)
+  - Functions: $f: A \to B$, $f(x) = x^2$
+  - Sets: $A \subset B$, $x \in S$
+  - Logic: $\forall x$, $\exists y$, $P \wedge Q$, $P \Rightarrow Q$
 
   ## Examples
   Input: "Prove that the square root of 2 is irrational"
@@ -57,13 +57,13 @@ const FORMALIZE_PROMPT =
   \'\'\'json
   {
     "variables": [
-      {"name": "sqrt_2", "description": "$sqrt(2)$", "kind": "free", "value": ""}
+      {"name": "sqrt_2", "description": "$\\sqrt{2}$", "kind": "free", "value": ""}
     ],
     "hypotheses": [
-      {"label": "sqrt_def", "statement": "$sqrt(2)^2 = 2$"}
+      {"label": "sqrt_def", "statement": "$\\sqrt{2}^2 = 2$"}
     ],
     "goals": [
-      {"label": "irrational", "statement": "$sqrt(2) in RR setminus QQ$"}
+      {"label": "irrational", "statement": "$\\sqrt{2} \\in \\mathbb{R} \\setminus \\mathbb{Q}$"}
     ]
   }
   \'\'\'
@@ -74,7 +74,7 @@ const FORMALIZE_PROMPT =
   {
     "variables": [
       {
-        "description": "Subset of $RR^2$",
+        "description": "Subset of $\\mathbb{R}^2$",
         "kind": "free", "value": "",
         "name": "$S$"
       }
@@ -110,7 +110,7 @@ const FORMALIZE_PROMPT =
           "kind": "existential",
           "statement": "$S$ is a subset of $L$",
           "variable": {
-            "description": "line in $RR^2$",
+            "description": "line in $\\mathbb{R}^2$",
             "name": "$L$"
           }
         }
@@ -125,12 +125,12 @@ const FORMALIZE_PROMPT =
   {
     "variables": [
       {
-        "description": "$RR_(gt.eq 0)$",
+        "description": "$\\delta \\geq 0$, $\\delta \\in \\mathbb{R}$",
         "kind": "free", "value": "",
         "name": "$delta$"
       },
       {
-        "description": "$NN$",
+        "description": "$\\mathbb{N}$",
         "kind": "free", "value": "",
         "name": "$k$"
       }
@@ -144,7 +144,7 @@ const FORMALIZE_PROMPT =
           "statement": {
             "kind": "universal",
             "statement": {
-              "antecedent": "$bar.v A bar.v gt.eq delta dot N$",
+              "antecedent": "$|A| \\geq \\delta N$",
               "consequent": {
                 "kind": "existential",
                 "statement": {
@@ -156,19 +156,19 @@ const FORMALIZE_PROMPT =
                   ]
                 },
                 "variable": {
-                  "description": "subset of $\\\\{1, 2, dots, N\\\\}$",
+                  "description": "subset of $\\{1, 2, \\ldots, N\\}$",
                   "name": "$P$"
                 }
               },
               "kind": "implication"
             },
             "variable": {
-              "description": "subset of $\\\\{1, 2, dots, N\\\\}$",
+              "description": "subset of $\\{1, 2, \\ldots, N\\}$",
               "name": "$A$"
             }
           },
           "variable": {
-            "description": "$NN$",
+            "description": "$\\mathbb{N}$",
             "name": "$N$"
           }
         }

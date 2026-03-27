@@ -25,21 +25,21 @@ Include general library results only if the statement suggested is non-trivially
 or if you have been explicitly asked to include them, and omit them otherwise. 
 
 
-For example, if the main selection is $ 5 divides a dot b $ and an auxilliary selection is $ 5 divides.not a $, 
-a relevant suggestion could be $ 5 divides b $ along with the general theorem statement 
+For example, if the main selection is $5 \mid ab$ and an auxiliary selection is $5 \nmid a$,
+a relevant suggestion could be $5 \mid b$ along with the general theorem statement
 \`\`\`
 {
     label: "divisibility_by_prime",
     statement: {
-        kind: "universal", variable: { name: "p", description: "$NN$" }, statement: {
-        kind: "universal", variable: { name: "a", description: "$NN$" }, statement: {
-        kind: "universal", variable: { name: "b", description: "$NN$" }, statement: {
+        kind: "universal", variable: { name: "p", description: "$\\mathbb{N}$" }, statement: {
+        kind: "universal", variable: { name: "a", description: "$\\mathbb{N}$" }, statement: {
+        kind: "universal", variable: { name: "b", description: "$\\mathbb{N}$" }, statement: {
         kind: "implication", antecedent: { kind: "conjunction", statements: [
-            "$p divides a dot b$",
+            "$p \\mid ab$",
             "$p$ is prime"
         ]}, consequent: {kind: "disjunction", statements: [
-            "$p$ divides $a$",
-            "$p$ divides $b$"
+            "$p \\mid a$",
+            "$p \\mid b$"
         ]}
 }}}}}
 \`\`\`
