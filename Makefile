@@ -1,7 +1,7 @@
 PORT     ?= 3001
 PID_DIR  := .pids
 
-.PHONY: start stop clean
+.PHONY: start stop clean clean-all
 
 start:
 	@mkdir -p $(PID_DIR)
@@ -27,5 +27,10 @@ stop:
 	fi
 
 clean:
-	@rm -rf dist $(PID_DIR)
+	@rm -rf dist $(PID_DIR) node_modules
 	@echo "Cleaned."
+
+# Remove everything including the legacy Typst WASM source in pkg/
+clean-all: clean
+	@rm -rf pkg
+	@echo "Fully cleaned."
