@@ -1,7 +1,5 @@
 import { z } from "zod"
-import { ContextVariable, LabelledStatementSchema, StatementSchema } from "../core/ProofStateZod.js"
-import { Statement } from "../core/ProofState.js"
-
+import { ContextVariable, LabelledStatementSchema, StatementSchema, Statement } from "../core/ProofStateZod.js"
 export interface SelectionWithPolarity {
     selection: Statement | string
     polarity: boolean | null
