@@ -16,7 +16,7 @@ import { runMove } from "../fetchers/move"
 import MoveGenerator from "../../tests/MoveGenerator"
 import { moves, suggestionMoves, logicalMoves } from "../prompts/AllMoves"
 import { checkMoveValidity, FilterResponse } from "../fetchers/filter"
-import { suggestStatements, SuggestResult, SuggestResults, selectionToSelectionWithPolarity } from "../fetchers/suggest"
+import { suggestStatements, SuggestResult, SuggestResults } from "../fetchers/suggest"
 
 /** Get all the applicable moves for a given proof state and selections. */
 export async function getApplicableMoves(
@@ -128,8 +128,18 @@ export async function fetchSuggestions(
 ): Promise<SuggestResults> {
   return suggestStatements({
     variables: getVariablesInProofState(getCurrentProofState(proofDiscoveryState)),
-    mainSelections: mainSelections.map(selectionToSelectionWithPolarity),
-    additionalSelections: additionalSelections.map(selectionToSelectionWithPolarity),
+    mainSelections: mainSelections.map(selection => {
+        return {
+            selection: typeof selection.selection === 'string' || 'kind' in selection.selection ? selection.selection : selection.selection.text,
+            polarity: selectionPolarity(selection)
+        }
+    }),
+    additionalSelections: additionalSelections.map(selection => {
+        return {
+            selection: typeof selection.selection === 'string' || 'kind' in selection.selection ? selection.selection : selection.selection.text,
+            polarity: selectionPolarity(selection)
+        }
+    }),
     instructions: move.suggestionPrompt
   })
 }
