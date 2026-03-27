@@ -3,6 +3,7 @@ import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove";
 export const rewritingMove: ProofDiscoveryMove = {
   "name": "Rewrite using equality result",
   "kind": "strengthening",
+  "classification": "mathematical",
   "trigger": "This move is relevant when the proof state has exactly two selections, one of which is a hypothesis or library result whose conclusion is an equality, and the second selection is a term.",
   "action": "Rewrite the selected term using the selected equality result, i.e., replace the selected term with an expression derived from one side of the equality if the other side matches the selected term. If the equality is conditional on other statements, introduce those statements as new goals. If the equality involves universally quantified variables, instantiate them appropriately while performing the rewrite. \n\nModify only the selected term and keep the rest of the proof state (included the selected equality result) intact. ",
   "examples": [

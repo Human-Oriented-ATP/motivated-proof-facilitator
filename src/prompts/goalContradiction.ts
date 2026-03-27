@@ -4,6 +4,7 @@ import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 export const goalContradictionMove: ProofDiscoveryMove = {
     name: "Prove by contradiction",
     kind: "equivalence",
+    classification: "mathematical",
     trigger: "This move is relevant when the only selection in the proof state is a goal statement with \"negative content\".",
     action: "Assume the negation of the goal as a new hypothesis, simplified by pushing the negation through all logical connectives using standard equivalences: De Morgan's laws ($not (A and B) <=> not A or not B$, $not (A or B) <=> not A and not B$), negation of implication ($not (A => B) <=> A and not B$), negation of quantifiers ($not forall x, P(x) <=> exists x, not P(x)$, $not exists x, P(x) <=> forall x, not P(x)$), and double negation elimination ($not not A <=> A$). Replace the goal with a contradiction ($bot$). If there are other goals remaining, split into two proof contexts: one containing the new negated hypothesis and the contradiction as the new goal, and another containing the original hypotheses and the remaining goals.",
     examples: [

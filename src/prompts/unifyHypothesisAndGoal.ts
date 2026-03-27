@@ -3,6 +3,7 @@ import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove";
 export const unifyHypothesisAndGoalMove: ProofDiscoveryMove = {
   "name": "Unify hypothesis with goal",
   "kind": "strengthening",
+  "classification": "logical",
   "trigger": "This move is relevant if the selections are a hypothesis and a goal in the same proof state context that are roughly the same structurally and which can potentially unify.",
   "action": "This move examines both expressions, and if they are structurally identical apart from metavariables, it instantiates the metavariables to the values that make the two expressions equal and then clears the goal. Instantiating a metavariable involves first checking whether the term it is being assigned to has the same type as the metavariable and contains only variables that occur above the metavariable in the list of variables. If this is the case, the metavariable is replaced with a let variable with the term as its value, and all occurrences of the metavariable in the proof state are replaced with the term.",
   "examples": [

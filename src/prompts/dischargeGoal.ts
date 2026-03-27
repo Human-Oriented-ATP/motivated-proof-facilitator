@@ -3,6 +3,7 @@ import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove";
 export const dischargeGoalMove: ProofDiscoveryMove = {
   "name": "Discharge obviously true goal",
   "kind": "strengthening",
+  "classification": "mathematical",
   "trigger": "This move appears when the only selection is a goal statement that is a simple fact that feels obviously true.",
   "action": "Remove the goal from the list of goals.",
   "examples": [

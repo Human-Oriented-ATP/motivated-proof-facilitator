@@ -3,6 +3,7 @@ import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove";
 export const isolateVariableMove: ProofDiscoveryMove = {
   "name": "Isolate the selected variable in the equality",
   "kind": "equivalence",
+  "classification": "mathematical",
   "trigger": "This move is relevant when the proof state contains two selections, one of which is an equation and the other is a variable within that equation.",
   "action": "Manipulate the equality using valid operations to make one of the sides the selected variable and the other an expression which does not contain the variable.",
   "examples": [

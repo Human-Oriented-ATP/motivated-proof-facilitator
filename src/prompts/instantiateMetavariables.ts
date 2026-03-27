@@ -3,6 +3,7 @@ import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove";
 export const instantiateMetavariablesMove: ProofDiscoveryMove = {
   "name": "Instantiate metavariables in equality",
   "kind": "strengthening",
+  "classification": "logical",
   "trigger": "This move is relevant when the proof state contains a single selection which is an equality.",
   "action": "This move examines both sides of the equality, and if they are structurally identical apart from metavariables, it instantiates the metavariables to the values that make the two sides equal. Instantiating a metavariable involves first checking whether the term it is being assigned to has the same type as the metavariable and contains only variables that occur above the metavariable in the list of variables. If this is the case, the metavariable is replaced with a let variable with the term as its value, and all occurrences of the metavariable in the proof state are replaced with the term.",
   "examples": [

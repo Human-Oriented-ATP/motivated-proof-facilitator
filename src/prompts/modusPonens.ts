@@ -3,6 +3,7 @@ import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove";
 export const modusPonensMove: ProofDiscoveryMove = {
   "name": "Perform modus ponens",
   "kind": "strengthening",
+  "classification": "logical",
   "trigger": "This move is relevant when there are two selections within a proof state context, one of which is a hypothesis and the other is either the antecedent of an implication hypothesis or the whole implication hypothesis itself. Moreover, the hypothesis needs to be structurally similar and must potentially unify with the antecedent.",
   "action": "This move examines the hypothesis and the antecedent of the implication hypothesis, and if they are structurally identical apart from metavariables or universally quantified variables, it instantiates the metavariables to the values that make the two expressions equal and then replaces the implication hypothesis with just its consequent.",
   "examples": [

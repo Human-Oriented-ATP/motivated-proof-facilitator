@@ -3,6 +3,7 @@ import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove";
 export const simplifyExpressionMove: ProofDiscoveryMove = {
   "name": "Simplify the selected expression",
   "kind": "equivalence",
+  "classification": "mathematical",
   "trigger": "This move is relevant when the proof state has a single selected expression or statement, ideally representing a term that can be simplified. This move also applies to statements that can be simplified, not just expressions within atomic statements.",
   "action": "This move replaces the selected expression with an equivalent one that is simpler in an intuitive sense.",
   "examples": [

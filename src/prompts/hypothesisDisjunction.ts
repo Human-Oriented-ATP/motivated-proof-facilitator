@@ -4,6 +4,7 @@ import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 export const hypothesisDisjunctionMove: ProofDiscoveryMove = {
     name: "Perform case distinction on a disjunctive hypothesis",
     kind: "strengthening",
+    classification: "logical",
     trigger: "This move is relevant when the only selection in the proof state is a hypothesis statement that is a disjunction.",
     action: "Split the disjunction into separate proof states (cases), one corresponding to each disjunct. In each case, the disjunctive hypothesis is replaced by the corresponding disjunct as a new hypothesis.",
     examples: [

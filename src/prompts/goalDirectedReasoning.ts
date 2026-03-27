@@ -3,6 +3,7 @@ import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove";
 export const goalDirectedReasoningMove: ProofDiscoveryMove = {
   "name": "Perform goal-directed forwards reasoning",
   "kind": "strengthening",
+  "classification": "mathematical",
   "trigger": "This move appears when the user has selected at least one hypothesis and at least one goal in the same proof context.",
   "action": "This move creates a new hypothesis that is derived from some of the selected hypotheses and is syntactically similar to at least one of the selected goals. Avoid dropping the level of abstraction; ideally, the new hypothesis should be syntactically similar to one of the selected goals (and not just have semantic resemblance). Avoid introducing hypotheses that already exist in the proof state.",
   "examples": [

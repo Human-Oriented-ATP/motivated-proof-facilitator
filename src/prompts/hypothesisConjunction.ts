@@ -4,6 +4,7 @@ import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 export const hypothesisConjunctionMove: ProofDiscoveryMove = {
     name: "Split a conjunction in a hypothesis",
     kind: "equivalence",
+    classification: "logical",
     trigger: "This move is relevant when the only selection in the proof state is a hypothesis statement that is a conjunction.",
     action: "Split the conjunction into separate hypotheses, one corresponding to each conjunct.",
     examples: [

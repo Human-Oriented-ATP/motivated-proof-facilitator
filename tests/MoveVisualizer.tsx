@@ -48,7 +48,7 @@ function KindBadge({ kind }: { kind: string }): React.JSX.Element {
 type Props = { onOpenInGenerator?: (moveJson: string) => void };
 
 export default function MoveVisualizer({ onOpenInGenerator }: Props): React.JSX.Element {
-    const [selectedKey, setSelectedKey] = useState<string>(Object.keys(prompts)[0]);
+    const [selectedKey, setSelectedKey] = useState<string>(Object.keys(prompts)[0] ?? "");
     const [expandedExamples, setExpandedExamples] = useState<Set<number>>(new Set());
     const active = prompts[selectedKey];
 
@@ -64,6 +64,8 @@ export default function MoveVisualizer({ onOpenInGenerator }: Props): React.JSX.
             return n;
         });
     };
+
+    if (!active) return <div />
 
     return (
         <TypstContextProvider>

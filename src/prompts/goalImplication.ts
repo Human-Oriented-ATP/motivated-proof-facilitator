@@ -4,6 +4,7 @@ import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 export const goalImplicationMove: ProofDiscoveryMove = {
     name: "Introduce hypothesis from an implication in the goal",
     kind: "equivalence",
+    classification: "logical",
     trigger: "This move is relevant when the only selection in the proof state is either a goal statement that is an implication, or the antecedent of such a goal.",
     action: "Move the antecedent of the implication into the hypotheses as a new hypothesis and replace the goal with the consequent of the implication. If there are other goals remaining, split into two proof contexts: one containing the new hypothesis and the consequent as the new goal, and another containing the original hypotheses and the remaining goals.",
     examples: [

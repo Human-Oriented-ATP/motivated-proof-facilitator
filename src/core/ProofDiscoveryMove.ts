@@ -24,6 +24,7 @@ export interface ProofDiscoveryMoveExample {
 export interface ProofDiscoveryMove {
     name: string
     kind: MoveKind
+    classification: "mathematical" | "logical"
     /** The trigger decides whether the move is relevant for a given set of selections made in a proof state.  */
     trigger: string
     /** The action specifies how the move is supposed to transform the proof state. */

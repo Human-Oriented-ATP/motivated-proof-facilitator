@@ -2,6 +2,41 @@ import React, { useState, useEffect, useRef, JSX } from "react"
 import { ProofState, ProofStateSchema, ContextVariable, Statement, StatementSchema } from "../core/ProofStateZod"
 import { StatementBuilder } from "./StatementBuilder"
 import { formalizeStatement } from "../fetchers/formalize-statement"
+import { MathStatement } from "./MathStatement"
+import { AtomicStatement } from "./AtomicStatement"
+import { ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
+import { ProofStateSelectionContext, ProofStateLocationContext } from "../core/ProofStateSelectionContext"
+
+// ── Static math preview helpers (non-interactive, no selection) ──────────────
+
+const STATIC_ID = { proofNodeId: -99, proofContextId: -1 }
+const STATIC_SELECTIONS = { selections: [] as never[], dispatch: () => {} }
+
+/** Renders an atomic string (which may contain $...$) as math, non-interactively. */
+function StaticAtomicPreview({ text, locationKind = "variable" }: { text: string; locationKind?: string }): JSX.Element {
+  return (
+    <ProofStateIdContext.Provider value={STATIC_ID}>
+      <ProofStateSelectionContext.Provider value={STATIC_SELECTIONS}>
+        <ProofStateLocationContext.Provider value={{ kind: locationKind as "variable", label: "preview" }}>
+          <AtomicStatement address={[]} input={text} />
+        </ProofStateLocationContext.Provider>
+      </ProofStateSelectionContext.Provider>
+    </ProofStateIdContext.Provider>
+  )
+}
+
+/** Renders a full Statement (possibly compound) as math, non-interactively. */
+function StaticStatementPreview({ statement, locationKind = "hypothesis" }: { statement: Statement; locationKind?: string }): JSX.Element {
+  return (
+    <ProofStateIdContext.Provider value={STATIC_ID}>
+      <ProofStateSelectionContext.Provider value={STATIC_SELECTIONS}>
+        <ProofStateLocationContext.Provider value={{ kind: locationKind as "hypothesis", label: "preview" }}>
+          <MathStatement address={[]} statement={statement} polarity={null} />
+        </ProofStateLocationContext.Provider>
+      </ProofStateSelectionContext.Provider>
+    </ProofStateIdContext.Provider>
+  )
+}
 
 export interface ProofStateEditorProps {
   proofState: ProofState
@@ -11,23 +46,6 @@ export interface ProofStateEditorProps {
 type EditTarget = { section: "variable" | "hypothesis" | "goal"; idx: number } | null
 type AddTarget = "variable" | "hypothesis" | "goal" | null
 
-function statementPreview(stmt: Statement): string {
-  if (typeof stmt === "string") return stmt || "(empty)"
-  switch (stmt.kind) {
-    case "conjunction":  return stmt.statements.map(statementPreview).join(" ∧ ")
-    case "disjunction":  return stmt.statements.map(statementPreview).join(" ∨ ")
-    case "negation":     return `¬(${statementPreview(stmt.statement)})`
-    case "implication":  return `${statementPreview(stmt.antecedent)} → ${statementPreview(stmt.consequent)}`
-    case "equivalence":  return `${statementPreview(stmt.left)} ↔ ${statementPreview(stmt.right)}`
-    case "universal":    return `∀${stmt.variable.name}. ${statementPreview(stmt.statement)}`
-    case "existential":  return `∃${stmt.variable.name}. ${statementPreview(stmt.statement)}`
-    case "highlight":    return statementPreview(stmt.statement)
-  }
-}
-
-function truncate(s: string, max: number): string {
-  return s.length > max ? s.slice(0, max) + "…" : s
-}
 
 /**
  * Editor for incrementally building or modifying a ProofState.
@@ -61,6 +79,10 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
   const [goalStatement, setGoalStatement] = useState<Statement>("")
   const [goalLoading, setGoalLoading] = useState(false)
   const [goalError, setGoalError] = useState<string | null>(null)
+
+  const [varNameError, setVarNameError] = useState<string | null>(null)
+  const [hypLabelError, setHypLabelError] = useState<string | null>(null)
+  const [goalLabelError, setGoalLabelError] = useState<string | null>(null)
 
   // JSON state
   const [rawJson, setRawJson] = useState("")
@@ -113,10 +135,12 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
 
   const ensureContext = (): ProofState => {
     if (proofState.length === 0) return [{ variables: [], hypotheses: [], goals: [] }]
-    return proofState.map(c => ({ ...c }))
+    return proofState.map(c => ({ variables: c.variables, hypotheses: c.hypotheses, goals: c.goals }))
   }
 
-  const closeAll = () => { setEditTarget(null); setAddTarget(null) }
+  const getCtx = (state: ProofState) => state[ctxIdx] ?? { variables: [], hypotheses: [], goals: [] }
+
+  const closeAll = () => { setEditTarget(null); setAddTarget(null); setVarNameError(null); setHypLabelError(null); setGoalLabelError(null) }
 
   const startEdit = (section: "variable" | "hypothesis" | "goal", idx: number) => {
     setAddTarget(null)
@@ -133,28 +157,29 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
     if (addTarget === section) { setAddTarget(null); return }
     setAddTarget(section)
     if (section === "variable") {
-      setVarName(""); setVarKind("free"); setVarDescription(""); setVarLetValue("")
+      setVarName(""); setVarKind("free"); setVarDescription(""); setVarLetValue(""); setVarNameError(null)
     } else if (section === "hypothesis") {
-      setHypLabel(""); setHypMode("build"); setHypText(""); setHypStatement(""); setHypError(null)
+      setHypLabel(""); setHypMode("build"); setHypText(""); setHypStatement(""); setHypError(null); setHypLabelError(null)
     } else {
-      setGoalLabel(""); setGoalMode("build"); setGoalText(""); setGoalStatement(""); setGoalError(null)
+      setGoalLabel(""); setGoalMode("build"); setGoalText(""); setGoalStatement(""); setGoalError(null); setGoalLabelError(null)
     }
   }
 
   // ── Save / Delete handlers ──────────────────────────────────────────────
 
   const handleSaveVariable = () => {
-    if (!varName.trim()) return
+    if (!varName.trim()) { setVarNameError("Name is required"); return }
+    setVarNameError(null)
     const state = ensureContext()
     const newVar: ContextVariable = varKind === "let"
       ? { kind: "let", name: varName, description: varDescription, value: varLetValue }
-      : { kind: varKind, name: varName, description: varDescription }
+      : { kind: varKind, name: varName, description: varDescription, value: "" }
     if (editTarget?.section === "variable") {
-      const vars = [...state[ctxIdx].variables]
+      const vars = [...getCtx(state).variables]
       vars[editTarget.idx] = newVar
-      state[ctxIdx] = { ...state[ctxIdx], variables: vars }
+      state[ctxIdx] = { ...getCtx(state), variables: vars }
     } else {
-      state[ctxIdx] = { ...state[ctxIdx], variables: [...state[ctxIdx].variables, newVar] }
+      state[ctxIdx] = { ...getCtx(state), variables: [...getCtx(state).variables, newVar] }
     }
     onUpdate(state)
     closeAll()
@@ -162,13 +187,14 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
 
   const handleDeleteVariable = (idx: number) => {
     const state = ensureContext()
-    state[ctxIdx] = { ...state[ctxIdx], variables: state[ctxIdx].variables.filter((_, i) => i !== idx) }
+    state[ctxIdx] = { ...getCtx(state), variables: getCtx(state).variables.filter((_, i) => i !== idx) }
     onUpdate(state)
     if (editTarget?.section === "variable" && editTarget.idx === idx) setEditTarget(null)
   }
 
   const handleSaveHypothesis = async () => {
-    if (!hypLabel.trim()) return
+    if (!hypLabel.trim()) { setHypLabelError("Label is required"); return }
+    setHypLabelError(null)
     setHypError(null)
     let statement: Statement
     if (hypMode === "formalize") {
@@ -183,11 +209,11 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
     const state = ensureContext()
     const newHyp = { label: hypLabel, statement }
     if (editTarget?.section === "hypothesis") {
-      const hyps = [...state[ctxIdx].hypotheses]
+      const hyps = [...getCtx(state).hypotheses]
       hyps[editTarget.idx] = newHyp
-      state[ctxIdx] = { ...state[ctxIdx], hypotheses: hyps }
+      state[ctxIdx] = { ...getCtx(state), hypotheses: hyps }
     } else {
-      state[ctxIdx] = { ...state[ctxIdx], hypotheses: [...state[ctxIdx].hypotheses, newHyp] }
+      state[ctxIdx] = { ...getCtx(state), hypotheses: [...getCtx(state).hypotheses, newHyp] }
     }
     onUpdate(state)
     closeAll()
@@ -195,13 +221,14 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
 
   const handleDeleteHypothesis = (idx: number) => {
     const state = ensureContext()
-    state[ctxIdx] = { ...state[ctxIdx], hypotheses: state[ctxIdx].hypotheses.filter((_, i) => i !== idx) }
+    state[ctxIdx] = { ...getCtx(state), hypotheses: getCtx(state).hypotheses.filter((_, i) => i !== idx) }
     onUpdate(state)
     if (editTarget?.section === "hypothesis" && editTarget.idx === idx) setEditTarget(null)
   }
 
   const handleSaveGoal = async () => {
-    if (!goalLabel.trim()) return
+    if (!goalLabel.trim()) { setGoalLabelError("Label is required"); return }
+    setGoalLabelError(null)
     setGoalError(null)
     let statement: Statement
     if (goalMode === "formalize") {
@@ -216,11 +243,11 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
     const state = ensureContext()
     const newGoal = { label: goalLabel, statement }
     if (editTarget?.section === "goal") {
-      const goals = [...state[ctxIdx].goals]
+      const goals = [...getCtx(state).goals]
       goals[editTarget.idx] = newGoal
-      state[ctxIdx] = { ...state[ctxIdx], goals: goals }
+      state[ctxIdx] = { ...getCtx(state), goals: goals }
     } else {
-      state[ctxIdx] = { ...state[ctxIdx], goals: [...state[ctxIdx].goals, newGoal] }
+      state[ctxIdx] = { ...getCtx(state), goals: [...getCtx(state).goals, newGoal] }
     }
     onUpdate(state)
     closeAll()
@@ -228,7 +255,7 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
 
   const handleDeleteGoal = (idx: number) => {
     const state = ensureContext()
-    state[ctxIdx] = { ...state[ctxIdx], goals: state[ctxIdx].goals.filter((_, i) => i !== idx) }
+    state[ctxIdx] = { ...getCtx(state), goals: getCtx(state).goals.filter((_, i) => i !== idx) }
     onUpdate(state)
     if (editTarget?.section === "goal" && editTarget.idx === idx) setEditTarget(null)
   }
@@ -259,13 +286,14 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
   // ── Inline form renderers ───────────────────────────────────────────────
 
   const renderVariableForm = (isEdit: boolean) => (
-    <div style={es.inlineForm}>
-      <div style={es.formTitle}>{isEdit ? "Edit Variable" : "New Variable"}</div>
+    <div style={es.varInlineForm}>
+      <div style={es.varFormTitle}>{isEdit ? "Edit Variable" : "New Variable"}</div>
       <div style={es.row}>
         <div style={{ flex: 1 }}>
           <label style={es.label}>Name</label>
-          <input type="text" value={varName} onChange={e => setVarName(e.target.value)}
+          <input type="text" value={varName} onChange={e => { setVarName(e.target.value); if (varNameError) setVarNameError(null) }}
             placeholder="e.g. $x$" style={es.input} autoFocus />
+          {varNameError && <div style={es.fieldError}>{varNameError}</div>}
         </div>
         <div style={{ width: "120px" }}>
           <label style={es.label}>Kind</label>
@@ -289,7 +317,7 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
         </div>
       )}
       <div style={es.formBtns}>
-        <button onClick={handleSaveVariable} disabled={!varName.trim()} style={es.primaryBtn}>
+        <button onClick={handleSaveVariable} style={es.varPrimaryBtn}>
           {isEdit ? "Save" : "Add Variable"}
         </button>
         {isEdit && editTarget && (
@@ -301,12 +329,13 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
   )
 
   const renderHypForm = (isEdit: boolean) => (
-    <div style={es.inlineForm}>
-      <div style={es.formTitle}>{isEdit ? "Edit Hypothesis" : "New Hypothesis"}</div>
+    <div style={es.hypInlineForm}>
+      <div style={es.hypFormTitle}>{isEdit ? "Edit Hypothesis" : "New Hypothesis"}</div>
       <div>
         <label style={es.label}>Label</label>
-        <input type="text" value={hypLabel} onChange={e => setHypLabel(e.target.value)}
+        <input type="text" value={hypLabel} onChange={e => { setHypLabel(e.target.value); if (hypLabelError) setHypLabelError(null) }}
           placeholder="e.g. hyp_continuity" style={es.input} autoFocus />
+        {hypLabelError && <div style={es.fieldError}>{hypLabelError}</div>}
       </div>
       <div style={es.modeToggle}>
         <button onClick={() => setHypMode("build")} style={hypMode === "build" ? es.modeActive : es.modeInactive}>Build interactively</button>
@@ -327,8 +356,8 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
       {hypError && <div style={es.error}>{hypError}</div>}
       <div style={es.formBtns}>
         <button onClick={handleSaveHypothesis}
-          disabled={!hypLabel.trim() || hypLoading || (hypMode === "formalize" && !hypText.trim())}
-          style={es.primaryBtn}>
+          disabled={hypLoading || (hypMode === "formalize" && !hypText.trim())}
+          style={es.hypPrimaryBtn}>
           {hypLoading ? "Formalizing…" : isEdit ? "Save" : "Add Hypothesis"}
         </button>
         {isEdit && editTarget && (
@@ -340,12 +369,13 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
   )
 
   const renderGoalForm = (isEdit: boolean) => (
-    <div style={es.inlineForm}>
-      <div style={es.formTitle}>{isEdit ? "Edit Goal" : "New Goal"}</div>
+    <div style={es.goalInlineForm}>
+      <div style={es.goalFormTitle}>{isEdit ? "Edit Goal" : "New Goal"}</div>
       <div>
         <label style={es.label}>Label</label>
-        <input type="text" value={goalLabel} onChange={e => setGoalLabel(e.target.value)}
+        <input type="text" value={goalLabel} onChange={e => { setGoalLabel(e.target.value); if (goalLabelError) setGoalLabelError(null) }}
           placeholder="e.g. main_goal" style={es.input} autoFocus />
+        {goalLabelError && <div style={es.fieldError}>{goalLabelError}</div>}
       </div>
       <div style={es.modeToggle}>
         <button onClick={() => setGoalMode("build")} style={goalMode === "build" ? es.modeActive : es.modeInactive}>Build interactively</button>
@@ -366,8 +396,8 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
       {goalError && <div style={es.error}>{goalError}</div>}
       <div style={es.formBtns}>
         <button onClick={handleSaveGoal}
-          disabled={!goalLabel.trim() || goalLoading || (goalMode === "formalize" && !goalText.trim())}
-          style={es.primaryBtn}>
+          disabled={goalLoading || (goalMode === "formalize" && !goalText.trim())}
+          style={es.goalPrimaryBtn}>
           {goalLoading ? "Formalizing…" : isEdit ? "Save" : "Add Goal"}
         </button>
         {isEdit && editTarget && (
@@ -435,10 +465,10 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
                     {v.kind === "let"  && <span style={{ color: "#0891b2", fontWeight: "bold", fontSize: "13px", minWidth: "14px" }}>≔</span>}
                     {v.kind === "free" && <span style={{ minWidth: "14px" }} />}
                     <span style={es.varText}>
-                      <strong style={{ color: "#1e293b" }}>{v.name}</strong>
+                      <strong style={{ color: "#1e293b" }}><StaticAtomicPreview text={v.name} locationKind="variable" /></strong>
                       <span style={{ color: "#94a3b8", margin: "0 4px" }}>:</span>
-                      <span style={{ color: "#64748b" }}>{v.description || <em>no type</em>}</span>
-                      {v.kind === "let" && <><span style={{ color: "#94a3b8", margin: "0 4px" }}>≔</span><span style={{ color: "#64748b" }}>{v.value}</span></>}
+                      <span style={{ color: "#64748b" }}>{v.description ? <StaticAtomicPreview text={v.description} locationKind="variable" /> : <em>no type</em>}</span>
+                      {v.kind === "let" && <><span style={{ color: "#94a3b8", margin: "0 4px" }}>≔</span><span style={{ color: "#64748b" }}><StaticAtomicPreview text={v.value} locationKind="variable" /></span></>}
                     </span>
                     <div style={es.itemActions}>
                       <button onClick={() => startEdit("variable", i)} style={isEditing ? es.editBtnActive : es.editBtn} title="Edit">✎</button>
@@ -452,7 +482,7 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
             {addTarget === "variable" && renderVariableForm(false)}
           </div>
           <button onClick={() => startAdd("variable")}
-            style={addTarget === "variable" ? es.addBtnActive : es.addBtn}>
+            style={addTarget === "variable" ? es.varAddBtnActive : es.varAddBtn}>
             {addTarget === "variable" ? "− Variable" : "+ Variable"}
           </button>
         </div>
@@ -470,8 +500,8 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
                 <React.Fragment key={i}>
                   <div style={isEditing ? es.hypItemActive : es.hypItem}>
                     <span style={{ color: "#c2410c", fontSize: "16px", fontWeight: "bold", flexShrink: 0, userSelect: "none" }}>•</span>
-                    <span style={{ flex: 1, color: "#64748b", fontStyle: "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
-                      {truncate(statementPreview(h.statement), 65)}
+                    <span style={{ flex: 1, overflow: "hidden", minWidth: 0, lineHeight: 1.4 }}>
+                      <StaticStatementPreview statement={h.statement} locationKind="hypothesis" />
                     </span>
                     <span style={es.hypPill}>{h.label}</span>
                     <div style={es.itemActions}>
@@ -486,7 +516,7 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
             {addTarget === "hypothesis" && renderHypForm(false)}
           </div>
           <button onClick={() => startAdd("hypothesis")}
-            style={addTarget === "hypothesis" ? es.addBtnActive : es.addBtn}>
+            style={addTarget === "hypothesis" ? es.hypAddBtnActive : es.hypAddBtn}>
             {addTarget === "hypothesis" ? "− Hypothesis" : "+ Hypothesis"}
           </button>
         </div>
@@ -504,8 +534,8 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
                 <React.Fragment key={i}>
                   <div style={isEditing ? es.goalItemActive : es.goalItem}>
                     <span style={{ color: "#1d4ed8", fontSize: "15px", fontWeight: "bold", flexShrink: 0, userSelect: "none" }}>⊢</span>
-                    <span style={{ flex: 1, color: "#64748b", fontStyle: "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
-                      {truncate(statementPreview(g.statement), 65)}
+                    <span style={{ flex: 1, overflow: "hidden", minWidth: 0, lineHeight: 1.4 }}>
+                      <StaticStatementPreview statement={g.statement} locationKind="goal" />
                     </span>
                     <span style={es.goalPill}>{g.label}</span>
                     <div style={es.itemActions}>
@@ -520,7 +550,7 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
             {addTarget === "goal" && renderGoalForm(false)}
           </div>
           <button onClick={() => startAdd("goal")}
-            style={addTarget === "goal" ? es.addBtnActive : es.addBtn}>
+            style={addTarget === "goal" ? es.goalAddBtnActive : es.goalAddBtn}>
             {addTarget === "goal" ? "− Goal" : "+ Goal"}
           </button>
         </div>
@@ -772,48 +802,83 @@ const es: Record<string, React.CSSProperties> = {
     lineHeight: 1,
   },
 
-  // ── Add button ──
-  addBtn: {
-    marginTop: "12px",
-    padding: "5px 12px",
-    backgroundColor: "transparent",
-    color: "#94a3b8",
-    border: "1px dashed #cbd5e1",
-    borderRadius: "6px",
-    fontSize: "12px",
-    fontWeight: 500,
-    cursor: "pointer",
-    width: "100%",
+  // ── Add buttons (section-themed) ──
+  varAddBtn: {
+    marginTop: "12px", padding: "5px 12px", width: "100%",
+    backgroundColor: "transparent", color: "#b91c1c",
+    border: "1px dashed #fca5a5", borderRadius: "6px",
+    fontSize: "12px", fontWeight: 600, cursor: "pointer",
   },
-  addBtnActive: {
-    marginTop: "12px",
-    padding: "5px 12px",
-    backgroundColor: "rgba(255,255,255,0.5)",
-    color: "#64748b",
-    border: "1px solid #cbd5e1",
-    borderRadius: "6px",
-    fontSize: "12px",
-    fontWeight: 500,
-    cursor: "pointer",
-    width: "100%",
+  varAddBtnActive: {
+    marginTop: "12px", padding: "5px 12px", width: "100%",
+    backgroundColor: "#fff8f8", color: "#b91c1c",
+    border: "1px solid #fca5a5", borderRadius: "6px",
+    fontSize: "12px", fontWeight: 600, cursor: "pointer",
+  },
+  hypAddBtn: {
+    marginTop: "12px", padding: "5px 12px", width: "100%",
+    backgroundColor: "transparent", color: "#c2410c",
+    border: "1px dashed #fdba74", borderRadius: "6px",
+    fontSize: "12px", fontWeight: 600, cursor: "pointer",
+  },
+  hypAddBtnActive: {
+    marginTop: "12px", padding: "5px 12px", width: "100%",
+    backgroundColor: "#fffaf6", color: "#c2410c",
+    border: "1px solid #fdba74", borderRadius: "6px",
+    fontSize: "12px", fontWeight: 600, cursor: "pointer",
+  },
+  goalAddBtn: {
+    marginTop: "12px", padding: "5px 12px", width: "100%",
+    backgroundColor: "transparent", color: "#1d4ed8",
+    border: "1px dashed #93c5fd", borderRadius: "6px",
+    fontSize: "12px", fontWeight: 600, cursor: "pointer",
+  },
+  goalAddBtnActive: {
+    marginTop: "12px", padding: "5px 12px", width: "100%",
+    backgroundColor: "#f5f9ff", color: "#1d4ed8",
+    border: "1px solid #93c5fd", borderRadius: "6px",
+    fontSize: "12px", fontWeight: 600, cursor: "pointer",
   },
 
-  // ── Inline accordion form ──
-  inlineForm: {
+  // ── Inline accordion forms (one per section) ──
+  varInlineForm: {
     marginTop: "4px",
     padding: "14px 16px",
-    backgroundColor: "#ffffff",
-    borderRadius: "8px",
-    border: "1px solid #e2e8f0",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
+    background: "linear-gradient(180deg, #fff8f8 0%, #fef2f2 100%)",
+    borderRadius: "10px",
+    border: "1.5px solid #fca5a5",
+    boxShadow: "0 2px 8px rgba(185,28,28,0.06)",
   },
-  formTitle: {
-    fontSize: "11px",
-    fontWeight: 700,
-    color: "#475569",
-    letterSpacing: "0.06em",
-    textTransform: "uppercase" as const,
-    marginBottom: "10px",
+  hypInlineForm: {
+    marginTop: "4px",
+    padding: "14px 16px",
+    background: "linear-gradient(180deg, #fffaf6 0%, #fff7ed 100%)",
+    borderRadius: "10px",
+    border: "1.5px solid #fdba74",
+    boxShadow: "0 2px 8px rgba(194,65,12,0.06)",
+  },
+  goalInlineForm: {
+    marginTop: "4px",
+    padding: "14px 16px",
+    background: "linear-gradient(180deg, #f5f9ff 0%, #eff6ff 100%)",
+    borderRadius: "10px",
+    border: "1.5px solid #93c5fd",
+    boxShadow: "0 2px 8px rgba(29,78,216,0.06)",
+  },
+  varFormTitle: {
+    fontSize: "10px", fontWeight: 800, letterSpacing: "0.1em",
+    textTransform: "uppercase" as const, marginBottom: "10px",
+    color: "#b91c1c",
+  },
+  hypFormTitle: {
+    fontSize: "10px", fontWeight: 800, letterSpacing: "0.1em",
+    textTransform: "uppercase" as const, marginBottom: "10px",
+    color: "#c2410c",
+  },
+  goalFormTitle: {
+    fontSize: "10px", fontWeight: 800, letterSpacing: "0.1em",
+    textTransform: "uppercase" as const, marginBottom: "10px",
+    color: "#1d4ed8",
   },
   row: {
     display: "flex",
@@ -821,10 +886,10 @@ const es: Record<string, React.CSSProperties> = {
   },
   label: {
     display: "block",
-    fontSize: "11px",
-    fontWeight: 600,
-    color: "#64748b",
-    letterSpacing: "0.04em",
+    fontSize: "10px",
+    fontWeight: 800,
+    color: "#1e3a5f",
+    letterSpacing: "0.1em",
     textTransform: "uppercase" as const,
     marginBottom: "4px",
     marginTop: "10px",
@@ -832,13 +897,14 @@ const es: Record<string, React.CSSProperties> = {
   input: {
     width: "100%",
     padding: "7px 10px",
-    border: "1px solid #e2e8f0",
-    borderRadius: "6px",
+    border: "1.5px solid rgba(180,200,220,0.7)",
+    borderRadius: "8px",
     fontSize: "13px",
     boxSizing: "border-box" as const,
-    backgroundColor: "#f8fafc",
-    color: "#1e293b",
+    backgroundColor: "rgba(255,255,255,0.7)",
+    color: "#1e3a5f",
     outline: "none",
+    fontFamily: "inherit",
   },
   select: {
     width: "100%",
@@ -883,20 +949,54 @@ const es: Record<string, React.CSSProperties> = {
   },
   primaryBtn: {
     padding: "6px 16px",
-    backgroundColor: "#2563eb",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
+    background: "linear-gradient(180deg, #e8f5e3 0%, #c5dfc0 100%)",
+    color: "#2d5a2a",
+    border: "1px solid #7ab872",
+    borderRadius: "20px",
     fontSize: "13px",
-    fontWeight: 600,
+    fontWeight: 700,
     cursor: "pointer",
+    boxShadow: "0 2px 5px rgba(100,155,85,0.18)",
+  },
+  varPrimaryBtn: {
+    padding: "6px 16px",
+    background: "linear-gradient(180deg, #fef2f2 0%, #fecaca 100%)",
+    color: "#b91c1c",
+    border: "1px solid #fca5a5",
+    borderRadius: "20px",
+    fontSize: "13px",
+    fontWeight: 700,
+    cursor: "pointer",
+    boxShadow: "0 2px 5px rgba(185,28,28,0.12)",
+  },
+  hypPrimaryBtn: {
+    padding: "6px 16px",
+    background: "linear-gradient(180deg, #fff7ed 0%, #fed7aa 100%)",
+    color: "#c2410c",
+    border: "1px solid #fdba74",
+    borderRadius: "20px",
+    fontSize: "13px",
+    fontWeight: 700,
+    cursor: "pointer",
+    boxShadow: "0 2px 5px rgba(194,65,12,0.12)",
+  },
+  goalPrimaryBtn: {
+    padding: "6px 16px",
+    background: "linear-gradient(180deg, #eff6ff 0%, #bfdbfe 100%)",
+    color: "#1d4ed8",
+    border: "1px solid #93c5fd",
+    borderRadius: "20px",
+    fontSize: "13px",
+    fontWeight: 700,
+    cursor: "pointer",
+    boxShadow: "0 2px 5px rgba(29,78,216,0.12)",
   },
   dangerBtn: {
     padding: "6px 14px",
     backgroundColor: "transparent",
     color: "#dc2626",
     border: "1px solid #fca5a5",
-    borderRadius: "6px",
+    borderRadius: "20px",
     fontSize: "13px",
     fontWeight: 500,
     cursor: "pointer",
@@ -905,40 +1005,51 @@ const es: Record<string, React.CSSProperties> = {
     padding: "6px 14px",
     backgroundColor: "transparent",
     color: "#64748b",
-    border: "1px solid #e2e8f0",
-    borderRadius: "6px",
+    border: "1px solid #c0cedb",
+    borderRadius: "20px",
     fontSize: "13px",
     cursor: "pointer",
     marginLeft: "auto",
   },
   modeToggle: {
     display: "flex",
-    gap: "4px",
+    gap: "2px",
     marginTop: "10px",
     padding: "3px",
-    backgroundColor: "#f1f5f9",
-    borderRadius: "7px",
+    backgroundColor: "#f0f4f8",
+    borderRadius: "8px",
     width: "fit-content",
+    border: "1px solid #c0cedb",
   },
   modeActive: {
     padding: "5px 14px",
     backgroundColor: "white",
-    color: "#1d4ed8",
-    border: "none",
-    borderRadius: "5px",
+    color: "#1e3a5f",
+    border: "1px solid #c0cedb",
+    borderRadius: "6px",
     fontSize: "12px",
-    fontWeight: 600,
+    fontWeight: 700,
     cursor: "pointer",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+    boxShadow: "0 1px 3px rgba(30,60,100,0.1)",
   },
   modeInactive: {
     padding: "5px 14px",
     backgroundColor: "transparent",
-    color: "#64748b",
-    border: "none",
-    borderRadius: "5px",
+    color: "#94a3b8",
+    border: "1px solid transparent",
+    borderRadius: "6px",
     fontSize: "12px",
     fontWeight: 500,
     cursor: "pointer",
+  },
+  fieldError: {
+    backgroundColor: "#fff7ed",
+    color: "#c2410c",
+    border: "1px solid #fed7aa",
+    borderRadius: "6px",
+    padding: "5px 10px",
+    marginTop: "4px",
+    fontSize: "11px",
+    fontWeight: 600,
   },
 }

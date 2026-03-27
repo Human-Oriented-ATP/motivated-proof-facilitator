@@ -4,6 +4,7 @@ import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 export const goalUniversalMove: ProofDiscoveryMove = {
     name: "Peel universally quantified variable in the goal",
     kind: "equivalence",
+    classification: "logical",
     trigger: "This move is relevant when the only selection in the proof state is either a goal statement that is a universally quantified statement, or the universally quantified variable within such a goal.",
     action: "Introduce the universally quantified variable as a new free variable and replace the goal with the body of the universally quantified statement. If a variable of that name already exists in the list of variables, please rename the universally quantified variable in the statement before proceeding. If there are other goals remaining, split into two proof contexts: one containing the newly introduced variable and the body as the new goal, and another containing the original variables and the remaining goals.",
     examples: [

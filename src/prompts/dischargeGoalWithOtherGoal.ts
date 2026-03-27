@@ -3,6 +3,7 @@ import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove";
 export const dischargeGoalWithOtherGoalMove: ProofDiscoveryMove = {
   "name": "Solve one open goal using another ",
   "kind": "strengthening",
+  "classification": "mathematical",
   "trigger": "This move is relevant when there are two goals within the same proof context of the proof state selected, where one goal is an easy consequence of the other.",
   "action": "Remove the goal that can be easily deduced from the other.",
   "examples": [

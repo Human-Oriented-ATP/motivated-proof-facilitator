@@ -4,6 +4,7 @@ import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 export const goalExistentialMove: ProofDiscoveryMove = {
     name: "Peel existentially quantified variable in the goal",
     kind: "equivalence",
+    classification: "logical",
     trigger: "This move is relevant when the only selection in the proof state is either an existentially quantified statement in the goal, or the existentially quantified variable within such a goal.",
     action: "Introduce the existentially quantified variable as a new metavariable at the bottom of the variables list and replace the goal with the body of the existential statement. If a variable of that name already exists in the list of variables, please rename the existential variable in the statement before proceeding. If there are other goals remaining, split into two proof contexts: one containing the newly introduced metavariable and the body as the new goal, and another containing the original variables and the remaining goals.",
     examples: [

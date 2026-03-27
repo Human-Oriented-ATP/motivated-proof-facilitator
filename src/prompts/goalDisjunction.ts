@@ -4,6 +4,7 @@ import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 export const goalDisjunctionMove: ProofDiscoveryMove = {
     name: "Choose a branch in a disjunctive goal",
     kind: "strengthening",
+    classification: "logical",
     trigger: "This move is relevant when the only selection in the proof state is a single disjunct within a goal statement that is a disjunction.",
     action: "Replace the disjunctive goal with the selected disjunct as the new goal.",
     examples: [

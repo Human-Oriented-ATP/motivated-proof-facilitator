@@ -55,24 +55,56 @@ function CloseIcon() {
   )
 }
 
+const BLU_DARK   = '#1e3a5f'
+const BLU_MED    = '#2e4a68'
+const BLU_BRIGHT = '#4a8ab5'
+const BLU_BORDER = 'rgba(180,200,220,0.7)'
+const BLU_LIGHT  = '#f0f4f8'
+
 // Sublabel for nested fields
 function SubLabel({ children }: { children: React.ReactNode }) {
   return (
-    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.5, mt: 1 }}>
+    <Typography sx={{
+      display: 'block', mb: 0.5, mt: 1,
+      fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.1em',
+      textTransform: 'uppercase', color: BLU_DARK,
+    }}>
       {children}
     </Typography>
   )
 }
 
-// Shared compact styles applied to all inputs in the builder
+// Shared styles applied to all inputs in the builder
 const INPUT_SX = {
-  '& .MuiInputBase-input': { fontSize: '0.6875rem', py: '3px', px: '8px' },
-  '& .MuiOutlinedInput-root': { fontSize: '0.6875rem' },
+  '& .MuiInputBase-input': {
+    fontSize: '0.82rem', py: '7px', px: '10px', color: BLU_DARK,
+  },
+  '& .MuiOutlinedInput-root': { fontSize: '0.82rem', background: 'rgba(255,255,255,0.7)' },
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: BLU_BORDER },
+  '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': { borderColor: BLU_BRIGHT },
+  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: BLU_BRIGHT, borderWidth: '1.5px' },
 } as const
 
 const SELECT_SX = {
-  fontSize: '0.6875rem',
-  '& .MuiSelect-select': { fontSize: '0.6875rem', py: '3px' },
+  fontSize: '0.82rem', fontWeight: 600, color: BLU_DARK,
+  background: 'rgba(255,255,255,0.7)',
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: BLU_BORDER },
+  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: BLU_BRIGHT },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: BLU_BRIGHT, borderWidth: '1.5px' },
+  '& .MuiSelect-select': { fontSize: '0.82rem', fontWeight: 600, py: '7px', px: '10px' },
+} as const
+
+const MENU_PAPER_SX = {
+  background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)',
+  border: '1px solid #c0cedb', borderRadius: '8px',
+  mt: '3px', boxShadow: '0 4px 16px rgba(30,60,100,0.12)',
+} as const
+
+const MENU_ITEM_SX = {
+  fontSize: '0.82rem', fontWeight: 600, color: BLU_DARK,
+  '&:hover': { background: 'rgba(138,171,204,0.15)' },
+  '&.Mui-selected': { background: 'rgba(138,171,204,0.2)', color: BLU_DARK },
+  '&.Mui-selected:hover': { background: 'rgba(138,171,204,0.28)' },
 } as const
 
 interface StatementBuilderProps {
@@ -102,10 +134,11 @@ export function StatementBuilder({ value, onChange, depth = 0 }: StatementBuilde
       } : {}}
     >
       {/* Kind selector */}
-      <FormControl size="small" sx={{ minWidth: 148, mb: 0.5 }}>
-        <Select value={kind} onChange={handleKindChange} sx={SELECT_SX}>
+      <FormControl size="small" sx={{ minWidth: 160, mb: 0.75 }}>
+        <Select value={kind} onChange={handleKindChange} sx={SELECT_SX}
+          MenuProps={{ PaperProps: { sx: MENU_PAPER_SX } }}>
           {STATEMENT_KINDS.map(k => (
-            <MenuItem key={k.value} value={k.value} sx={{ fontSize: '0.6875rem' }}>
+            <MenuItem key={k.value} value={k.value} sx={MENU_ITEM_SX}>
               {k.label}
             </MenuItem>
           ))}
@@ -158,7 +191,11 @@ export function StatementBuilder({ value, onChange, depth = 0 }: StatementBuilde
             size="small"
             variant="outlined"
             onClick={() => onChange({ kind: value.kind, statements: [...value.statements, ""] } as Statement)}
-            sx={{ mt: 0.75, fontSize: '0.75rem', borderStyle: 'dashed' }}
+            sx={{
+              mt: 0.75, fontSize: '0.75rem', fontWeight: 600, textTransform: 'none',
+              borderStyle: 'dashed', borderColor: BLU_BORDER, color: BLU_MED, borderRadius: '8px',
+              '&:hover': { background: BLU_LIGHT, borderColor: BLU_BRIGHT, borderStyle: 'solid' },
+            }}
           >
             + Add {value.kind === "conjunction" ? "conjunct" : "disjunct"}
           </Button>

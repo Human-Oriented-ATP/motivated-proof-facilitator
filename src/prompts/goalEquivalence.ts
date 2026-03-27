@@ -4,6 +4,7 @@ import { ProofStateSelection } from "../core/ProofStateSelectionContext"
 export const goalEquivalenceMove: ProofDiscoveryMove = {
     name: "Split an equivalence in the goal into two implications",
     kind: "equivalence",
+    classification: "logical",
     trigger: "This move is relevant when the only selection in the proof state is a goal statement that is a biconditional (equivalence).",
     action: "Replace the equivalence goal $A <=> B$ with two implication goals: $A => B$ (the forward direction) and $B => A$ (the backward direction), keeping all other goals unchanged.",
     examples: [
