@@ -3,7 +3,10 @@ PID_DIR  := .pids
 
 .PHONY: start stop clean clean-all
 
-start:
+node_modules: package.json package-lock.json
+	npm install
+
+start: node_modules
 	@mkdir -p $(PID_DIR)
 	@echo "Starting API server on :$(PORT)..."
 	@OPENROUTER_API_KEY=$(OPENROUTER_API_KEY) PORT=$(PORT) \
