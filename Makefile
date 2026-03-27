@@ -1,7 +1,7 @@
 PORT     ?= 3001
 PID_DIR  := .pids
 
-.PHONY: start stop
+.PHONY: start stop clean
 
 start:
 	@mkdir -p $(PID_DIR)
@@ -25,3 +25,7 @@ stop:
 		kill $$(cat $(PID_DIR)/frontend.pid) 2>/dev/null && echo "Frontend stopped."; \
 		rm -f $(PID_DIR)/frontend.pid; \
 	fi
+
+clean:
+	@rm -rf dist $(PID_DIR)
+	@echo "Cleaned."
