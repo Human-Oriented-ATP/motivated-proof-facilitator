@@ -1130,6 +1130,7 @@ function CustomMoveSection({ onHasText }: { onHasText?: (hasText: boolean) => vo
       name: description.trim(),
       kind,
       classification: "mathematical",
+      runWithGuardrails: false,
       trigger: "",
       action: description.trim(),
       examples: [],
@@ -1337,7 +1338,7 @@ function AllMovesList(): JSX.Element {
   }
 
   const handleRunMove = async (move: ProofDiscoveryMove, skipCheck = false) => {
-    if (!skipCheck) {
+    if (!skipCheck && move.runWithGuardrails) {
       setRunState({ phase: 'checking' })
       try {
         const filterResponse = await checkMoveValidity({

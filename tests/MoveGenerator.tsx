@@ -174,6 +174,7 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
   const [moveName, setMoveName] = useState(initialMove?.name ?? "")
   const [moveKind, setMoveKind] = useState<MoveKind>(initialMove?.kind ?? "strengthening")
   const [classification, setClassification] = useState<"mathematical" | "logical">(initialMove?.classification ?? "mathematical")
+  const [runWithGuardrails, setRunWithGuardrails] = useState(initialMove?.runWithGuardrails ?? true)
   const [trigger, setTrigger] = useState(initialMove?.trigger ?? "")
   const [action, setAction] = useState(initialMove?.action ?? "")
   const [examples, setExamples] = useState<UIExample[]>(
@@ -213,6 +214,7 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
       setMoveName(initialMove.name)
       setMoveKind(initialMove.kind)
       setClassification(initialMove.classification ?? "mathematical")
+      setRunWithGuardrails(initialMove.runWithGuardrails ?? true)
       setTrigger(initialMove.trigger)
       setAction(initialMove.action)
       setExamples((initialMove.examples ?? []).map((ex, i) => ({ ...ex, id: `reload-${i}-${Date.now()}` })))
@@ -224,7 +226,7 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
 
   const buildMove = (): ProofDiscoveryMove => {
     const stripped: ProofDiscoveryMoveExample[] = examples.map(({ id: _id, ...rest }) => rest)
-    return { name: moveName, kind: moveKind, classification, trigger, action, examples: stripped }
+    return { name: moveName, kind: moveKind, classification, runWithGuardrails, trigger, action, examples: stripped }
   }
 
   const handleLoadMove = (jsonString: string): void => {
@@ -236,6 +238,7 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
       setMoveName(parsed.name)
       setMoveKind(parsed.kind)
       setClassification(parsed.classification ?? "mathematical")
+      setRunWithGuardrails(parsed.runWithGuardrails ?? true)
       setTrigger(parsed.trigger)
       setAction(parsed.action)
       setExamples((parsed.examples ?? []).map((ex, i) => ({ ...ex, id: `loaded-${Date.now()}-${i}` })))
@@ -300,7 +303,7 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
     try {
       const { proofState: newPS, reasoning: _r } = await runMove({
         proofState: currentInputState.proofState,
-        move: { name: moveName, action, kind: moveKind, classification, trigger, examples: [] },
+        move: { name: moveName, action, kind: moveKind, classification, runWithGuardrails, trigger, examples: [] },
         selections: selections.map(toProofStateSelectionWithPolarity),
       })
       if (newPS) setCurrentOutputState({ proofState: newPS, libraryResult: currentInputState.libraryResult })
@@ -455,6 +458,29 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
                 <MenuItem value="logical" sx={menuItemSx}>Logical</MenuItem>
               </Select>
             </Box>
+          </Box>
+
+          {/* Guardrails toggle */}
+          <Box
+            component="label"
+            sx={{
+              display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer',
+              width: 'fit-content', userSelect: 'none',
+            }}
+          >
+            <Box
+              component="input"
+              type="checkbox"
+              checked={runWithGuardrails}
+              onChange={e => setRunWithGuardrails(e.target.checked)}
+              sx={{ width: 14, height: 14, accentColor: BLU.bright, cursor: 'pointer', flexShrink: 0 }}
+            />
+            <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: BLU.dark }}>
+              Run with guardrails
+            </Typography>
+            <Tooltip title="When enabled, the LLM may decline to apply the move if it judges it inapplicable. Disable to force an output regardless." placement="right">
+              <Box component="span" sx={{ fontSize: '0.68rem', color: '#94a3b8', cursor: 'help', lineHeight: 1 }}>ⓘ</Box>
+            </Tooltip>
           </Box>
 
           {/* Trigger */}
