@@ -7,7 +7,7 @@
  */
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
-import { moves as builtInMoves } from "../prompts/AllMoves"
+import { moves as builtInMoves } from "../prompts/moves"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

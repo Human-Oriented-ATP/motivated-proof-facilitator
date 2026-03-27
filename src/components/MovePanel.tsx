@@ -14,7 +14,7 @@ import { ProofStateWithLibraryResult as ProofStateComponent } from "./ProofState
 import { MathStatement } from "./MathStatement"
 import { runMove } from "../fetchers/move"
 import MoveGenerator from "../../tests/MoveGenerator"
-import { moves, suggestionMoves } from "../prompts/AllMoves"
+import { moves, suggestionMoves } from "../prompts/moves"
 import { useMoveSet } from "./MoveSetContext"
 import { checkMoveValidity, FilterResponse } from "../fetchers/filter"
 import { suggestStatements, SuggestResult, SuggestResults } from "../fetchers/suggest"
