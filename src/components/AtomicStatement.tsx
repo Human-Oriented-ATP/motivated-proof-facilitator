@@ -1,5 +1,5 @@
 import React, { JSX } from "react"
-import { MathExpression } from "./MathExpression"
+import { MathExpressionMathJax as MathExpression } from "./MathExpressionMathJax"
 import { StatementAddress } from "../core/ProofStateSelectionContext"
 
 /** A segment within an atomic statement, either plain text or a mathematical expression. */

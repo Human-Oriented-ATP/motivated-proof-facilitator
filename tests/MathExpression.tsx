@@ -3,7 +3,7 @@ import "./ProofStateContext";
 import { expressions } from "./samples/MathExpression";
 import { atomicStatements } from "./samples/AtomicStatement";
 import ProofStateContextProvider from "./ProofStateContext";
-import { MathExpression } from "../src/components/MathExpression";
+import { MathExpressionMathJax as MathExpression } from "../src/components/MathExpressionMathJax";
 import { AtomicStatement } from "../src/components/AtomicStatement";
 import { ProofStateSelectionContext } from "../src/core/ProofStateSelectionContext";
 

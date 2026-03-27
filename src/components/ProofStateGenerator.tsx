@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef, JSX } from "react"
+import React, { useState, useEffect, useRef, JSX } from "react"
 import { ProofState, ProofStateSchema } from "../core/ProofStateZod"
 import { ProofDiscoveryState, ProofNode, MoveDescription } from "../core/ProofDiscoveryState"
-import { WasmContext, loadWasm } from "./MathExpression"
 import { ProofStateEditor } from "./ProofStateEditor"
 import Graph from "graphology"
 import { formalizeProblem } from "../fetchers/formalize"
@@ -10,73 +9,24 @@ export type ProofStateGeneratorProps = {
   onGenerated: (state: ProofDiscoveryState) => void
 }
 
-/** Render a live Typst preview for $...$-delimited math in the input string. */
-function TypstPreview({ input }: { input: string }): JSX.Element | null {
-  const wasm = React.useContext(WasmContext)
-  const compiler = wasm?.current
+/** Render a live MathJax preview for $...$-delimited math in the input string. */
+function MathPreview({ input }: { input: string }): JSX.Element | null {
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
-  const rendered = useMemo(() => {
-    if (!compiler || !input.trim()) return null
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el || !input.trim()) return
+    if (!window.MathJax?.typeset) return
+    el.textContent = input
+    window.MathJax.typeset([el])
+  }, [input])
 
-    // Split on $...$ delimiters
-    const parts = input.split(/(\$[^$]+\$)/)
-    if (parts.every((p) => !p.startsWith("$"))) return null
-
-    return parts.map((part, i) => {
-      if (part.startsWith("$") && part.endsWith("$") && part.length > 2) {
-        const math = part.slice(1, -1)
-        try {
-          const result = JSON.parse(compiler.compile(math)) as
-            | { svg: string }
-            | { error: string }
-          if ("error" in result) {
-            return (
-              <span key={i} style={{ color: "#e53e3e", fontStyle: "italic", margin: "0 0.4em" }}>
-                {part}
-              </span>
-            )
-          }
-          const SCALING = 1.5
-          const rawSvg = result.svg.replace(/fill="#ffffff"/g, 'fill="#000000"')
-          const wMatch = rawSvg.match(/\bwidth="([\d.]+)(pt|px)?"/)
-          const hMatch = rawSvg.match(/\bheight="([\d.]+)(pt|px)?"/)
-          const w = wMatch?.[1] != null ? parseFloat(wMatch[1]!) : null
-          const h = hMatch?.[1] != null ? parseFloat(hMatch[1]!) : null
-          const unit = wMatch?.[2] ?? "pt"
-          const svgStyle = "width:100%; height:100%; font-size:10pt; vertical-align:-0.2em"
-          const fixedSvg = rawSvg.includes(" style=")
-            ? rawSvg.replace(/(<svg[^>]*) style="([^"]*)"/, `$1 style="${svgStyle}; $2"`)
-            : rawSvg.replace("<svg", `<svg style="${svgStyle}"`)
-          return (
-            <span
-              key={i}
-              style={{
-                display: "inline-block",
-                ...(w != null ? { width: `${w * SCALING}${unit}` } : {}),
-                ...(h != null ? { height: `${h * SCALING}${unit}` } : {}),
-                margin: "0 0.4em",
-              }}
-              dangerouslySetInnerHTML={{ __html: fixedSvg }}
-            />
-          )
-        } catch {
-          return (
-            <span key={i} style={{ color: "#e53e3e", fontStyle: "italic", margin: "0 0.4em" }}>
-              {part}
-            </span>
-          )
-        }
-      }
-      return <span key={i}>{part}</span>
-    })
-  }, [compiler, input])
-
-  if (!rendered) return null
+  if (!/\$[^$]+\$/.test(input)) return null
 
   return (
     <div style={styles.previewBox}>
       <div style={styles.previewLabel}>Preview</div>
-      <div style={styles.previewContent}>{rendered}</div>
+      <div ref={containerRef} style={styles.previewContent}>{input}</div>
     </div>
   )
 }
@@ -92,14 +42,6 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
     hypotheses: [],
     goals: []
   }])
-
-  // Load WASM for the Typst preview
-  const wasmRef = useRef<{ compile: (input: string) => string } | null>(null)
-  const [wasmReady, setWasmReady] = useState(false)
-
-  useEffect(() => {
-    loadWasm(wasmRef).then(() => setWasmReady(true))
-  }, [])
 
   const handleFormalize = async (): Promise<void> => {
     if (!inputStatement.trim()) {
@@ -153,10 +95,7 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
     }
   }
 
-  const hasMath = /\$[^$]+\$/.test(inputStatement)
-
   return (
-    <WasmContext.Provider value={wasmRef}>
       <div style={styles.container}>
         <div style={styles.inputCard}>
           <div style={styles.header}>
@@ -216,7 +155,7 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
                 </div>
               </div>
 
-              {wasmReady && hasMath && <TypstPreview input={inputStatement} />}
+              <MathPreview input={inputStatement} />
 
               {error && (
                 <div style={styles.errorBox}>
@@ -307,7 +246,6 @@ export function ProofStateGenerator({ onGenerated }: ProofStateGeneratorProps): 
           </a>
         </div>
       </div>
-    </WasmContext.Provider>
   )
 }
 

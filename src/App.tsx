@@ -3,7 +3,6 @@ import { ProofDiscoveryState } from "./core/ProofDiscoveryState"
 import { ProofDiscoveryEnvironment } from "./components/ProofDiscoveryEnvironment"
 import { ProofStateGenerator } from "./components/ProofStateGenerator"
 import { ProofStateSelectionContext, proofStateSelectionReducer } from "./core/ProofStateSelectionContext"
-import TypstContextProvider from "./components/TypstContext"
 import { Box, Button, Chip, Typography } from "@mui/material"
 import { sampleProofDiscoveryState } from "../tests/samples/ProofDiscoveryState"
 
@@ -14,7 +13,6 @@ export default function App(): JSX.Element {
   if (initialState) {
     return (
       <ProofStateSelectionContext.Provider value={{ selections, dispatch: selectionsDispatch }}>
-        <TypstContextProvider>
           <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
             {/* ── App Header ── */}
             <Box sx={{
@@ -100,16 +98,13 @@ export default function App(): JSX.Element {
               <ProofDiscoveryEnvironment initialProofDiscoveryState={initialState} />
             </Box>
           </Box>
-        </TypstContextProvider>
       </ProofStateSelectionContext.Provider>
     )
   }
 
   return (
     <ProofStateSelectionContext.Provider value={{ selections, dispatch: selectionsDispatch }}>
-      <TypstContextProvider>
-        <ProofStateGenerator onGenerated={setInitialState} />
-      </TypstContextProvider>
+      <ProofStateGenerator onGenerated={setInitialState} />
     </ProofStateSelectionContext.Provider>
   )
 }

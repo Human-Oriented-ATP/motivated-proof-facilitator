@@ -1,7 +1,6 @@
 import React from 'react'
 import { ProofDiscoveryState } from '../src/components/ProofDiscoveryState'
 import { sampleProofDiscoveryState } from './samples/ProofDiscoveryState'
-import TypstContextProvider from '../src/components/TypstContext'
 import { ProofDiscoveryStateContext } from '../src/core/ProofDiscoveryStateContext'
 import { proofDiscoveryStateReducer, ProofDiscoveryState as ProofDiscoveryStateType } from '../src/core/ProofDiscoveryState'
 
@@ -22,8 +21,7 @@ function ProofDiscoveryStateInteractive({ initialState }: { initialState: ProofD
  */
 export default function Test() {
     return (
-        <TypstContextProvider>
-        <div style={{ 
+        <div style={{
             padding: '20px', 
             display: 'flex', 
             flexDirection: 'column', 
@@ -79,6 +77,5 @@ export default function Test() {
                 </ul>
             </div>
         </div>
-        </TypstContextProvider>
     )
 }

@@ -1,4 +1,4 @@
-import { MathExpressionProps } from "../../src/components/MathExpression"
+import { MathExpressionProps } from "../../src/components/MathExpressionMathJax"
 
 export const expressions: MathExpressionProps[] = [
     {

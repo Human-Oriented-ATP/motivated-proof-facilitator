@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { ProofStateWithLibraryResult as ProofStateWithLibraryResultComponent } from '../src/components/ProofState';
 import { ProofStateSelectionContext } from '../src/core/ProofStateSelectionContext';
 import { ProofStateIdContext } from '../src/core/ProofDiscoveryStateContext';
-import TypstContextProvider from '../src/components/TypstContext';
 import { ProofDiscoveryMove } from '../src/core/ProofDiscoveryMove';
 
 import { goalConjunctionMove } from '../src/prompts/goalConjunction';
@@ -66,7 +65,6 @@ export default function MoveVisualizer({ onOpenInGenerator }: Props): React.JSX.
     };
 
     return (
-        <TypstContextProvider>
             <div style={{ display: 'flex', height: '100%', fontFamily: 'system-ui, sans-serif', background: '#f7fafc' }}>
                 {/* Sidebar */}
                 <div style={{ width: 240, flexShrink: 0, background: 'white', borderRight: '1.5px solid #e2e8f0',
@@ -218,6 +216,5 @@ export default function MoveVisualizer({ onOpenInGenerator }: Props): React.JSX.
                     })}
                 </div>
             </div>
-        </TypstContextProvider>
     );
 }

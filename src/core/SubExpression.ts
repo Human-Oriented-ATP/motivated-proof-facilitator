@@ -1,8 +1,12 @@
+import type { LatexNode } from "./LatexParser"
+
 /** A data-structure representing a sub-expression within a larger expression. */
 export type SubExpressionCore = {
   text: string
   source_start: number
   source_end: number
+  /** TypeScript syntax tree of the selected sub-expression (from LatexParser). */
+  syntaxTree?: LatexNode
 }
 
 /** A sub-expression with extra parameters that 

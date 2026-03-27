@@ -30,7 +30,6 @@ import { proofDiscoveryStateReducer, nullProofDiscoveryState } from "../src/core
 import { ProofStateWithLibraryResult as ProofStateWithLibraryResultComponent } from "../src/components/ProofState"
 import ProofStateContextProvider from "./ProofStateContext"
 import { ProofStateSelectionContext, proofStateSelectionReducer } from "../src/core/ProofStateSelectionContext"
-import TypstContextProvider from "../src/components/TypstContext"
 import { ProofStateEditor } from "../src/components/ProofStateEditor"
 import { formalizeProblem } from "../src/fetchers/formalize"
 import { formalizeStatement } from "../src/fetchers/formalize-statement"
@@ -481,12 +480,10 @@ export default function MoveGenerator({ initialMoveJson }: { initialMoveJson?: s
                 Make selections below, then apply the move or mark as a non-example.
               </Typography>
               <ProofStateSelectionContext.Provider value={{ selections, dispatch: selectionsDispatch }}>
-                <TypstContextProvider>
                   <ProofStateWithLibraryResultComponent
                     proofState={currentInputState.proofState}
                     libraryResult={currentInputState.libraryResult}
                   />
-                </TypstContextProvider>
               </ProofStateSelectionContext.Provider>
               <Typography variant="caption" sx={{ display: 'block', mt: 1.5, color: 'text.secondary', fontWeight: 500 }}>
                 {selections.length} selection{selections.length !== 1 ? 's' : ''} made
