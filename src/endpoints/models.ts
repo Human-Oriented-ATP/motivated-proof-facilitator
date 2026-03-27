@@ -1,8 +1,10 @@
+import { openrouter } from './provider.js'
+
 export const MODELS = {
-    "formalize": "openai/gpt-5.4",
-    "formalize_statement": "anthropic/claude-sonnet-4.6",
-    "move": "openai/gpt-5.4",
-    "filter": "openai/gpt-5.3-chat",
-    "informalize": "inception/mercury-2",
-    "suggest": "openai/gpt-5.4"
+    "formalize":          openrouter("openai/gpt-4o"),
+    "formalize_statement":openrouter("anthropic/claude-3-5-sonnet"),
+    "move":               openrouter("openai/gpt-4o"),
+    "filter":             openrouter("openai/gpt-4o"),
+    "informalize":        openrouter("openai/gpt-4o-mini"),
+    "suggest":            openrouter("openai/gpt-4o"),
 }
