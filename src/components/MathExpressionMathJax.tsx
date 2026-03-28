@@ -7,13 +7,6 @@ import {
   areStatementAddressesEqual,
 } from "../core/ProofStateSelectionContext"
 import { areProofStateIdsEqual, ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
-import {
-  LatexNode,
-  parseLatex,
-  getLeaves,
-  flattenNodes,
-  restructureInfixOps,
-} from "../core/LatexParser"
 
 // ---------------------------------------------------------------------------
 // MathJax CDN loader (once per page)
@@ -42,7 +35,16 @@ function ensureMathJax(): Promise<void> {
       startup: {
         ready() {
           window.MathJax.startup.defaultReady()
-          resolve()
+          // Wait until tex2svg is available (same readiness check as standalone)
+          const check = () => {
+            const mj = window.MathJax as any
+            if (mj.tex2svg) {
+              resolve()
+            } else {
+              setTimeout(check, 50)
+            }
+          }
+          check()
         },
       },
     }
@@ -56,138 +58,332 @@ function ensureMathJax(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Rendered sub-expression record
+// MathJax SVG DOM node mapping (replaces custom LatexParser)
 // ---------------------------------------------------------------------------
+// MathJax's SVG output contains nested <g data-mml-node="kind"> elements
+// that mirror its internal parse tree — we walk this tree directly.
+// No custom LaTeX parser needed!
 
-export type MathJaxSubExpression = SubExpressionCore & {
-  /** Bounding rect in pixels, relative to the container element's top-left. */
-  x: number; y: number; width: number; height: number
-  /** Pre-computed area for hit-testing (width × height). */
-  area: number
-  /** The corresponding AST node (for depth ordering & parent lookup). */
-  node: LatexNode
+type SvgNodeMapping = {
+  svgElement: Element
+  kind: string
+  latex: string
+  depth: number
+  children: SvgNodeMapping[]
+  parent: SvgNodeMapping | null
+  uid: number
+  isVirtual?: boolean  // true for injected equation-side nodes
 }
 
-// ---------------------------------------------------------------------------
-// Sub-expression extraction
-// ---------------------------------------------------------------------------
+let _nextMappingUid = 0
 
-type Rect = { x: number; y: number; x2: number; y2: number }
+/**
+ * After building the tree, find matched parentheses/brackets among a node's
+ * children and inject virtual grouping nodes so Alt+click can step through
+ * parenthesized sub-expressions (e.g. a → (a+b) → (a+b)(a-b) → full expr).
+ */
+function injectParenGroups(allMappings: SvgNodeMapping[]) {
+  const CLOSE_FOR: Record<string, string> = { "(": ")", "[": "]", "{": "}" }
+  const OPEN_CHARS = new Set(Object.keys(CLOSE_FOR))
 
-/** Union of two rects. */
-function unionRect(a: Rect, b: Rect): Rect {
-  return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), x2: Math.max(a.x2, b.x2), y2: Math.max(a.y2, b.y2) }
+  // Work on a snapshot so we don't iterate newly-added virtual nodes
+  const snapshot = [...allMappings]
+
+  for (const p of snapshot) {
+    if (p.children.length < 3) continue
+
+    // Find matched paren groups among p's direct children
+    const groups: { start: number; end: number }[] = []
+    const stack: { char: string; idx: number }[] = []
+
+    for (let i = 0; i < p.children.length; i++) {
+      const c = p.children[i]!
+      if (c.kind !== "mo") continue
+      const txt = extractText(c.svgElement)
+      if (OPEN_CHARS.has(txt)) {
+        stack.push({ char: txt, idx: i })
+      } else if (txt === ")" || txt === "]" || txt === "}") {
+        for (let j = stack.length - 1; j >= 0; j--) {
+          if (CLOSE_FOR[stack[j]!.char] === txt) {
+            groups.push({ start: stack[j]!.idx, end: i })
+            stack.splice(j, 1)
+            break
+          }
+        }
+      }
+    }
+
+    for (const { start, end } of groups) {
+      if (end - start < 2) continue // empty parens ()
+      // Skip if group spans ALL children (would just duplicate parent)
+      if (start === 0 && end === p.children.length - 1) continue
+
+      const groupChildren = p.children.slice(start, end + 1)
+
+      const virtualMapping: SvgNodeMapping = {
+        svgElement: groupChildren[0]!.svgElement,
+        kind: "mrow",
+        latex: groupChildren.map(c => c.latex).join(" "),
+        depth: p.depth + 0.3,
+        children: groupChildren,
+        parent: p,
+        uid: _nextMappingUid++,
+        isVirtual: true,
+      }
+
+      for (const child of groupChildren) {
+        child.parent = virtualMapping
+      }
+
+      allMappings.push(virtualMapping)
+    }
+  }
 }
 
 /**
- * Walk the SVG and build a list of selectable sub-expressions.
- *
- * Algorithm:
- *  1. Parse LaTeX → structural AST (mirrors MathJax's MML tree)
- *  2. Collect leaf nodes from both:
- *       • original structural AST  (for source positions)
- *       • SVG [data-mml-node] leaves  (for bounding boxes)
- *     and map them pairwise by DFS order.
- *  3. Build a `bboxByStart` map: source_start → client bounding rect.
- *  4. For every AST node (structural + operator-precedence compound nodes),
- *     compute its bounding box as the UNION of all leaves whose source span
- *     falls within the node's [start, end].  This gives correct bboxes for
- *     compound expressions like `a + b` even though they have no direct SVG
- *     wrapper element.
- *  5. Deduplicate by (source_start, source_end) and discard empty boxes.
+ * After building the tree, find nodes whose children contain an = sign,
+ * and insert virtual "equation-side" parent nodes so that Alt+click can
+ * expand to "left side" or "right side" before reaching the full expression.
  */
-function extractSubExpressions(
-  svgEl: SVGSVGElement,
-  latexSrc: string,
-): MathJaxSubExpression[] {
-  // ── 1. Parse ──────────────────────────────────────────────────────────────
-  const ast = parseLatex(latexSrc)
+function injectEquationSideParents(allMappings: SvgNodeMapping[]) {
+  const EQ_CHARS = new Set(["=", "\u2260", "\u2264", "\u2265"])
 
-  // ── 2. Gather all selectable AST nodes ───────────────────────────────────
-  // Start with every node from the structural parse.
-  const structuralNodes = flattenNodes(ast)
-
-  // Add compound infix-operator nodes (e.g. binop for "a + b").
-  // We apply restructureInfixOps to the top-level sequence only — deep
-  // nesting is already structural (e.g. \frac already groups its args).
-  const topLevel = ast.body.kind === "mrow" ? ast.body.children
-                 : ast.body.kind === "math"  ? [ast.body]
-                 : [ast.body]
-  const exprTree = topLevel.length > 1 ? restructureInfixOps(topLevel) : null
-  const compoundNodes = exprTree ? flattenNodes(exprTree) : []
-
-  // Merge, deduplicate by span key.
-  const bySpan = new Map<string, LatexNode>()
-  for (const n of [...structuralNodes, ...compoundNodes]) {
-    const key = `${n.start}:${n.end}`
-    if (!bySpan.has(key)) bySpan.set(key, n)
-  }
-  const allNodes = Array.from(bySpan.values())
-
-  // ── 3. Leaf-to-SVG-element mapping ───────────────────────────────────────
-  const astLeaves = getLeaves(ast)
-
-  // SVG leaves = [data-mml-node] elements that contain no nested [data-mml-node]
-  const allMmlEls = Array.from(svgEl.querySelectorAll("[data-mml-node]"))
-  const svgLeaves = allMmlEls.filter(el => !el.querySelector("[data-mml-node]"))
-
-  const containerRect = svgEl.getBoundingClientRect()
-
-  // source_start → client rect (relative to container)
-  const bboxByStart = new Map<number, Rect>()
-  const count = Math.min(astLeaves.length, svgLeaves.length)
-  for (let i = 0; i < count; i++) {
-    const leaf = astLeaves[i]!
-    const el = svgLeaves[i]!
-    try {
-      const r = (el as SVGGraphicsElement).getBoundingClientRect()
-      if (r.width > 0 || r.height > 0) {
-        bboxByStart.set(leaf.start, {
-          x:  r.left - containerRect.left,
-          y:  r.top  - containerRect.top,
-          x2: r.right  - containerRect.left,
-          y2: r.bottom - containerRect.top,
-        })
-      }
-    } catch { /* element not yet laid out */ }
-  }
-
-  // ── 4. Compute bboxes and build results ───────────────────────────────────
-  const result: MathJaxSubExpression[] = []
-
-  for (const node of allNodes) {
-    const { start, end } = node
-    if (start >= end) continue  // degenerate span
-
-    // Union of all leaf bboxes whose span falls within this node's span
-    let box: Rect | null = null
-    for (const leaf of astLeaves) {
-      if (leaf.start >= start && leaf.end <= end) {
-        const b = bboxByStart.get(leaf.start)
-        if (b) box = box ? unionRect(box, b) : { ...b }
+  // Find parent nodes that have an = among their direct children
+  const parents = new Set<SvgNodeMapping>()
+  for (const m of allMappings) {
+    if (m.kind === "mo") {
+      const txt = extractText(m.svgElement)
+      if (m.parent && EQ_CHARS.has(txt)) {
+        parents.add(m.parent)
       }
     }
-    if (!box) continue
-
-    const w = box.x2 - box.x
-    const h = box.y2 - box.y
-    if (w <= 0 || h <= 0) continue
-
-    result.push({
-      text: latexSrc.slice(start, end),
-      source_start: start,
-      source_end: end,
-      syntaxTree: node,
-      x: box.x, y: box.y, width: w, height: h,
-      area: w * h,
-      node,
-    })
   }
 
-  // Sort by area ascending so hit-testing can stop early
-  result.sort((a, b) => a.area - b.area)
-  return result
+  for (const p of parents) {
+    const eqIdx = p.children.findIndex(
+      c => c.kind === "mo" && EQ_CHARS.has(extractText(c.svgElement)),
+    )
+    if (eqIdx <= 0 || eqIdx >= p.children.length - 1) continue
+
+    const leftChildren = p.children.slice(0, eqIdx)
+    const rightChildren = p.children.slice(eqIdx + 1)
+
+    for (const side of [leftChildren, rightChildren]) {
+      if (side.length < 2) continue // single-node side doesn't need grouping
+
+      // Create a virtual SVG element that spans the side's bounding box
+      // (we reuse the first child's element for getBoundingClientRect — 
+      //  the highlight will use the actual element's bbox)
+      const virtualMapping: SvgNodeMapping = {
+        svgElement: side[0]!.svgElement,
+        kind: "mrow",
+        latex: side.map(c => c.latex).join(" "),
+        depth: p.depth + 0.5,
+        children: side,
+        parent: p,
+        uid: _nextMappingUid++,
+        isVirtual: true,
+      }
+
+      // Re-parent: each child now points to the virtual node
+      for (const child of side) {
+        child.parent = virtualMapping
+      }
+
+      allMappings.push(virtualMapping)
+    }
+  }
 }
+
+function buildNodeTree(svgRoot: Element): SvgNodeMapping[] {
+  const allMappings: SvgNodeMapping[] = []
+
+  function walk(el: Element, depth: number, parent: SvgNodeMapping | null): SvgNodeMapping | null {
+    const kind = el.getAttribute("data-mml-node")
+    if (kind) {
+      const mapping: SvgNodeMapping = {
+        svgElement: el, kind, latex: "", depth, children: [], parent,
+        uid: _nextMappingUid++,
+      }
+      allMappings.push(mapping)
+      for (let i = 0; i < el.children.length; i++) {
+        const child = walk(el.children[i]!, depth + 1, mapping)
+        if (child) mapping.children.push(child)
+      }
+      mapping.latex = nodeToLatex(mapping)
+      return mapping
+    }
+    for (let i = 0; i < el.children.length; i++) {
+      const child = walk(el.children[i]!, depth, parent)
+      if (child && parent) parent.children.push(child)
+    }
+    return null
+  }
+
+  walk(svgRoot, 0, null)
+
+  // MathJax SVG sometimes places nodes OUTSIDE <g data-mml-node="math">.
+  // Adopt all orphan nodes (parent=null, not the root math) into the math node.
+  const mathNode = allMappings.find(m => m.kind === "math" && m.depth === 0)
+  if (mathNode) {
+    for (const m of allMappings) {
+      if (m !== mathNode && m.parent === null) {
+        m.parent = mathNode
+        m.depth = 1
+        mathNode.children.push(m)
+      }
+    }
+    // Recompute math node's latex since it now has more children
+    mathNode.latex = nodeToLatex(mathNode)
+  }
+
+  // Insert virtual "equation side" parent nodes for children split by = ≠ ≤ ≥
+  // This lets Alt+click expand to "left side" / "right side" before reaching the root
+  injectEquationSideParents(allMappings)
+
+  // Insert virtual grouping nodes for matched parentheses/brackets
+  // This lets Alt+click step through (a+b) before reaching the full side
+  injectParenGroups(allMappings)
+
+  return allMappings
+}
+
+function nodeToLatex(m: SvgNodeMapping): string {
+  const { kind, children, svgElement } = m
+  if (children.length === 0 || kind === "mi" || kind === "mn" || kind === "mo") {
+    const text = extractText(svgElement)
+    if (kind === "mo") return OPERATOR_MAP[text] ?? text
+    if (kind === "mi") {
+      // Check identifier map first, then operator map (∞ can appear as mi),
+      // then common function names
+      if (IDENTIFIER_MAP[text]) return IDENTIFIER_MAP[text]
+      if (OPERATOR_MAP[text]) return OPERATOR_MAP[text]
+      if (FUNCTION_NAMES.has(text)) return `\\${text}`
+      return text
+    }
+    if (kind === "mn") return text
+    if (kind === "mtext") return `\\text{${text}}`
+    return text
+  }
+  const cl = children.map(c => c.latex)
+  switch (kind) {
+    case "math": case "semantics": case "TeXAtom": case "mpadded": case "mstyle":
+      return cl.join("")
+    case "mrow": return cl.join(" ")
+    case "mfrac": return `\\frac{${cl[0] ?? ""}}{${cl[1] ?? ""}}`
+    case "msup": return `{${cl[0] ?? ""}}^{${cl[1] ?? ""}}`
+    case "msub": return `{${cl[0] ?? ""}}_{${cl[1] ?? ""}}`
+    case "msubsup": return `{${cl[0] ?? ""}}_{${cl[1] ?? ""}}^{${cl[2] ?? ""}}`
+    case "msqrt": return `\\sqrt{${cl.join(" ")}}`
+    case "mroot": return `\\sqrt[${cl[1] ?? ""}]{${cl[0] ?? ""}}`
+    case "mover": return `\\overline{${cl[0] ?? ""}}`
+    case "munder": return `\\underline{${cl[0] ?? ""}}`
+    case "munderover": return `{${cl[0] ?? ""}}_{${cl[1] ?? ""}}^{${cl[2] ?? ""}}`
+    case "mspace": return "\\,"
+    default: return cl.join(" ")
+  }
+}
+
+function extractText(el: Element): string {
+  const glyphs = el.querySelectorAll("[data-c]")
+  if (glyphs.length > 0) {
+    return Array.from(glyphs)
+      .map(g => {
+        const hex = g.getAttribute("data-c")
+        if (!hex) return ""
+        const cp = parseInt(hex, 16)
+        return normalizeMathChar(cp)
+      })
+      .join("")
+  }
+  return el.textContent?.trim() ?? ""
+}
+
+/**
+ * Convert Unicode Mathematical Alphanumeric Symbols back to ASCII.
+ * MathJax SVG uses these (e.g. U+1D44E = math italic 'a'), but
+ * MathJax TeX input needs plain ASCII letters.
+ */
+function normalizeMathChar(cp: number): string {
+  // Math Italic Capital A-Z: U+1D434..U+1D44D
+  if (cp >= 0x1D434 && cp <= 0x1D44D) return String.fromCharCode(65 + cp - 0x1D434)
+  // Math Italic Small a-z: U+1D44E..U+1D467 (with gap at h=U+1D455)
+  if (cp >= 0x1D44E && cp <= 0x1D467) {
+    if (cp === 0x1D455) return "h" // gap in Unicode, but just in case
+    const offset = cp - 0x1D44E
+    return String.fromCharCode(97 + offset)
+  }
+  // Planck constant ℎ (used for italic h)
+  if (cp === 0x210E) return "h"
+  // Math Bold Capital A-Z: U+1D400..U+1D419
+  if (cp >= 0x1D400 && cp <= 0x1D419) return String.fromCharCode(65 + cp - 0x1D400)
+  // Math Bold Small a-z: U+1D41A..U+1D433
+  if (cp >= 0x1D41A && cp <= 0x1D433) return String.fromCharCode(97 + cp - 0x1D41A)
+  // Math Bold Italic Capital A-Z: U+1D468..U+1D481
+  if (cp >= 0x1D468 && cp <= 0x1D481) return String.fromCharCode(65 + cp - 0x1D468)
+  // Math Bold Italic Small a-z: U+1D482..U+1D49B
+  if (cp >= 0x1D482 && cp <= 0x1D49B) return String.fromCharCode(97 + cp - 0x1D482)
+  // Everything else: return as-is
+  return String.fromCodePoint(cp)
+}
+
+const OPERATOR_MAP: Record<string, string> = {
+  "\u2264": "\\leq", "\u2265": "\\geq", "\u2260": "\\neq",
+  "\u00B1": "\\pm", "\u00D7": "\\times", "\u00F7": "\\div",
+  "\u22C5": "\\cdot", "\u2208": "\\in", "\u2282": "\\subset",
+  "\u222A": "\\cup", "\u2229": "\\cap", "\u2192": "\\to",
+  "\u21D2": "\\Rightarrow", "\u221E": "\\infty", "\u2202": "\\partial",
+  "\u2207": "\\nabla", "\u2211": "\\sum", "\u220F": "\\prod", "\u222B": "\\int",
+}
+
+const IDENTIFIER_MAP: Record<string, string> = {
+  "\u03B1": "\\alpha", "\u03B2": "\\beta", "\u03B3": "\\gamma",
+  "\u03B4": "\\delta", "\u03B5": "\\epsilon", "\u03B8": "\\theta",
+  "\u03BB": "\\lambda", "\u03BC": "\\mu", "\u03C0": "\\pi",
+  "\u03C3": "\\sigma", "\u03C6": "\\phi", "\u03C8": "\\psi", "\u03C9": "\\omega",
+}
+
+// Common math function names that MathJax renders as mi but need \cmd in LaTeX
+const FUNCTION_NAMES = new Set([
+  "sin", "cos", "tan", "cot", "sec", "csc",
+  "arcsin", "arccos", "arctan",
+  "sinh", "cosh", "tanh", "coth",
+  "log", "ln", "exp", "det", "dim", "ker", "hom",
+  "lim", "sup", "inf", "max", "min", "arg", "deg",
+  "gcd", "Pr",
+])
+
+// ---------------------------------------------------------------------------
+// Helper: skip structural nodes when walking up the tree
+// ---------------------------------------------------------------------------
+
+const SKIP_KINDS = new Set(["TeXAtom", "mpadded", "mstyle", "semantics"])
+
+function nextMeaningfulParent(m: SvgNodeMapping): SvgNodeMapping | null {
+  let p = m.parent
+  while (p && SKIP_KINDS.has(p.kind)) p = p.parent
+  return p
+}
+
+// ---------------------------------------------------------------------------
+// Helper: convert a mapping to selection text + source positions
+// ---------------------------------------------------------------------------
+
+function mappingToSelectionData(
+  m: SvgNodeMapping,
+  _latexSrc: string,
+): { text: string; source_start: number; source_end: number } | null {
+  const text = m.latex
+  if (!text.trim()) return null
+  // Use unique node ID to ensure each node has a distinct selection key
+  // (avoids "select one x → all x's highlighted" bug)
+  const source_start = -(m.uid + 1) * 1000
+  return { text, source_start, source_end: source_start + text.length }
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Component
@@ -196,24 +392,9 @@ function extractSubExpressions(
 export type MathExpressionProps = {
   address: StatementAddress
   index: number
-  /** Raw LaTeX math string (no surrounding $ signs). */
   input: string
 }
 
-/**
- * Renders a LaTeX math expression via MathJax and supports interactive
- * sub-expression selection.
- *
- * **Hover** — yellow highlight on the smallest expression under the cursor.
- * **Click** — toggles selection (blue highlight) dispatched to
- *   `ProofStateSelectionContext` with `text`, `source_start`, `source_end`,
- *   `syntaxTree`, and `index`.
- * **Alt/Option + Click** — expands to the next-larger enclosing expression
- *   (e.g. click `+` to select `a + b` instead of just `+`).
- *
- * Any expression recognised by the LaTeX parser is selectable, including
- * composite infix expressions such as `a + b` within `a + b = c`.
- */
 export function MathExpressionMathJax({ address, index, input }: MathExpressionProps): JSX.Element {
   const { selections, dispatch } = React.useContext(ProofStateSelectionContext)
   const proofStateLocation = React.useContext(ProofStateLocationContext)
@@ -221,55 +402,88 @@ export function MathExpressionMathJax({ address, index, input }: MathExpressionP
 
   const containerRef = useRef<HTMLSpanElement | null>(null)
   const [mjReady, setMjReady] = useState(false)
-  const [subExprs, setSubExprs] = useState<MathJaxSubExpression[]>([])
-  const [hoverIdx, setHoverIdx] = useState<number | null>(null)
-  // Tracks how many times the component has been successfully typeset
+  const [allMappings, setAllMappings] = useState<SvgNodeMapping[]>([])
+  const lastSelectedRef = useRef<SvgNodeMapping | null>(null)
+  const [hovered, setHovered] = useState<SvgNodeMapping | null>(null)
   const [renderVersion, setRenderVersion] = useState(0)
 
-  // Load MathJax once globally
   useEffect(() => {
     ensureMathJax().then(() => setMjReady(true)).catch(console.error)
   }, [])
 
-  // Re-typeset whenever the input changes and MathJax is ready
+  // Re-render whenever input changes
+  // Use tex2svgPromise() (same as standalone 5175) instead of typeset() to get
+  // properly nested data-mml-node attributes in the SVG tree.
   useEffect(() => {
     const el = containerRef.current
-    if (!el || !mjReady || !window.MathJax?.typeset) return
+    if (!el || !mjReady) return
 
-    el.innerHTML = `$${input}$`
-    window.MathJax.typeset([el])
+    const mj = window.MathJax as any
+    const render = mj.tex2svgPromise ?? mj.tex2svg
+    if (!render) return
 
-    // Extract sub-expressions after the next paint (geometry is settled)
-    requestAnimationFrame(() => {
-      const svg = el.querySelector("svg")
-      if (!svg) return
-      // MathJax already writes vertical-align on the SVG's style attribute,
-      // which correctly aligns the baseline with surrounding text.
-      svg.style.display = "inline-block"
+    let cancelled = false
 
-      const exprs = extractSubExpressions(svg as SVGSVGElement, input)
-      setSubExprs(exprs)
-      setRenderVersion(v => v + 1)
-    })
+    // Clear previous content
+    while (el.firstChild) el.removeChild(el.firstChild)
+
+    const doRender = async () => {
+      try {
+        const mjxContainer = await Promise.resolve(render.call(mj, input, { display: false })) as HTMLElement
+        if (cancelled || !el) return
+
+        // Clear again in case of race condition
+        while (el.firstChild) el.removeChild(el.firstChild)
+        el.appendChild(mjxContainer)
+
+        // Hide assistive MathML
+        const assistive = el.querySelector("mjx-assistive-mml")
+        if (assistive) (assistive as HTMLElement).style.display = "none"
+
+        const svg = el.querySelector("svg")
+        if (!svg) return
+        svg.style.display = "inline-block"
+
+        const mappings = buildNodeTree(svg as SVGSVGElement)
+        setAllMappings(mappings)
+        lastSelectedRef.current = null
+        setHovered(null)
+        setRenderVersion(v => v + 1)
+      } catch (err) {
+        console.error("[MathExpressionMathJax] render error:", err)
+      }
+    }
+    doRender()
+
+    return () => { cancelled = true }
   }, [input, mjReady])
 
-  // ── Hit testing ────────────────────────────────────────────────────────────
+  // ── Find smallest node at screen coordinates ──────────────────────────────
 
-  function candidatesAt(relX: number, relY: number): MathJaxSubExpression[] {
-    // subExprs is already sorted by area ascending
-    return subExprs.filter(
-      s => relX >= s.x && relX <= s.x + s.width && relY >= s.y && relY <= s.y + s.height,
-    )
+  function findSmallestAt(clientX: number, clientY: number): SvgNodeMapping | null {
+    let best: SvgNodeMapping | null = null
+    let bestArea = Infinity
+    for (const m of allMappings) {
+      if (SKIP_KINDS.has(m.kind)) continue
+      const el = m.svgElement as SVGGraphicsElement
+      let r: DOMRect
+      try { r = el.getBoundingClientRect() } catch { continue }
+      if (r.width <= 0 || r.height <= 0) continue
+      if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) {
+        const a = r.width * r.height
+        if (a < bestArea) { bestArea = a; best = m }
+      }
+    }
+    return best
   }
 
-  function toRelative(e: React.MouseEvent): { x: number; y: number } | null {
-    const el = containerRef.current
-    if (!el) return null
-    const r = el.getBoundingClientRect()
-    return { x: e.clientX - r.left, y: e.clientY - r.top }
-  }
+  // ── Selection key helpers ─────────────────────────────────────────────────
 
-  // ── Selected spans (by source position key) ────────────────────────────────
+  function selKeyFor(m: SvgNodeMapping): string | null {
+    const data = mappingToSelectionData(m, input)
+    if (!data) return null
+    return `${data.source_start}:${data.source_end}`
+  }
 
   const selectedKeys = useMemo<Set<string>>(() => {
     const set = new Set<string>()
@@ -287,45 +501,64 @@ export function MathExpressionMathJax({ address, index, input }: MathExpressionP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selections, proofStateId, proofStateLocation, address, index, renderVersion])
 
-  function isSelected(s: MathJaxSubExpression) {
-    return selectedKeys.has(`${s.source_start}:${s.source_end}`)
+  function isMappingSelected(m: SvgNodeMapping): boolean {
+    const key = selKeyFor(m)
+    return key !== null && selectedKeys.has(key)
   }
 
-  // ── Event handlers ─────────────────────────────────────────────────────────
+  // ── Event handlers ────────────────────────────────────────────────────────
 
   function handleMouseMove(e: React.MouseEvent) {
-    const pos = toRelative(e)
-    if (!pos) return
-    // Show the smallest expression under the cursor
-    const cands = candidatesAt(pos.x, pos.y)
-    setHoverIdx(cands.length > 0 ? subExprs.indexOf(cands[0]!) : null)
+    setHovered(findSmallestAt(e.clientX, e.clientY))
   }
 
   function handleClick(e: React.MouseEvent) {
     if (!proofStateLocation) return
-    const pos = toRelative(e)
-    if (!pos) return
 
-    const cands = candidatesAt(pos.x, pos.y)
-    if (cands.length === 0) return
+    let target: SvgNodeMapping | null = null
+    let oldMapping: SvgNodeMapping | null = null
 
-    let target: MathJaxSubExpression
-
-    if (e.altKey || e.metaKey) {
-      // Alt/⌥ + click: expand to the NEXT-LARGER enclosing expression.
-      // Find the smallest candidate that is strictly larger than the
-      // currently selected expression at this location (if any).
-      const currentlySelectedIdx = cands.findIndex(isSelected)
-      target = currentlySelectedIdx >= 0 && currentlySelectedIdx + 1 < cands.length
-        ? cands[currentlySelectedIdx + 1]!
-        : cands[1] ?? cands[0]!
-    } else {
-      // Regular click: select smallest
-      target = cands[0]!
+    if ((e.altKey || e.metaKey) && lastSelectedRef.current) {
+      // Alt+click: walk up to next meaningful parent (same as standalone 5175)
+      oldMapping = lastSelectedRef.current
+      target = nextMeaningfulParent(lastSelectedRef.current)
     }
+
+    if (!target) {
+      // Normal click: find smallest node at click point
+      target = findSmallestAt(e.clientX, e.clientY)
+    }
+
+    if (!target) return
+
+    const data = mappingToSelectionData(target, input)
+    if (!data) return
 
     e.preventDefault()
     e.stopPropagation()
+
+    // For Alt+click expansion: remove old selection first (replace, not stack)
+    if (oldMapping) {
+      const oldData = mappingToSelectionData(oldMapping, input)
+      if (oldData) {
+        dispatch({
+          type: "TOGGLE_SELECTION",
+          selection: {
+            proofStateId,
+            location: proofStateLocation,
+            address,
+            selection: {
+              text:         oldData.text,
+              source_start: oldData.source_start,
+              source_end:   oldData.source_end,
+              index,
+            } satisfies SubExpressionCoreWithIndex,
+          },
+        })
+      }
+    }
+
+    lastSelectedRef.current = target
 
     dispatch({
       type: "TOGGLE_SELECTION",
@@ -334,65 +567,88 @@ export function MathExpressionMathJax({ address, index, input }: MathExpressionP
         location: proofStateLocation,
         address,
         selection: {
-          text:         target.text,
-          source_start: target.source_start,
-          source_end:   target.source_end,
-          syntaxTree:   target.node,
+          text:         data.text,
+          source_start: data.source_start,
+          source_end:   data.source_end,
           index,
         } satisfies SubExpressionCoreWithIndex,
       },
     })
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Highlight drawing (inside SVG — no vertical misalignment) ─────────────
 
-  const selectedExprs = subExprs.filter(isSelected)
-  const hoverExpr = hoverIdx !== null ? subExprs[hoverIdx] ?? null : null
-  const hoverIsAlsoSelected = hoverExpr ? isSelected(hoverExpr) : false
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const svg = el.querySelector("svg")
+    if (!svg) return
+
+    svg.querySelectorAll(".subexpr-hl").forEach(e => e.remove())
+
+    const svgRect = svg.getBoundingClientRect()
+    const vb = svg.viewBox.baseVal
+    if (!vb || vb.width === 0 || vb.height === 0) return
+    const sx = vb.width / svgRect.width
+    const sy = vb.height / svgRect.height
+
+    function drawHighlight(m: SvgNodeMapping, fill: string, stroke: string, strokeW: number) {
+      let elR: DOMRect
+      if (m.isVirtual) {
+        // Virtual equation-side node — union bbox of all children
+        let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity
+        for (const child of m.children) {
+          try {
+            const cr = (child.svgElement as SVGGraphicsElement).getBoundingClientRect()
+            if (cr.width <= 0 || cr.height <= 0) continue
+            left = Math.min(left, cr.left)
+            top = Math.min(top, cr.top)
+            right = Math.max(right, cr.right)
+            bottom = Math.max(bottom, cr.bottom)
+          } catch { /* skip */ }
+        }
+        if (left >= right) return
+        elR = new DOMRect(left, top, right - left, bottom - top)
+      } else {
+        elR = (m.svgElement as SVGGraphicsElement).getBoundingClientRect()
+      }
+      if (elR.width <= 0 || elR.height <= 0) return
+      const padX = 5 * sx, padY = 8 * sy
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+      rect.setAttribute("x", String(vb!.x + (elR.left - svgRect.left) * sx - padX))
+      rect.setAttribute("y", String(vb!.y + (elR.top - svgRect.top) * sy - padY))
+      rect.setAttribute("width", String(elR.width * sx + padX * 2))
+      rect.setAttribute("height", String(elR.height * sy + padY * 2))
+      rect.setAttribute("rx", String(60 * sx))
+      rect.setAttribute("fill", fill)
+      rect.setAttribute("stroke", stroke)
+      rect.setAttribute("stroke-width", String(strokeW))
+      rect.setAttribute("pointer-events", "none")
+      rect.setAttribute("class", "subexpr-hl")
+      svg!.insertBefore(rect, svg!.firstChild)
+    }
+
+    // Blue highlights for selected mappings
+    for (const m of allMappings) {
+      if (isMappingSelected(m)) {
+        drawHighlight(m, "rgba(59,130,246,0.2)", "rgba(59,130,246,0.55)", 1.5 * sx)
+      }
+    }
+    // Yellow highlight for hover (if not already selected)
+    if (hovered && !isMappingSelected(hovered)) {
+      drawHighlight(hovered, "rgba(250,204,21,0.18)", "rgba(234,179,8,0.45)", 1.25 * sx)
+    }
+  })
 
   return (
     <span style={{ display: "inline-block", position: "relative", cursor: "pointer" }}>
-      {/* MathJax renders into this span */}
       <span
         ref={containerRef}
         onMouseMove={handleMouseMove}
-        onMouseLeave={() => setHoverIdx(null)}
+        onMouseLeave={() => setHovered(null)}
         onClick={handleClick}
         style={{ display: "inline-block", position: "relative" }}
       />
-
-      {/* Highlight overlay (SVG positioned over the rendered math) */}
-      {subExprs.length > 0 && (
-        <svg
-          style={{
-            position: "absolute", top: 0, left: 0,
-            width: "100%", height: "100%",
-            pointerEvents: "none", overflow: "visible",
-          }}
-        >
-          {/* Blue: selected sub-expressions */}
-          {selectedExprs.map((s, i) => (
-            <rect
-              key={`sel-${i}`}
-              x={s.x - 1} y={s.y - 1} width={s.width + 2} height={s.height + 2}
-              rx={2} ry={2}
-              fill="rgba(59,130,246,0.2)"
-              stroke="rgba(59,130,246,0.55)"
-              strokeWidth={1.5}
-            />
-          ))}
-          {/* Yellow: hover (skip if already blue) */}
-          {hoverExpr && !hoverIsAlsoSelected && (
-            <rect
-              x={hoverExpr.x - 1} y={hoverExpr.y - 1} width={hoverExpr.width + 2} height={hoverExpr.height + 2}
-              rx={2} ry={2}
-              fill="rgba(250,204,21,0.18)"
-              stroke="rgba(234,179,8,0.45)"
-              strokeWidth={1.25}
-            />
-          )}
-        </svg>
-      )}
     </span>
   )
 }
