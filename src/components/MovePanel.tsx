@@ -6,10 +6,9 @@ import {
   Select, MenuItem, Dialog, DialogContent, Tooltip,
 } from "@mui/material"
 import { ProofStateSelection, ProofStateSelectionContext, toProofStateSelectionWithPolarity } from "../core/ProofStateSelectionContext"
-import { ProofDiscoveryAction, ProofDiscoveryState } from "../core/ProofDiscoveryState"
+import { getCurrentProofState, ProofDiscoveryAction, ProofDiscoveryState } from "../core/ProofDiscoveryState"
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
 import { ProofDiscoveryStateContext } from "../core/ProofDiscoveryStateContext"
-import { moves } from "../prompts/moves"
 import { useMoveSet } from "./MoveSetContext"
 import { checkMoveValidity, FilterResponse } from "../fetchers/filter"
 import {
@@ -26,28 +25,27 @@ export async function getApplicableMoves(
   proofDiscoveryState: ProofDiscoveryState,
   selections: ProofStateSelection[],
   signal?: AbortSignal,
-  movesToCheck: ProofDiscoveryMove[] = moves
+  movesToCheck: ProofDiscoveryMove[] = []
 ): Promise<{ move: ProofDiscoveryMove, filterResponse: FilterResponse }[]> {
-  return []
-  // const results = await Promise.all(
-  //   movesToCheck.map(async (move) => {
-  //     try {
-  //       const filterResponse = await checkMoveValidity({ 
-  //         proofState: getCurrentProofState(proofDiscoveryState), 
-  //         selections: selections.map(toProofStateSelectionWithPolarity), 
-  //         name: move.name, 
-  //         triggerCriterion: move.trigger 
-  //       }, signal)
-  //       return filterResponse.meetsCondition ? { move, filterResponse } : null
-  //     } catch (error) {
-  //       if (error instanceof DOMException && error.name === 'AbortError') throw error
-  //       console.error(`Error checking move validity for move ${move.name}:`, error)
-  //       return null
-  //     }
-  //   })
-  // )
+  const results = await Promise.all(
+    movesToCheck.map(async (move) => {
+      try {
+        const filterResponse = await checkMoveValidity({ 
+          proofState: getCurrentProofState(proofDiscoveryState), 
+          selections: selections.map(toProofStateSelectionWithPolarity), 
+          name: move.name, 
+          triggerCriterion: move.trigger 
+        }, signal)
+        return filterResponse.meetsCondition ? { move, filterResponse } : null
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') throw error
+        console.error(`Error checking move validity for move ${move.name}:`, error)
+        return null
+      }
+    })
+  )
 
-  // return results.filter((result): result is { move: ProofDiscoveryMove, filterResponse: FilterResponse } => result !== null)
+  return results.filter((result): result is { move: ProofDiscoveryMove, filterResponse: FilterResponse } => result !== null)
 }
 
 // ─── Inline SVG icons ────────────────────────────────────────────────────────
@@ -80,6 +78,8 @@ type ApplicableMove = { move: ProofDiscoveryMove, filterResponse: FilterResponse
 function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: boolean) => void }): JSX.Element {
   const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
   const { selections, dispatch: dispatchSelections } = useContext(ProofStateSelectionContext)
+
+  const moveSet = useMoveSet()
 
   const [status, setStatus] = useState<MovePanelStatus>("idle")
   const [customInputActive, setCustomInputActive] = useState(false)
@@ -166,7 +166,7 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
     setExpandedExamples(new Set())
     setInfoIndex(null)
     try {
-      const regularMoves = await getApplicableMoves(proofDiscoveryState, selections, controller.signal)
+      const regularMoves = await getApplicableMoves(proofDiscoveryState, selections, controller.signal, moveSet.activeMoves)
       setApplicableMoves(regularMoves)
       setStatus("loaded")
       lastFetchedSelectionsRef.current = selectionsKey

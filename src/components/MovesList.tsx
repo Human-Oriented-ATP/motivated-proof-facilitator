@@ -177,7 +177,7 @@ export function ExamplePreview({ example, idx }: { example: ProofDiscoveryMoveEx
             <Box sx={{ flex: 1, height: '1px', background: '#E0E0E0' }} />
           </Box>
           <Box sx={{ background: 'white', borderRadius: '7px', p: '6px 8px', border: '1px solid #EEEEEE', overflow: 'auto', maxHeight: 200, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)' }}>
-            <ProofStateIdContext.Provider value={{ proofNodeId: example.selections[0]?.proofStateId.proofNodeId ?? 0, proofContextId: -1 }}>
+            <ProofStateIdContext.Provider value={{ proofNodeId: example.selections[0]?.proofStateId.proofNodeId ?? 0, proofContextId: example.selections[0]?.proofStateId.proofContextId ?? 0 }}>
               <ProofStateSelectionContext.Provider value={{ selections: example.selections, dispatch: () => {} }}>
                 <ProofStateComponent
                   proofState={example.inputState.proofState}
@@ -570,7 +570,7 @@ export function AllMovesList(): JSX.Element {
               <Box key={move.name} sx={{
                 borderBottom: `1px solid ${C.border}`,
                 opacity: isEnabled ? 1 : 0.45,
-                transition: 'opacity 0.15s',
+                transition: 'all 0.15s ease',
               }}>
                 {/* Move header row */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -585,7 +585,8 @@ export function AllMovesList(): JSX.Element {
                       px: 1.5, py: 1, border: 'none', justifyContent: 'flex-start',
                       textTransform: 'none', borderRadius: 0,
                       background: isSelected ? (C === G ? G.bg : L.bg) : 'transparent',
-                      '&:hover': { background: C === G ? G.bg : L.bg },
+                      transition: 'all 0.2s ease',
+                      '&:hover': { background: C === G ? G.bg : L.bg, paddingLeft: 1.75 },
                     }}
                   >
                     <Box sx={{ flex: 1, textAlign: 'left' }}>
@@ -620,7 +621,8 @@ export function AllMovesList(): JSX.Element {
                           cursor: 'pointer', flexShrink: 0,
                           background: isEnabled ? 'transparent' : '#f1f5f9',
                           color: isEnabled ? '#94a3b8' : '#22c55e',
-                          '&:hover': { background: isEnabled ? '#fef2f2' : '#f0fdf4', color: isEnabled ? '#ef4444' : '#16a34a' },
+                          transition: 'all 0.2s ease',
+                          '&:hover': { background: isEnabled ? '#fef2f2' : '#f0fdf4', color: isEnabled ? '#ef4444' : '#16a34a', transform: 'scale(1.08)' },
                         }}
                       >
                         {/* Power button icon */}
@@ -640,7 +642,8 @@ export function AllMovesList(): JSX.Element {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             cursor: 'pointer', flexShrink: 0,
                             background: 'transparent', color: '#94a3b8',
-                            '&:hover': { background: C === G ? G.bg : L.bg, color: C === G ? G.dark : L.dark },
+                            transition: 'all 0.2s ease',
+                            '&:hover': { background: C === G ? G.bg : L.bg, color: C === G ? G.dark : L.dark, transform: 'scale(1.08)' },
                           }}
                         >
                           <EditPencilIcon />
@@ -656,7 +659,8 @@ export function AllMovesList(): JSX.Element {
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: 'pointer', flexShrink: 0,
                           background: 'transparent', color: '#94a3b8',
-                          '&:hover': { background: '#f0f4f8', color: '#1e3a5f' },
+                          transition: 'all 0.2s ease',
+                          '&:hover': { background: '#f0f4f8', color: '#1e3a5f', transform: 'scale(1.08)' },
                         }}
                       >
                         <DownloadSmIcon />
@@ -672,7 +676,8 @@ export function AllMovesList(): JSX.Element {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             cursor: 'pointer', flexShrink: 0,
                             background: 'transparent', color: '#94a3b8',
-                            '&:hover': { background: '#fff5f5', color: '#ef4444' },
+                            transition: 'all 0.2s ease',
+                            '&:hover': { background: '#fff5f5', color: '#ef4444', transform: 'scale(1.08)' },
                           }}
                         >
                           <CloseXIcon />
@@ -705,8 +710,8 @@ export function AllMovesList(): JSX.Element {
                           fontSize: '0.75rem', fontWeight: 700, textTransform: 'none',
                           color: '#2d5a2a', background: 'linear-gradient(180deg, #e8f5e3 0%, #c5dfc0 100%)',
                           borderColor: '#7ab872', borderRadius: '20px',
-                          boxShadow: '0 2px 6px rgba(100,155,85,0.18)', transition: 'all 0.2s ease',
-                          '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54', transform: 'translateY(-1px)' },
+                          boxShadow: '0 2px 6px rgba(100,155,85,0.15)', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                          '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54', boxShadow: '0 4px 12px rgba(100,155,85,0.25)', transform: 'translateY(-1.5px)' },
                           '&:disabled': { opacity: 0.45, boxShadow: 'none', transform: 'none' },
                         }}>
                         {isBusy ? <SpinnerBox size={12} /> : <PlayIcon />}
@@ -719,16 +724,16 @@ export function AllMovesList(): JSX.Element {
 
                     {/* Warning */}
                     {runState.phase === 'warning' && (
-                      <Box sx={{ mt: 1.25, p: '10px 12px', borderRadius: '8px', background: '#FFFBEB', border: '1.5px solid #FDE68A' }}>
+                      <Box sx={{ mt: 1.25, p: '10px 12px', borderRadius: '8px', background: '#FFFBEB', border: '1.5px solid #FDE68A', animation: 'slideInUp 0.2s ease-out' }}>
                         <Typography sx={{ fontSize: '0.73rem', fontWeight: 700, color: '#92400E', mb: 0.5 }}>Trigger criterion not satisfied</Typography>
                         <Typography sx={{ fontSize: '0.73rem', color: '#78350F', lineHeight: 1.5, mb: 1 }}>{runState.warningReasoning}</Typography>
                         <Box sx={{ display: 'flex', gap: 0.75 }}>
                           <Button size="small" onClick={() => void handleRunMove(selectedMove, true)}
-                            sx={{ fontSize: '0.73rem', fontWeight: 700, textTransform: 'none', color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '6px', '&:hover': { background: '#FDE68A' } }}>
+                            sx={{ fontSize: '0.73rem', fontWeight: 700, textTransform: 'none', color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '6px', transition: 'all 0.2s ease', '&:hover': { background: '#FDE68A', boxShadow: '0 2px 6px rgba(146,64,14,0.15)' } }}>
                             Apply anyway
                           </Button>
                           <Button size="small" onClick={resetRunState}
-                            sx={{ fontSize: '0.73rem', fontWeight: 600, textTransform: 'none', color: '#6B7280', background: 'white', border: '1px solid #E5E7EB', borderRadius: '6px', '&:hover': { background: '#F3F4F6' } }}>
+                            sx={{ fontSize: '0.73rem', fontWeight: 600, textTransform: 'none', color: '#6B7280', background: 'white', border: '1px solid #E5E7EB', borderRadius: '6px', transition: 'all 0.2s ease', '&:hover': { background: '#F3F4F6', borderColor: '#D1D5DB' } }}>
                             Cancel
                           </Button>
                         </Box>
@@ -737,9 +742,9 @@ export function AllMovesList(): JSX.Element {
 
                     {/* Error */}
                     {runState.phase === 'error' && (
-                      <Box sx={{ mt: 1.25, p: '8px 12px', borderRadius: '8px', background: '#FFF5F5', border: '1.5px solid #FFCDD2', display: 'flex', alignItems: 'flex-start', gap: 0.75 }}>
+                      <Box sx={{ mt: 1.25, p: '8px 12px', borderRadius: '8px', background: '#FFF5F5', border: '1.5px solid #FFCDD2', display: 'flex', alignItems: 'flex-start', gap: 0.75, animation: 'slideInUp 0.2s ease-out' }}>
                         <Typography sx={{ fontSize: '0.73rem', color: '#C62828', lineHeight: 1.5, flex: 1 }}>{runState.errorText}</Typography>
-                        <Button size="small" onClick={resetRunState} sx={{ fontSize: '0.7rem', textTransform: 'none', color: '#C62828', minWidth: 0, p: '0 4px' }}>✕</Button>
+                        <Button size="small" onClick={resetRunState} sx={{ fontSize: '0.7rem', textTransform: 'none', color: '#C62828', minWidth: 0, p: '0 4px', transition: 'all 0.2s ease', '&:hover': { background: '#FEE2E2' } }}>✕</Button>
                       </Box>
                     )}
 
@@ -789,10 +794,6 @@ export function AllMovesList(): JSX.Element {
             )}
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-            <Button size="small" onClick={handleCloseEditor}
-              sx={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'none', color: '#64748b', borderRadius: '8px', '&:hover': { background: '#f1f5f9' } }}>
-              Close
-            </Button>
             <IconButton size="small" onClick={handleCloseEditor}
               sx={{ background: 'white', border: '1px solid #c0cedb', color: '#3A5B80', borderRadius: '8px', '&:hover': { background: '#E2E8F0' } }}>
               <CloseXIcon />

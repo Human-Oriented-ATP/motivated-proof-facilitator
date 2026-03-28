@@ -125,9 +125,9 @@ function SectionDivider({ label }: { label: string }) {
 const greenBtnSx = {
   fontWeight: 700, textTransform: 'none' as const, borderRadius: '20px',
   color: '#2d5a2a', background: 'linear-gradient(180deg, #e8f5e3 0%, #c5dfc0 100%)',
-  borderColor: '#7ab872', boxShadow: '0 2px 6px rgba(100,155,85,0.18)',
-  transition: 'all 0.2s ease',
-  '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54', boxShadow: '0 4px 10px rgba(100,155,85,0.28)', transform: 'translateY(-1px)' },
+  borderColor: '#7ab872', boxShadow: '0 2px 6px rgba(100,155,85,0.15)',
+  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54', boxShadow: '0 4px 12px rgba(100,155,85,0.25)', transform: 'translateY(-1.5px)' },
   '&:disabled': { opacity: 0.45, boxShadow: 'none', transform: 'none' },
 }
 
@@ -194,6 +194,7 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
   const [libraryStatement, setLibraryStatement] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [failureReasoning, setFailureReasoning] = useState<string | null>(null)
   const [currentInputState, setCurrentInputState] = useState<ProofStateWithLibraryResultType | null>(null)
   const [currentOutputState, setCurrentOutputState] = useState<ProofStateWithLibraryResultType | null>(null)
   const [exampleComment, setExampleComment] = useState("")
@@ -271,7 +272,7 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
   const handleReset = (): void => {
     setProblemDescription(""); setLibraryStatement(""); setCurrentInputState(null)
     setCurrentOutputState(null); setExampleComment(""); setExampleDescription("")
-    setWorkflowState("idle"); setError(null); setEditingExampleId(null)
+    setWorkflowState("idle"); setError(null); setFailureReasoning(null); setEditingExampleId(null)
     setShowInputEditor(false); setShowOutputEditor(false)
     selectionsDispatch({ type: 'CLEAR_ALL_SELECTIONS' })
     dispatch({ action: "initialize", statement: "", proofState: [] })
@@ -309,15 +310,23 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
   const handleApplyMove = async (): Promise<void> => {
     if (!currentInputState) { setError("No input state"); return }
     if (!action.trim()) { setError("Please enter an action first"); return }
-    setIsLoading(true); setError(null); setWorkflowState("applying")
+    if (selections.length === 0) { setError("Please make selections in the proof state"); return }
+    setIsLoading(true); setError(null); setFailureReasoning(null); setWorkflowState("applying")
     try {
-      const { proofState: newPS, reasoning: _r } = await runMove({
+      const { proofState: newPS, reasoning } = await runMove({
         proofState: currentInputState.proofState,
         move: { name: moveName, action, kind: moveKind, classification, runWithGuardrails, trigger, examples: [] },
         selections: selections.map(toProofStateSelectionWithPolarity),
       })
-      if (newPS) setCurrentOutputState({ proofState: newPS, libraryResult: currentInputState.libraryResult })
-      setWorkflowState("applied")
+      if (newPS) {
+        setCurrentOutputState({ proofState: newPS, libraryResult: currentInputState.libraryResult })
+        setWorkflowState("applied")
+      } else {
+        setFailureReasoning(reasoning)
+        setExampleComment(reasoning)
+        setCurrentOutputState(null)
+        setWorkflowState("applied")
+      }
     } catch (err) {
       setError(err instanceof Error ? `Failed: ${err.message}` : "Unknown error")
       setWorkflowState("formalized")
@@ -355,7 +364,7 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
     setCurrentOutputState(ex.outputState)
     dispatch({ action: "initialize", statement: ex.description, proofState: ex.inputState.proofState })
     selectionsDispatch({ type: 'SET_SELECTIONS', selections: ex.selections })
-    setWorkflowState(ex.outputState ? "applied" : "formalized")
+    setWorkflowState("applied")
   }
 
   const handleDuplicateExample = (ex: UIExample): void => {
@@ -403,6 +412,7 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
 
   const handleRegenerateOutput = (): void => {
     setCurrentOutputState(null)
+    setShowOutputEditor(false)
     void handleApplyMove()
   }
 
@@ -551,9 +561,12 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
         {examplesOpen && (
           <Box>
             {examples.length === 0 ? (
-              <Box sx={{ px: 2, py: 1.5 }}>
-                <Typography sx={{ fontSize: '0.78rem', color: '#94a3b8', fontStyle: 'italic' }}>
-                  No examples yet — add one below.
+              <Box sx={{ px: 2, py: 2.5, textAlign: 'center' }}>
+                <Typography sx={{ fontSize: '0.75rem', color: '#cbd5e1', fontWeight: 500, letterSpacing: '0.02em' }}>
+                  ✨ No examples yet
+                </Typography>
+                <Typography sx={{ fontSize: '0.7rem', color: '#94a3b8', mt: 0.5 }}>
+                  Add one to help demonstrate how this move works
                 </Typography>
               </Box>
             ) : (
@@ -703,7 +716,8 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
                 sx={{
                   fontSize: '0.78rem', fontWeight: 600, textTransform: 'none', borderRadius: '20px',
                   color: BLU.dark, borderColor: BLU.border, alignSelf: 'flex-start',
-                  '&:hover': { background: BLU.light, borderColor: BLU.bright },
+                  background: 'rgba(255,255,255,0.5)', transition: 'all 0.2s ease',
+                  '&:hover': { background: BLU.light, borderColor: BLU.bright, boxShadow: '0 2px 8px rgba(30,60,100,0.08)', transform: 'translateY(-1px)' },
                 }}>
                 Build manually
               </Button>
@@ -719,10 +733,6 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
             </Box>
           )}
 
-          {error && (
-            <Alert severity="error" sx={{ fontSize: '0.78rem', borderRadius: '8px', py: 0.5 }}>{error}</Alert>
-          )}
-
           {hasActiveWorkflow && currentInputState && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               <SectionDivider label="Input State" />
@@ -730,7 +740,7 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
               <Box sx={{ background: 'white', borderRadius: '8px', border: `1px solid ${BLU.border}`, overflow: 'hidden' }}>
                 <Box sx={{ px: 1.5, py: '6px', background: BLU.light, borderBottom: `1px solid ${BLU.border}`, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography sx={{ fontSize: '0.63rem', color: BLU.dark, fontWeight: 700, flex: 1 }}>
-                    Click to make selections, then apply the move
+                    {showInputEditor ? 'Edit proof state' : 'Selections made. Choose how to create output:'}
                   </Typography>
                   <Tooltip title={showInputEditor ? "Hide editor" : "Edit proof state"}>
                     <Box
@@ -753,7 +763,7 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
                 </Box>
                 {!showInputEditor && (
                   <Box sx={{ p: 1 }}>
-                    <ProofStateIdContext.Provider value={{ proofNodeId: 0, proofContextId: -1 }}>
+                    <ProofStateIdContext.Provider value={{ proofNodeId: selections[0]?.proofStateId.proofNodeId ?? 0, proofContextId: selections[0]?.proofStateId.proofContextId ?? 0 }}>
                       <ProofStateSelectionContext.Provider value={{ selections, dispatch: selectionsDispatch }}>
                         <TypstContextProvider>
                           <ProofStateComponent
@@ -771,42 +781,50 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
                       proofState={currentInputState.proofState}
                       onUpdate={handleUpdateInputProofState}
                     />
+                    <Box sx={{ mt: 1, p: '8px 10px', borderRadius: '6px', background: '#f0fdf4', border: `1px solid ${G.border}`, fontSize: '0.65rem', color: G.dark, animation: 'fadeIn 0.3s ease-out' }}>
+                      💡 Close the editor to see output creation options
+                    </Box>
                   </Box>
                 )}
               </Box>
 
               {workflowState === "formalized" && (
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
-                  <Button variant="outlined" size="small" onClick={() => void handleApplyMove()}
-                    disabled={isLoading || !action.trim()}
-                    sx={{ ...greenBtnSx, fontSize: '0.78rem', px: 1.75 }}>
-                    Apply move
-                  </Button>
-                  <Button variant="outlined" size="small"
-                    onClick={() => {
-                      setCurrentOutputState({ proofState: JSON.parse(JSON.stringify(currentInputState!.proofState)), libraryResult: currentInputState!.libraryResult })
-                      setWorkflowState("applied")
-                      setShowOutputEditor(true)
-                    }}
-                    sx={{
-                      fontSize: '0.78rem', fontWeight: 600, textTransform: 'none', borderRadius: '20px',
-                      color: BLU.dark, borderColor: BLU.border, background: BLU.light,
-                      '&:hover': { background: BLU.border, borderColor: BLU.bright },
-                    }}>
-                    Create output manually
-                  </Button>
-                  <Button variant="outlined" size="small" onClick={() => handleSaveExample("non-example")}
-                    sx={{
-                      fontSize: '0.78rem', fontWeight: 600, textTransform: 'none', borderRadius: '20px',
-                      color: '#7f1d1d', borderColor: '#fca5a5', background: '#fff5f5',
-                      '&:hover': { background: '#fee2e2', borderColor: '#f87171' },
-                    }}>
-                    Save as non-example
-                  </Button>
-                  <Button variant="text" size="small" onClick={handleReset}
-                    sx={{ fontSize: '0.78rem', fontWeight: 500, color: '#64748b', textTransform: 'none' }}>
-                    Discard
-                  </Button>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.75, pt: 1, borderTop: `1px solid ${BLU.border}` }}>
+                    <Button variant="outlined" size="small" onClick={() => void handleApplyMove()}
+                      disabled={isLoading || !action.trim()}
+                      sx={{ ...greenBtnSx, fontSize: '0.78rem', px: 1.75 }}>
+                      {isLoading ? 'Applying…' : 'Apply move'}
+                    </Button>
+                    <Button variant="outlined" size="small"
+                      onClick={() => {
+                        setCurrentOutputState({ proofState: JSON.parse(JSON.stringify(currentInputState!.proofState)), libraryResult: currentInputState!.libraryResult })
+                        setWorkflowState("applied")
+                        setShowOutputEditor(true)
+                      }}
+                      sx={{
+                        fontSize: '0.78rem', fontWeight: 600, textTransform: 'none', borderRadius: '20px',
+                        color: '#1565C0', borderColor: '#2196F3', background: '#E3F2FD', border: '1.5px solid #2196F3',
+                        '&:hover': { background: '#BBDEFB', borderColor: '#1565C0' },
+                      }}>
+                      Edit output manually
+                    </Button>
+                    <Button variant="outlined" size="small" onClick={() => handleSaveExample("non-example")}
+                      sx={{
+                        fontSize: '0.78rem', fontWeight: 600, textTransform: 'none', borderRadius: '20px',
+                        color: '#7f1d1d', borderColor: '#fca5a5', background: '#fff5f5',
+                        '&:hover': { background: '#fee2e2', borderColor: '#f87171' },
+                      }}>
+                      Save as non-example
+                    </Button>
+                    <Button variant="text" size="small" onClick={handleReset}
+                      sx={{ fontSize: '0.78rem', fontWeight: 500, color: '#64748b', textTransform: 'none' }}>
+                      Discard
+                    </Button>
+                  </Box>
+                  {error && (
+                    <Alert severity="error" sx={{ fontSize: '0.76rem', borderRadius: '8px', py: 0.75, px: 1.25, background: '#FEE2E2', color: '#991B1B', border: '1px solid #FECACA', '& .MuiAlert-icon': { color: '#DC2626' }, transition: 'all 0.2s ease' }}>{error}</Alert>
+                  )}
                 </Box>
               )}
 
@@ -819,55 +837,70 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
                 </Box>
               )}
 
-              {workflowState === "applied" && currentOutputState && (
+              {workflowState === "applied" && (
                 <>
-                  <SectionDivider label="Output State" />
-                  <Box sx={{ background: 'white', borderRadius: '8px', border: `1px solid ${BLU.border}`, overflow: 'hidden' }}>
-                    <Box sx={{ px: 1.5, py: '6px', background: BLU.light, borderBottom: `1px solid ${BLU.border}`, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography sx={{ fontSize: '0.63rem', color: BLU.dark, fontWeight: 700, flex: 1 }}>
-                        Output state
-                      </Typography>
-                      <Tooltip title={showOutputEditor ? "Hide editor" : "Edit proof state"}>
-                        <Box
-                          component="button"
-                          onClick={() => setShowOutputEditor(v => !v)}
-                          sx={{
-                            width: 26, height: 26, cursor: 'pointer', borderRadius: '6px', flexShrink: 0,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: `1px solid ${showOutputEditor ? BLU.bright : 'transparent'}`,
-                            background: showOutputEditor ? BLU.border : 'transparent',
-                            color: showOutputEditor ? BLU.dark : '#94a3b8',
-                            '&:hover': { background: BLU.border, color: BLU.dark, borderColor: BLU.border },
-                          }}
-                        >
-                          <svg style={{ width: 11, height: 11, display: 'block' }} viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                          </svg>
+                  {currentOutputState && (
+                    <>
+                      <SectionDivider label="Output State" />
+                      <Box sx={{ background: 'white', borderRadius: '8px', border: `1px solid ${BLU.border}`, overflow: 'hidden' }}>
+                        <Box sx={{ px: 1.5, py: '6px', background: BLU.light, borderBottom: `1px solid ${BLU.border}`, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography sx={{ fontSize: '0.63rem', color: BLU.dark, fontWeight: 700, flex: 1 }}>
+                            Output state
+                          </Typography>
+                          <Tooltip title={showOutputEditor ? "Hide editor" : "Edit proof state"}>
+                            <Box
+                              component="button"
+                              onClick={() => setShowOutputEditor(v => !v)}
+                              sx={{
+                                width: 26, height: 26, cursor: 'pointer', borderRadius: '6px', flexShrink: 0,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                border: `1px solid ${showOutputEditor ? BLU.bright : 'transparent'}`,
+                                background: showOutputEditor ? BLU.border : 'transparent',
+                                color: showOutputEditor ? BLU.dark : '#94a3b8',
+                                '&:hover': { background: BLU.border, color: BLU.dark, borderColor: BLU.border },
+                              }}
+                            >
+                              <svg style={{ width: 11, height: 11, display: 'block' }} viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                              </svg>
+                            </Box>
+                          </Tooltip>
                         </Box>
-                      </Tooltip>
-                    </Box>
-                    {!showOutputEditor && (
-                      <Box sx={{ p: 1 }}>
-                        <ProofStateContextProvider>
-                          <ProofStateComponent
-                            proofState={currentOutputState.proofState}
-                            libraryResult={currentOutputState.libraryResult}
-                          />
-                        </ProofStateContextProvider>
+                        {!showOutputEditor && (
+                          <Box sx={{ p: 1 }}>
+                            <ProofStateIdContext.Provider value={{ proofNodeId: 0, proofContextId: 0 }}>
+                              <TypstContextProvider>
+                                <ProofStateComponent
+                                  proofState={currentOutputState.proofState}
+                                  libraryResult={currentOutputState.libraryResult}
+                                />
+                              </TypstContextProvider>
+                            </ProofStateIdContext.Provider>
+                          </Box>
+                        )}
+                        {showOutputEditor && (
+                          <Box sx={{ px: 1.5, pb: 1.5, pt: 1, borderTop: `1px solid ${BLU.border}` }}>
+                            <ProofStateEditor
+                              proofState={currentOutputState.proofState}
+                              onUpdate={handleUpdateOutputProofState}
+                            />
+                          </Box>
+                        )}
                       </Box>
-                    )}
-                    {showOutputEditor && (
-                      <Box sx={{ px: 1.5, pb: 1.5, pt: 1, borderTop: `1px solid ${BLU.border}` }}>
-                        <ProofStateEditor
-                          proofState={currentOutputState.proofState}
-                          onUpdate={handleUpdateOutputProofState}
-                        />
-                      </Box>
-                    )}
-                  </Box>
+                    </>
+                  )}
 
                   <Box>
-                    <FieldLabel>Comment (optional)</FieldLabel>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.5 }}>
+                      <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: BLU.dark }}>
+                        Comment {failureReasoning ? "(failure reason)" : "(optional)"}
+                      </Typography>
+                      {failureReasoning && (
+                        <Box sx={{ fontSize: '0.62rem', fontWeight: 600, color: '#ef4444', background: '#fff5f5', border: '1px solid #fecaca', px: 0.75, py: 0.25, borderRadius: '4px' }}>
+                          Not applicable
+                        </Box>
+                      )}
+                    </Box>
                     <Box
                       component="input"
                       type="text"
@@ -875,19 +908,20 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setExampleComment(e.target.value)}
                       placeholder="Add a note about this example…"
                       sx={{
-                        width: '100%', fontSize: '0.82rem', color: BLU.dark,
-                        border: `1.5px solid rgba(180,200,220,0.7)`, borderRadius: '8px',
-                        p: '7px 10px', outline: 'none', background: 'rgba(255,255,255,0.7)',
+                        width: '100%', fontSize: '0.82rem', color: failureReasoning ? '#7f1d1d' : BLU.dark,
+                        border: failureReasoning ? `1.5px solid #fca5a5` : `1.5px solid rgba(180,200,220,0.7)`, borderRadius: '8px',
+                        p: '7px 10px', outline: 'none', background: failureReasoning ? '#fff5f5' : 'rgba(255,255,255,0.7)',
                         boxSizing: 'border-box', display: 'block', fontFamily: 'inherit',
                         '&::placeholder': { color: '#8aabcc' },
-                        '&:focus': { borderColor: BLU.bright, background: 'rgba(255,255,255,0.95)', boxShadow: `0 0 0 3px rgba(74,138,181,0.12)` },
+                        '&:focus': { borderColor: failureReasoning ? '#ef4444' : BLU.bright, background: 'rgba(255,255,255,0.95)', boxShadow: failureReasoning ? `0 0 0 3px rgba(239,68,68,0.12)` : `0 0 0 3px rgba(74,138,181,0.12)` },
                       }}
                     />
                   </Box>
 
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     <Button variant="outlined" size="small" onClick={() => handleSaveExample("example")}
-                      sx={{ ...greenBtnSx, fontSize: '0.78rem', px: 1.75 }}>
+                      disabled={!currentOutputState}
+                      sx={{ ...greenBtnSx, fontSize: '0.78rem', px: 1.75, '&:disabled': { opacity: 0.45, boxShadow: 'none', transform: 'none' } }}>
                       {editingExampleId ? "Update as example" : "Save as example"}
                     </Button>
                     <Button variant="outlined" size="small" onClick={() => handleSaveExample("non-example")}
