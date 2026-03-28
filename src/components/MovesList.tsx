@@ -268,6 +268,7 @@ export function AllMovesList(): JSX.Element {
   const [examplesOpen, setExamplesOpen] = useState(false)
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingMove, setEditingMove] = useState<ProofDiscoveryMove | undefined>(undefined)
+  const [editorHasUnsavedChanges, setEditorHasUnsavedChanges] = useState(false)
   const [runState, setRunState] = useState<RunState>({ phase: 'idle' })
   const [newSetName, setNewSetName] = useState("")
   const [addingNewSet, setAddingNewSet] = useState(false)
@@ -282,6 +283,7 @@ export function AllMovesList(): JSX.Element {
 
   const openEditor = (move?: ProofDiscoveryMove) => {
     setEditingMove(move)
+    setEditorHasUnsavedChanges(false)
     setEditorOpen(true)
   }
 
@@ -291,8 +293,16 @@ export function AllMovesList(): JSX.Element {
     } else {
       moveSet.addMove(move)
     }
+    // Update editingMove so future saves use the new name (in case of rename)
+    setEditingMove(move)
+    setEditorHasUnsavedChanges(false)
+  }
+
+  const handleCloseEditor = () => {
+    if (editorHasUnsavedChanges && !window.confirm("You have unsaved changes. Close without saving?")) return
     setEditorOpen(false)
     setEditingMove(undefined)
+    setEditorHasUnsavedChanges(false)
   }
 
   const handleRunMove = async (move: ProofDiscoveryMove, skipCheck = false) => {
@@ -759,7 +769,7 @@ export function AllMovesList(): JSX.Element {
       {/* ── Move Editor Dialog ── */}
       <Dialog
         open={editorOpen}
-        onClose={() => { setEditorOpen(false); setEditingMove(undefined) }}
+        onClose={handleCloseEditor}
         maxWidth="lg" fullWidth
         slotProps={{ paper: { sx: { borderRadius: '16px', border: `1px solid #c0cedb`, height: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' } } }}
       >
@@ -768,18 +778,32 @@ export function AllMovesList(): JSX.Element {
           px: 2.5, py: 1.5, borderBottom: '1px solid #c0cedb',
           background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)', flexShrink: 0,
         }}>
-          <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#1E3A5F', letterSpacing: '-0.01em' }}>
-            {editingMove ? `Edit Move — ${editingMove.name}` : 'New Move'}
-          </Typography>
-          <IconButton size="small" onClick={() => { setEditorOpen(false); setEditingMove(undefined) }}
-            sx={{ background: 'white', border: '1px solid #c0cedb', color: '#3A5B80', borderRadius: '8px', '&:hover': { background: '#E2E8F0' } }}>
-            <CloseXIcon />
-          </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#1E3A5F', letterSpacing: '-0.01em' }}>
+              {editingMove ? `Edit Move — ${editingMove.name}` : 'New Move'}
+            </Typography>
+            {editorHasUnsavedChanges && (
+              <Typography sx={{ fontSize: '0.7rem', fontWeight: 600, color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '4px', px: '6px', py: '2px' }}>
+                unsaved changes
+              </Typography>
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+            <Button size="small" onClick={handleCloseEditor}
+              sx={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'none', color: '#64748b', borderRadius: '8px', '&:hover': { background: '#f1f5f9' } }}>
+              Close
+            </Button>
+            <IconButton size="small" onClick={handleCloseEditor}
+              sx={{ background: 'white', border: '1px solid #c0cedb', color: '#3A5B80', borderRadius: '8px', '&:hover': { background: '#E2E8F0' } }}>
+              <CloseXIcon />
+            </IconButton>
+          </Box>
         </Box>
         <DialogContent sx={{ overflowY: 'auto', p: 2.5, background: '#f8fafc', flex: 1 }}>
           <MoveGenerator
             initialMove={editingMove}
             onSave={handleSaveMove}
+            onHasUnsavedChanges={setEditorHasUnsavedChanges}
           />
         </DialogContent>
       </Dialog>

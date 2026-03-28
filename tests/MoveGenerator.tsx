@@ -166,17 +166,20 @@ export interface MoveGeneratorProps {
   initialMove?: ProofDiscoveryMove
   /** Called when the user saves/exports the move. */
   onSave?: (move: ProofDiscoveryMove) => void
+  /** Called whenever the unsaved-changes status changes. */
+  onHasUnsavedChanges?: (dirty: boolean) => void
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProps = {}): JSX.Element {
+export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges }: MoveGeneratorProps = {}): JSX.Element {
   const [moveName, setMoveName] = useState(initialMove?.name ?? "")
   const [moveKind, setMoveKind] = useState<MoveKind>(initialMove?.kind ?? "strengthening")
   const [classification, setClassification] = useState<"mathematical" | "logical">(initialMove?.classification ?? "mathematical")
   const [runWithGuardrails, setRunWithGuardrails] = useState(initialMove?.runWithGuardrails ?? true)
   const [trigger, setTrigger] = useState(initialMove?.trigger ?? "")
   const [action, setAction] = useState(initialMove?.action ?? "")
+  const [isDirty, setIsDirty] = useState(false)
   const [examples, setExamples] = useState<UIExample[]>(
     (initialMove?.examples ?? []).map((ex, i) => ({ ...ex, id: `init-${i}` }))
   )
@@ -206,6 +209,11 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
   const [loadError, setLoadError] = useState<string | null>(null)
   const [jsonPaste, setJsonPaste] = useState("")
 
+  // Emit dirty state to parent
+  useEffect(() => {
+    onHasUnsavedChanges?.(isDirty)
+  }, [isDirty, onHasUnsavedChanges])
+
   // Update form when initialMove changes
   const prevInitialMove = useRef(initialMove)
   useEffect(() => {
@@ -218,6 +226,7 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
       setTrigger(initialMove.trigger)
       setAction(initialMove.action)
       setExamples((initialMove.examples ?? []).map((ex, i) => ({ ...ex, id: `reload-${i}-${Date.now()}` })))
+      setIsDirty(false)
       handleReset()
     }
   }, [initialMove])
@@ -332,6 +341,7 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
     } else {
       setExamples(prev => [...prev, newEx])
     }
+    setIsDirty(true)
     handleReset()
   }
 
@@ -350,10 +360,12 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
   const handleDuplicateExample = (ex: UIExample): void => {
     const dup: UIExample = { ...ex, id: Date.now().toString() }
     setExamples(prev => [...prev, dup])
+    setIsDirty(true)
   }
 
   const handleDeleteExample = (id: string): void => {
     setExamples(prev => prev.filter(e => e.id !== id))
+    setIsDirty(true)
     if (editingExampleId === id) handleReset()
   }
 
@@ -386,7 +398,7 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
     } catch { /* ignore */ }
   }
 
-  const handleSave = (): void => { onSave?.(buildMove()) }
+  const handleSave = (): void => { onSave?.(buildMove()); setIsDirty(false) }
 
   const handleRegenerateOutput = (): void => {
     setCurrentOutputState(null)
@@ -423,7 +435,7 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
               component="input"
               type="text"
               value={moveName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMoveName(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setMoveName(e.target.value); setIsDirty(true) }}
               placeholder="e.g. Split a conjunction in the goal"
               sx={{
                 width: '100%', fontSize: '0.88rem', fontWeight: 600, color: BLU.dark,
@@ -441,7 +453,7 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
             <Box sx={{ flex: 1 }}>
               <FieldLabel>Kind</FieldLabel>
               <Select size="small" fullWidth value={moveKind}
-                onChange={e => setMoveKind(e.target.value as MoveKind)}
+                onChange={e => { setMoveKind(e.target.value as MoveKind); setIsDirty(true) }}
                 sx={selectSx} MenuProps={{ PaperProps: { sx: menuPaperSx } }}>
                 <MenuItem value="strengthening" sx={menuItemSx}>Strengthening</MenuItem>
                 <MenuItem value="weakening" sx={menuItemSx}>Weakening</MenuItem>
@@ -452,7 +464,7 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
             <Box sx={{ flex: 1 }}>
               <FieldLabel>Classification</FieldLabel>
               <Select size="small" fullWidth value={classification}
-                onChange={e => setClassification(e.target.value as "mathematical" | "logical")}
+                onChange={e => { setClassification(e.target.value as "mathematical" | "logical"); setIsDirty(true) }}
                 sx={selectSx} MenuProps={{ PaperProps: { sx: menuPaperSx } }}>
                 <MenuItem value="mathematical" sx={menuItemSx}>Mathematical</MenuItem>
                 <MenuItem value="logical" sx={menuItemSx}>Logical</MenuItem>
@@ -472,7 +484,7 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
               component="input"
               type="checkbox"
               checked={runWithGuardrails}
-              onChange={e => setRunWithGuardrails(e.target.checked)}
+              onChange={e => { setRunWithGuardrails(e.target.checked); setIsDirty(true) }}
               sx={{ width: 14, height: 14, accentColor: BLU.bright, cursor: 'pointer', flexShrink: 0 }}
             />
             <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: BLU.dark }}>
@@ -488,7 +500,7 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
             <FieldLabel>Trigger</FieldLabel>
             <TextArea
               value={trigger}
-              onChange={setTrigger}
+              onChange={v => { setTrigger(v); setIsDirty(true) }}
               placeholder="Describe when this move is relevant (what selections must exist)…"
               rows={2}
             />
@@ -499,7 +511,7 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
             <FieldLabel>Action</FieldLabel>
             <TextArea
               value={action}
-              onChange={setAction}
+              onChange={v => { setAction(v); setIsDirty(true) }}
               placeholder="Describe how this move transforms the proof state…"
               rows={3}
             />
@@ -697,11 +709,11 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
             </>
           )}
 
-          {isWorking && (
+          {workflowState === "formalizing" && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, borderRadius: '8px', background: BLU.light, border: `1px solid ${BLU.border}` }}>
               <Spinner size={16} />
               <Typography sx={{ fontSize: '0.8rem', color: BLU.dark, fontWeight: 500 }}>
-                {workflowState === "formalizing" ? "Generating proof state…" : "Applying move…"}
+                Generating proof state…
               </Typography>
             </Box>
           )}
@@ -710,7 +722,7 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
             <Alert severity="error" sx={{ fontSize: '0.78rem', borderRadius: '8px', py: 0.5 }}>{error}</Alert>
           )}
 
-          {hasActiveWorkflow && !isWorking && currentInputState && (
+          {hasActiveWorkflow && currentInputState && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               <SectionDivider label="Input State" />
 
@@ -767,6 +779,19 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
                     sx={{ ...greenBtnSx, fontSize: '0.78rem', px: 1.75 }}>
                     Apply move
                   </Button>
+                  <Button variant="outlined" size="small"
+                    onClick={() => {
+                      setCurrentOutputState({ proofState: JSON.parse(JSON.stringify(currentInputState!.proofState)), libraryResult: currentInputState!.libraryResult })
+                      setWorkflowState("applied")
+                      setShowOutputEditor(true)
+                    }}
+                    sx={{
+                      fontSize: '0.78rem', fontWeight: 600, textTransform: 'none', borderRadius: '20px',
+                      color: BLU.dark, borderColor: BLU.border, background: BLU.light,
+                      '&:hover': { background: BLU.border, borderColor: BLU.bright },
+                    }}>
+                    Create output manually
+                  </Button>
                   <Button variant="outlined" size="small" onClick={() => handleSaveExample("non-example")}
                     sx={{
                       fontSize: '0.78rem', fontWeight: 600, textTransform: 'none', borderRadius: '20px',
@@ -779,6 +804,15 @@ export default function MoveGenerator({ initialMove, onSave }: MoveGeneratorProp
                     sx={{ fontSize: '0.78rem', fontWeight: 500, color: '#64748b', textTransform: 'none' }}>
                     Discard
                   </Button>
+                </Box>
+              )}
+
+              {workflowState === "applying" && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, borderRadius: '8px', background: BLU.light, border: `1px solid ${BLU.border}` }}>
+                  <Spinner size={16} />
+                  <Typography sx={{ fontSize: '0.8rem', color: BLU.dark, fontWeight: 500 }}>
+                    Applying move…
+                  </Typography>
                 </Box>
               )}
 
