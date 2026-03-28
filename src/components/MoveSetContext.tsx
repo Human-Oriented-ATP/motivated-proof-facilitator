@@ -20,6 +20,8 @@ export interface MoveSet {
   customMoves: ProofDiscoveryMove[]
   /** Names of moves (built-in or custom) that are currently disabled. */
   disabledMoveNames: string[]
+  /** Maps original built-in name → custom move name, for renamed built-in overrides. */
+  builtInOverrides: Record<string, string>
 }
 
 interface MoveSetStore {
@@ -59,6 +61,7 @@ function makeDefaultSet(): MoveSet {
     enabledBuiltInNames: null,
     customMoves: [],
     disabledMoveNames: [],
+    builtInOverrides: {},
   }
 }
 
@@ -92,7 +95,25 @@ function resolveBase(set: MoveSet): ProofDiscoveryMove[] {
     set.enabledBuiltInNames === null
       ? builtInMoves
       : builtInMoves.filter(m => set.enabledBuiltInNames!.includes(m.name))
-  return [...base, ...set.customMoves]
+  const customByName = new Map(set.customMoves.map(m => [m.name, m]))
+  // builtInOverrides maps original built-in name → current custom name (for renames).
+  const overrides = set.builtInOverrides ?? {}
+  const placedCustomNames = new Set<string>()
+  const result = base.map(m => {
+    // Same-name override (edited without renaming).
+    const sameNameCustom = customByName.get(m.name)
+    if (sameNameCustom) { placedCustomNames.add(m.name); return sameNameCustom }
+    // Renamed override: built-in "Foo" was renamed to "Bar".
+    const newName = overrides[m.name]
+    const renamedCustom = newName ? customByName.get(newName) : undefined
+    if (renamedCustom && newName) { placedCustomNames.add(newName); return renamedCustom }
+    return m
+  })
+  // Append custom moves that didn't replace a built-in (truly new custom moves).
+  for (const m of set.customMoves) {
+    if (!placedCustomNames.has(m.name)) result.push(m)
+  }
+  return result
 }
 
 function resolveMoves(set: MoveSet): ProofDiscoveryMove[] {
@@ -155,6 +176,7 @@ export function MoveSetProvider({ children }: { children: React.ReactNode }): Re
       enabledBuiltInNames: source.enabledBuiltInNames ? [...source.enabledBuiltInNames] : null,
       customMoves: source.customMoves.map(m => ({ ...m })),
       disabledMoveNames: [...source.disabledMoveNames],
+      builtInOverrides: { ...(source.builtInOverrides ?? {}) },
     }
     update(s => ({ ...s, sets: [...s.sets, newSet], activeSetId: newSet.id }))
     return newSet
@@ -191,11 +213,30 @@ export function MoveSetProvider({ children }: { children: React.ReactNode }): Re
       ...s,
       sets: s.sets.map(set => {
         if (set.id !== setId) return set
+        const isAlreadyCustom = set.customMoves.some(m => m.name === oldName)
+        // Update builtInOverrides: track which built-in name this custom move replaces.
+        const currentOverrides = set.builtInOverrides ?? {}
+        let builtInOverrides = { ...currentOverrides }
+        if (!isAlreadyCustom) {
+          // Editing a built-in: record the override (same name or renamed).
+          builtInOverrides[oldName] = move.name
+        } else {
+          // Renaming a custom that may itself be a renamed override: update the entry.
+          for (const [builtInName, customName] of Object.entries(builtInOverrides)) {
+            if (customName === oldName) { builtInOverrides[builtInName] = move.name }
+          }
+        }
+        // Update disabledMoveNames only for custom-to-custom renames.
+        const disabledMoveNames = isAlreadyCustom
+          ? set.disabledMoveNames.map(n => n === oldName ? move.name : n)
+          : set.disabledMoveNames
         return {
           ...set,
-          customMoves: set.customMoves.map(m => m.name === oldName ? move : m),
-          // If name changed, update disabledMoveNames too
-          disabledMoveNames: set.disabledMoveNames.map(n => n === oldName ? move.name : n),
+          customMoves: isAlreadyCustom
+            ? set.customMoves.map(m => m.name === oldName ? move : m)
+            : [...set.customMoves, move],
+          disabledMoveNames,
+          builtInOverrides,
         }
       }),
     }))
