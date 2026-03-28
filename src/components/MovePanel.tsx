@@ -374,7 +374,7 @@ function ExamplePreview({ example, idx }: { example: ProofDiscoveryMoveExample, 
             <Box sx={{ flex: 1, height: '1px', background: '#E0E0E0' }} />
           </Box>
           <Box sx={{ background: 'white', borderRadius: '7px', p: '6px 8px', border: '1px solid #EEEEEE', overflow: 'auto', maxHeight: 200, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)' }}>
-            <ProofStateIdContext.Provider value={{ proofNodeId: 0, proofContextId: -1 }}>
+            <ProofStateIdContext.Provider value={{ proofNodeId: example.selections[0]?.proofStateId.proofNodeId ?? 0, proofContextId: -1 }}>
               <ProofStateSelectionContext.Provider value={{ selections: example.selections, dispatch: () => {} }}>
                 <ProofStateComponent
                   proofState={example.inputState.proofState}

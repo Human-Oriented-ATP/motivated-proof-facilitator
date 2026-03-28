@@ -186,7 +186,7 @@ export default function MoveVisualizer({ onOpenInGenerator }: Props): React.JSX.
                                                     marginBottom: '0.375rem' }}>Input</div>
                                                 <div style={{ background: 'white', borderRadius: 8, padding: '0.75rem',
                                                     border: '1px solid #e5e7eb', overflow: 'auto', maxHeight: 220 }}>
-                                                    <ProofStateIdContext.Provider value={{ proofNodeId: 0, proofContextId: -1 }}>
+                                                    <ProofStateIdContext.Provider value={{ proofNodeId: example.selections[0]?.proofStateId.proofNodeId ?? 0, proofContextId: -1 }}>
                                                         <ProofStateSelectionContext.Provider value={{ selections: example.selections, dispatch: () => {} }}>
                                                             <ProofStateWithLibraryResultComponent
                                                                 proofState={example.inputState.proofState}
