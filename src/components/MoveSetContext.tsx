@@ -31,6 +31,7 @@ interface MoveSetContextValue {
   sets: MoveSet[]
   activeSet: MoveSet
   activeMoves: ProofDiscoveryMove[]       // resolved list of enabled moves
+  allMovesInSet: ProofDiscoveryMove[]     // all moves in the set, including disabled ones
   setActiveSetId: (id: string) => void
   createSet: (name: string, copyFromId?: string) => MoveSet
   renameSet: (id: string, name: string) => void
@@ -86,14 +87,16 @@ function saveStore(store: MoveSetStore): void {
   }
 }
 
-function resolveMoves(set: MoveSet): ProofDiscoveryMove[] {
+function resolveBase(set: MoveSet): ProofDiscoveryMove[] {
   const base: ProofDiscoveryMove[] =
     set.enabledBuiltInNames === null
       ? builtInMoves
       : builtInMoves.filter(m => set.enabledBuiltInNames!.includes(m.name))
+  return [...base, ...set.customMoves]
+}
 
-  const all = [...base, ...set.customMoves]
-  return all.filter(m => !set.disabledMoveNames.includes(m.name))
+function resolveMoves(set: MoveSet): ProofDiscoveryMove[] {
+  return resolveBase(set).filter(m => !set.disabledMoveNames.includes(m.name))
 }
 
 function downloadJson(filename: string, obj: unknown): void {
@@ -246,12 +249,14 @@ export function MoveSetProvider({ children }: { children: React.ReactNode }): Re
   }, [])
 
   const activeMoves = resolveMoves(activeSet)
+  const allMovesInSet = resolveBase(activeSet)
 
   return (
     <MoveSetContext.Provider value={{
       sets: store.sets,
       activeSet,
       activeMoves,
+      allMovesInSet,
       setActiveSetId,
       createSet,
       renameSet,
