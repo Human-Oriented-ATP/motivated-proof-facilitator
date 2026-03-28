@@ -5,6 +5,15 @@ export interface SelectionWithPolarity {
     polarity: boolean | null
 }
 
+export const SuggestionKindSchema = z.enum([
+    "sufficient_condition",
+    "standard_consequence",
+    "equivalent_statement",
+    "construction"
+])
+
+export type SuggestionKind = z.infer<typeof SuggestionKindSchema>
+
 export interface SuggestRequest {
     variables: ContextVariable[]
     mainSelections: SelectionWithPolarity[]
@@ -14,7 +23,14 @@ export interface SuggestRequest {
 
 const SuggestResultSchema = z.object({
     suggestion: StatementSchema.nullable().describe("A suggestion that is offered to the user in relation to certain selections in the proof state. Suggestions are precise, structured and specific statements that are often meant to directly replace or supplement the main selections in the proof state."),
-    generalResult: LabelledStatementSchema.nullable().describe("A general mathematical statement, corresponding to a result one might find in a textbook or a paper, that relates to the selections. In some cases, the general result is meant to be presented alongside the suggestion as a more general reason for why the suggestion is valid. In other cases, the general result is meant to be the main content of the response, especially when the user is looking for theorems to store and use a few steps down the line in the proof. Include the general result only when explicitly requested or when the suggested statement is non-trivially related to the selections; omit it otherwise.")
+    generalResult: LabelledStatementSchema.nullable().describe("A general mathematical statement, corresponding to a result one might find in a textbook or a paper, that relates to the selections. In some cases, the general result is meant to be presented alongside the suggestion as a more general reason for why the suggestion is valid. In other cases, the general result is meant to be the main content of the response, especially when the user is looking for theorems to store and use a few steps down the line in the proof. Include the general result only when explicitly requested or when the suggested statement is non-trivially related to the selections; omit it otherwise."),
+    kind: SuggestionKindSchema.describe(`
+Suggestions can fall into one of the following categories:
+- Standard consequences: Statements that are direct consequences of the main selections in the proof state, obtained by reasoning forwards from them.
+- Sufficient conditions: Statements that imply the main selections in the proof state, obtained by reasoning backwards from them.
+- Equivalent statements: Statements that are mathematically equivalent to the main selections in the proof state, usually obtained by simplifying the main selection or unfolding or refolding definitions within.
+- Constructions: Atomic statements representing mathematical objects associated with the main selections in the proof state.
+`)
 }).describe("A suggestion made in response to the user's selections in the proof state. The suggestion may include a precise, structured and specific statement that is relevant to the selections, as well as a more general mathematical result that relates to the selections. The general result can provide context and justification for the suggestion, or can serve as a standalone theorem for the user to keep in mind as they continue working on the proof.")
 
 export const SuggestResultsSchema = z.object({
