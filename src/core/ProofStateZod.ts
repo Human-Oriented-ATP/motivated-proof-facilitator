@@ -95,54 +95,47 @@ export type Statement =
   | { kind: "existential"; variable: Variable; statement: Statement }
   | { kind: "highlight"; statement: Statement }
 
-const _createStatementSchema = (depth: number): z.ZodType<Statement> => {
-  if (depth === 0) {
-    return AtomicStatementSchema as unknown as z.ZodType<Statement>
-  }
-  return z.union([
-    AtomicStatementSchema,
-    z.object({
-      kind: z.literal("conjunction"),
-      statements: z.array(_createStatementSchema(depth - 1))
-    }),
-    z.object({
-      kind: z.literal("disjunction"),
-      statements: z.array(_createStatementSchema(depth - 1))
-    }),
-    z.object({
-      kind: z.literal("negation"),
-      statement: _createStatementSchema(depth - 1)
-    }),
-    z.object({
-      kind: z.literal("implication"),
-      antecedent: _createStatementSchema(depth - 1),
-      consequent: _createStatementSchema(depth - 1)
-    }),
-    z.object({
-      kind: z.literal("equivalence"),
-      left: _createStatementSchema(depth - 1),
-      right: _createStatementSchema(depth - 1)
-    }),
-    z.object({
-      kind: z.literal("universal"),
-      variable: VariableSchema,
-      statement: _createStatementSchema(depth - 1)
-    }),
-    z.object({
-      kind: z.literal("existential"),
-      variable: VariableSchema,
-      statement: _createStatementSchema(depth - 1)
-    }),
-    z.object({
-      kind: z.literal("highlight"),
-      statement: _createStatementSchema(depth - 1)
-    }).describe(`This is an obsolete field, do not use it.`)
-  ]) as z.ZodType<Statement>;
-};
-
-export const StatementSchema: z.ZodType<Statement> = _createStatementSchema(2).describe(`Combinations of atomic statements using logical connectives. 
-It is always preferable to use a higher-level description of a statement (like "$f$ is injective") over a lower-level one (like 
-\`{ kind: "universal", variable: { name: "x", description: "$A$" }, statement: 
+export const StatementSchema: z.ZodType<Statement> = z.lazy(() => z.union([
+  AtomicStatementSchema,
+  z.object({
+    kind: z.literal("conjunction"),
+    statements: z.array(StatementSchema)
+  }),
+  z.object({
+    kind: z.literal("disjunction"),
+    statements: z.array(StatementSchema)
+  }),
+  z.object({
+    kind: z.literal("negation"),
+    statement: StatementSchema
+  }),
+  z.object({
+    kind: z.literal("implication"),
+    antecedent: StatementSchema,
+    consequent: StatementSchema
+  }),
+  z.object({
+    kind: z.literal("equivalence"),
+    left: StatementSchema,
+    right: StatementSchema
+  }),
+  z.object({
+    kind: z.literal("universal"),
+    variable: VariableSchema,
+    statement: StatementSchema
+  }),
+  z.object({
+    kind: z.literal("existential"),
+    variable: VariableSchema,
+    statement: StatementSchema
+  }),
+  z.object({
+    kind: z.literal("highlight"),
+    statement: StatementSchema
+  }).describe(`This is an obsolete field, do not use it.`)
+])).describe(`Combinations of atomic statements using logical connectives.
+It is always preferable to use a higher-level description of a statement (like "$f$ is injective") over a lower-level one (like
+\`{ kind: "universal", variable: { name: "x", description: "$A$" }, statement:
   { kind: "universal", variable: { name: "y", description: "$A$" }, statement:
   { kind: "implication", antecedent: "$f(x) = f(y)$", consequent: "$x = y$" }}}\'.`)
 
