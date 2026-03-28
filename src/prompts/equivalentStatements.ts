@@ -7,6 +7,7 @@ export const equivalentStatementsPrompt: ProofDiscoverySuggestionMove = {
     applySuggestionMove: {
         name: "Replace with an equivalent statement",
         kind: "equivalence",
+        classification: "mathematical",
         trigger: "",
         action: "This move replaces the selected statement with the equivalent suggestion.",
         examples: []

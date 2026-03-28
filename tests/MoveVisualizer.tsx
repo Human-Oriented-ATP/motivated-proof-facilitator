@@ -48,7 +48,7 @@ function KindBadge({ kind }: { kind: string }): React.JSX.Element {
 type Props = { onOpenInGenerator?: (moveJson: string) => void };
 
 export default function MoveVisualizer({ onOpenInGenerator }: Props): React.JSX.Element {
-    const [selectedKey, setSelectedKey] = useState<string>(Object.keys(prompts)[0]);
+    const [selectedKey, setSelectedKey] = useState<string>(Object.keys(prompts)[0] ?? "");
     const [expandedExamples, setExpandedExamples] = useState<Set<number>>(new Set());
     const active = prompts[selectedKey];
 
@@ -64,6 +64,8 @@ export default function MoveVisualizer({ onOpenInGenerator }: Props): React.JSX.
             return n;
         });
     };
+
+    if (!active) return <div />
 
     return (
         <TypstContextProvider>
@@ -184,7 +186,7 @@ export default function MoveVisualizer({ onOpenInGenerator }: Props): React.JSX.
                                                     marginBottom: '0.375rem' }}>Input</div>
                                                 <div style={{ background: 'white', borderRadius: 8, padding: '0.75rem',
                                                     border: '1px solid #e5e7eb', overflow: 'auto', maxHeight: 220 }}>
-                                                    <ProofStateIdContext.Provider value={{ proofNodeId: 0, proofContextId: -1 }}>
+                                                    <ProofStateIdContext.Provider value={{ proofNodeId: example.selections[0]?.proofStateId.proofNodeId ?? 0, proofContextId: -1 }}>
                                                         <ProofStateSelectionContext.Provider value={{ selections: example.selections, dispatch: () => {} }}>
                                                             <ProofStateWithLibraryResultComponent
                                                                 proofState={example.inputState.proofState}

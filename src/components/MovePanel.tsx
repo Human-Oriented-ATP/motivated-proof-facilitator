@@ -14,7 +14,8 @@ import { ProofStateWithLibraryResult as ProofStateComponent } from "./ProofState
 import { MathStatement } from "./MathStatement"
 import { runMove } from "../fetchers/move"
 import MoveGenerator from "../../tests/MoveGenerator"
-import { moves, suggestionMoves, logicalMoves } from "../prompts/AllMoves"
+import { moves, suggestionMoves } from "../prompts/moves"
+import { useMoveSet } from "./MoveSetContext"
 import { checkMoveValidity, FilterResponse } from "../fetchers/filter"
 import { suggestStatements, SuggestResult, SuggestResults } from "../fetchers/suggest"
 
@@ -373,7 +374,7 @@ function ExamplePreview({ example, idx }: { example: ProofDiscoveryMoveExample, 
             <Box sx={{ flex: 1, height: '1px', background: '#E0E0E0' }} />
           </Box>
           <Box sx={{ background: 'white', borderRadius: '7px', p: '6px 8px', border: '1px solid #EEEEEE', overflow: 'auto', maxHeight: 200, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)' }}>
-            <ProofStateIdContext.Provider value={{ proofNodeId: 0, proofContextId: -1 }}>
+            <ProofStateIdContext.Provider value={{ proofNodeId: example.selections[0]?.proofStateId.proofNodeId ?? 0, proofContextId: -1 }}>
               <ProofStateSelectionContext.Provider value={{ selections: example.selections, dispatch: () => {} }}>
                 <ProofStateComponent
                   proofState={example.inputState.proofState}
@@ -545,10 +546,8 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
   const toggleExamples = (idx: number) => {
     setExpandedExamples(prev => { const n = new Set(prev); n.has(idx) ? n.delete(idx) : n.add(idx); return n })
   }
-  const logicalMoveNames = new Set(logicalMoves.map(m => m.name))
-
   const renderMoveCard = (am: ApplicableMove, idx: number) => {
-    const isLogical = logicalMoveNames.has(am.move.name)
+    const isLogical = am.move.classification === "logical"
     const C = isLogical ? L : G
     const hoverBg = isLogical ? '#F3F4F6' : '#DCEDC8'
     return (
@@ -981,8 +980,8 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
             </Typography>
           )
         }
-        const generalIndexed = applicableMoves.map((am, idx) => ({ am, idx })).filter(({ am }) => !logicalMoveNames.has(am.move.name))
-        const logicalIndexed = applicableMoves.map((am, idx) => ({ am, idx })).filter(({ am }) => logicalMoveNames.has(am.move.name))
+        const generalIndexed = applicableMoves.map((am, idx) => ({ am, idx })).filter(({ am }) => am.move.classification !== "logical")
+        const logicalIndexed = applicableMoves.map((am, idx) => ({ am, idx })).filter(({ am }) => am.move.classification === "logical")
         return (
           <Box sx={{ display: 'flex', flexDirection: 'column', p: 1, pt: 0.5, gap: 0.75 }}>
             {lastMoveReasoning && (
@@ -1130,6 +1129,8 @@ function CustomMoveSection({ onHasText }: { onHasText?: (hasText: boolean) => vo
     const customMove: ProofDiscoveryMove = {
       name: description.trim(),
       kind,
+      classification: "mathematical",
+      runWithGuardrails: false,
       trigger: "",
       action: description.trim(),
       examples: [],
@@ -1265,21 +1266,80 @@ function CustomMoveSection({ onHasText }: { onHasText?: (hasText: boolean) => vo
 type RunPhase = 'idle' | 'checking' | 'warning' | 'applying' | 'error'
 type RunState = { phase: RunPhase; warningReasoning?: string; errorText?: string }
 
+const CloseXIcon = () => (
+  <svg style={{ width: 13, height: 13 }} viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+  </svg>
+)
+
+const EditPencilIcon = () => (
+  <svg style={{ width: 12, height: 12 }} viewBox="0 0 20 20" fill="currentColor">
+    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+  </svg>
+)
+
+const DownloadSmIcon = () => (
+  <svg style={{ width: 12, height: 12 }} viewBox="0 0 16 16" fill="none">
+    <path d="M8 2v8m0 0L5 7m3 3l3-3M2 12h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
+function ClassificationBadge({ classification }: { classification: "mathematical" | "logical" }) {
+  const isLogical = classification === "logical"
+  return (
+    <Chip
+      label={classification}
+      size="small"
+      sx={{
+        height: 16, fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.04em',
+        background: isLogical ? L.bg : G.bg,
+        color: isLogical ? L.dark : G.dark,
+        border: `1px solid ${isLogical ? L.border : G.border}`,
+        borderRadius: '6px', textTransform: 'capitalize',
+        '& .MuiChip-label': { px: '6px' },
+      }}
+    />
+  )
+}
+
 function AllMovesList(): JSX.Element {
   const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
   const { selections, dispatch: dispatchSelections } = useContext(ProofStateSelectionContext)
+  const moveSet = useMoveSet()
 
-  const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
+  const [selectedName, setSelectedName] = useState<string | null>(null)
   const [examplesOpen, setExamplesOpen] = useState(false)
-  const [showGenerator, setShowGenerator] = useState(false)
+  const [editorOpen, setEditorOpen] = useState(false)
+  const [editingMove, setEditingMove] = useState<ProofDiscoveryMove | undefined>(undefined)
   const [runState, setRunState] = useState<RunState>({ phase: 'idle' })
+  const [newSetName, setNewSetName] = useState("")
+  const [addingNewSet, setAddingNewSet] = useState(false)
+  const [renamingSetId, setRenamingSetId] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState("")
 
-  const selected = selectedIdx !== null ? moves[selectedIdx] : null
+  const { sets, activeSet, activeMoves } = moveSet
+  const isDefaultSet = activeSet.id === 'default'
 
+  const selectedMove = selectedName !== null ? activeMoves.find(m => m.name === selectedName) ?? null : null
   const resetRunState = () => setRunState({ phase: 'idle' })
 
+  const openEditor = (move?: ProofDiscoveryMove) => {
+    setEditingMove(move)
+    setEditorOpen(true)
+  }
+
+  const handleSaveMove = (move: ProofDiscoveryMove) => {
+    if (editingMove) {
+      moveSet.updateMove(activeSet.id, editingMove.name, move)
+    } else {
+      moveSet.addMove(move)
+    }
+    setEditorOpen(false)
+    setEditingMove(undefined)
+  }
+
   const handleRunMove = async (move: ProofDiscoveryMove, skipCheck = false) => {
-    if (!skipCheck) {
+    if (!skipCheck && move.runWithGuardrails) {
       setRunState({ phase: 'checking' })
       try {
         const filterResponse = await checkMoveValidity({
@@ -1293,11 +1353,10 @@ function AllMovesList(): JSX.Element {
           return
         }
       } catch (err) {
-        setRunState({ phase: 'error', errorText: err instanceof Error ? err.message : 'Failed to check trigger criterion' })
+        setRunState({ phase: 'error', errorText: err instanceof Error ? err.message : 'Failed to check trigger' })
         return
       }
     }
-
     setRunState({ phase: 'applying' })
     try {
       await applyMove(proofDiscoveryState, selections, move, dispatchProofDiscoveryAction, dispatchSelections)
@@ -1309,212 +1368,468 @@ function AllMovesList(): JSX.Element {
 
   const isBusy = runState.phase === 'checking' || runState.phase === 'applying'
 
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: '12px 16px 8px' }}>
-        <Button
-          onClick={() => setShowGenerator(true)}
-          fullWidth
-          variant="outlined"
-          sx={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75,
-            p: '10px', borderRadius: '12px',
-            background: 'linear-gradient(180deg, #e8f5e3 0%, #c5dfc0 100%)',
-            color: '#2d5a2a', borderColor: '#7ab872', textTransform: 'none',
-            fontSize: '0.85rem', fontWeight: 700,
-            boxShadow: '0 2px 8px rgba(100,155,85,0.18)',
-            transition: 'all 0.2s ease',
-            '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54', boxShadow: '0 4px 14px rgba(100,155,85,0.28)', transform: 'translateY(-1px)' },
-          }}
-        >
-          <svg style={{ width: 16, height: 16 }} viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-          </svg>
-          Create New Move Definition
-        </Button>
-      </Box>
+  const generalMoves = activeMoves.filter(m => m.classification !== "logical")
+  const logicalMovesActive = activeMoves.filter(m => m.classification === "logical")
 
-      <Box sx={{ borderTop: `1px solid ${G.border}` }}>
-        {moves.map((move, idx) => (
-          <Box key={idx} sx={{ borderBottom: `1px solid ${G.border}` }}>
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+
+      {/* ── Move Set Selector ── */}
+      <Box sx={{
+        px: 1.5, py: 0.75,
+        background: 'linear-gradient(180deg, #f8fafb 0%, #f0f4f8 100%)',
+        borderBottom: `1px solid #dde5ee`,
+      }}>
+        {/* Main row: icon + tabs + add + spacer + action icons */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.375, flexWrap: 'wrap' }}>
+          <Tooltip title="Move sets let you save different configurations of available moves" placement="right">
+            <Box sx={{ display: 'flex', alignItems: 'center', color: '#64748b', cursor: 'default', mr: 0.5, flexShrink: 0 }}>
+              <svg style={{ width: 13, height: 13 }} viewBox="0 0 20 20" fill="currentColor">
+                <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                <path d="M2 12a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2z" opacity="0.5" />
+              </svg>
+            </Box>
+          </Tooltip>
+
+          {sets.map(set => (
             <Button
-              onClick={() => { setSelectedIdx(selectedIdx === idx ? null : idx); setExamplesOpen(false); resetRunState() }}
-              fullWidth
+              key={set.id}
+              size="small"
+              onClick={() => { moveSet.setActiveSetId(set.id); setSelectedName(null) }}
               sx={{
-                display: 'flex', alignItems: 'center', gap: 1,
-                px: 1.75, py: 1.25, border: 'none',
-                background: selectedIdx === idx ? G.bg : 'transparent',
-                justifyContent: 'flex-start', textTransform: 'none',
-                borderRadius: 0,
-                '&:hover': { background: G.bg },
+                px: 1, py: 0.25, fontSize: '0.72rem', fontWeight: 600, textTransform: 'none', borderRadius: '7px',
+                background: activeSet.id === set.id ? '#1d4ed8' : 'transparent',
+                color: activeSet.id === set.id ? 'white' : '#374151',
+                border: `1px solid ${activeSet.id === set.id ? '#1d4ed8' : 'transparent'}`,
+                minHeight: 0, lineHeight: 1.4,
+                '&:hover': {
+                  background: activeSet.id === set.id ? '#1e40af' : '#e8eef4',
+                  borderColor: activeSet.id === set.id ? '#1e40af' : '#c0cedb',
+                },
               }}
             >
-              <Box sx={{ flex: 1, textAlign: 'left' }}>
-                <Typography sx={{ fontSize: '0.85rem', fontWeight: selectedIdx === idx ? 700 : 600, color: selectedIdx === idx ? G.dark : '#374151' }}>
-                  {move.name}
-                </Typography>
-              </Box>
-              <MoveKindBadge kind={move.kind} />
-              <Box sx={{ display: 'flex', color: '#9E9E9E', transition: 'transform 0.2s', transform: selectedIdx === idx ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                <ChevronIcon />
-              </Box>
+              {set.name}
             </Button>
-            {selectedIdx === idx && selected && (
-              <Box sx={{ px: 2, pb: 1.5, background: '#FAFAFA', fontSize: '0.8rem', color: '#374151', lineHeight: 1.5 }}>
-                <Typography sx={{ mb: 0.75, fontSize: '0.78rem', wordBreak: 'break-word' }}>
-                  <strong>Trigger:</strong> {selected.trigger || <em style={{ color: '#9E9E9E' }}>none</em>}
-                </Typography>
-                <Typography sx={{ mb: 0.5, fontSize: '0.78rem', wordBreak: 'break-word' }}>
-                  <strong>Action:</strong> {selected.action}
-                </Typography>
+          ))}
 
-                {/* ── Run button ── */}
-                <Box sx={{ mt: 1.25, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Button
-                    size="small"
-                    disabled={isBusy}
-                    variant="outlined"
-                    onClick={() => void handleRunMove(selected)}
-                    sx={{
-                      display: 'flex', alignItems: 'center', gap: 0.75,
-                      px: 1.5, fontSize: '0.75rem', fontWeight: 700, textTransform: 'none',
-                      color: '#2d5a2a', background: 'linear-gradient(180deg, #e8f5e3 0%, #c5dfc0 100%)',
-                      borderColor: '#7ab872', borderRadius: '20px',
-                      boxShadow: '0 2px 6px rgba(100,155,85,0.18)',
-                      transition: 'all 0.2s ease',
-                      '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54', boxShadow: '0 4px 10px rgba(100,155,85,0.28)', transform: 'translateY(-1px)' },
-                      '&:disabled': { opacity: 0.45, boxShadow: 'none', transform: 'none' },
-                    }}
-                  >
-                    {isBusy ? <SpinnerBox size={12} /> : <PlayIcon />}
-                    {runState.phase === 'checking' ? 'Checking…' : runState.phase === 'applying' ? 'Applying…' : 'Run'}
-                  </Button>
-                  {selections.length === 0 && (
-                    <Typography sx={{ fontSize: '0.7rem', color: '#90A4AE', fontStyle: 'italic' }}>
-                      No selection active
-                    </Typography>
-                  )}
-                </Box>
-
-                {/* ── Warning strip ── */}
-                {runState.phase === 'warning' && (
-                  <Box sx={{
-                    mt: 1.25, p: '10px 12px', borderRadius: '8px',
-                    background: '#FFFBEB', border: '1.5px solid #FDE68A',
-                  }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.75 }}>
-                      <svg style={{ width: 15, height: 15, color: '#D97706', flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                      <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#92400E' }}>
-                        Trigger criterion not satisfied
-                      </Typography>
-                    </Box>
-                    <Typography sx={{ fontSize: '0.73rem', color: '#78350F', lineHeight: 1.5, mb: 1 }}>
-                      {runState.warningReasoning}
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 0.75 }}>
-                      <Button
-                        size="small"
-                        onClick={() => void handleRunMove(selected, true)}
-                        sx={{
-                          fontSize: '0.73rem', fontWeight: 700, textTransform: 'none',
-                          color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A',
-                          borderRadius: '6px',
-                          '&:hover': { background: '#FDE68A' },
-                        }}
-                      >
-                        Apply anyway
-                      </Button>
-                      <Button
-                        size="small"
-                        onClick={resetRunState}
-                        sx={{
-                          fontSize: '0.73rem', fontWeight: 600, textTransform: 'none',
-                          color: '#6B7280', background: 'white', border: '1px solid #E5E7EB',
-                          borderRadius: '6px',
-                          '&:hover': { background: '#F3F4F6' },
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </Box>
-                  </Box>
-                )}
-
-                {/* ── Error strip ── */}
-                {runState.phase === 'error' && (
-                  <Box sx={{
-                    mt: 1.25, p: '8px 12px', borderRadius: '8px',
-                    background: '#FFF5F5', border: '1.5px solid #FFCDD2',
-                    display: 'flex', alignItems: 'flex-start', gap: 0.75,
-                  }}>
-                    <svg style={{ width: 14, height: 14, color: '#E53935', marginTop: 2, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    <Typography sx={{ fontSize: '0.73rem', color: '#C62828', lineHeight: 1.5, flex: 1 }}>
-                      {runState.errorText}
-                    </Typography>
-                    <Button size="small" onClick={resetRunState} sx={{ fontSize: '0.7rem', textTransform: 'none', color: '#C62828', minWidth: 0, p: '0 4px' }}>
-                      ✕
-                    </Button>
-                  </Box>
-                )}
-
-                {selected.examples.length > 0 && (
-                  <>
-                    <Button
-                      size="small"
-                      onClick={() => setExamplesOpen(v => !v)}
-                      endIcon={<Box sx={{ display: 'flex', transition: 'transform 0.2s', transform: examplesOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}><ChevronIcon /></Box>}
-                      sx={{
-                        mt: 1, color: G.med, background: G.bg, border: `1px solid ${G.border}`,
-                        borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'none',
-                        '&:hover': { background: '#DCEDC8' },
-                      }}
-                    >
-                      Examples ({selected.examples.length})
-                    </Button>
-                    {examplesOpen && (
-                      <Box sx={{ mt: 1.25 }}>
-                        {selected.examples.map((ex, exIdx) => (
-                          <ExamplePreview key={exIdx} example={ex} idx={exIdx} />
-                        ))}
-                      </Box>
-                    )}
-                  </>
-                )}
+          {!addingNewSet && (
+            <Tooltip title="Create new move set">
+              <Box
+                component="button"
+                onClick={() => setAddingNewSet(true)}
+                sx={{
+                  width: 22, height: 22, borderRadius: '6px', border: '1px dashed #c0cedb',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', background: 'transparent', color: '#94a3b8', flexShrink: 0,
+                  '&:hover': { background: '#f0f4f8', color: '#1d4ed8', borderColor: '#8aabcc', borderStyle: 'solid' },
+                }}
+              >
+                <svg style={{ width: 10, height: 10 }} viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
               </Box>
-            )}
+            </Tooltip>
+          )}
+
+          <Box sx={{ flex: 1 }} />
+
+          {/* Active set action icons */}
+          {renamingSetId !== activeSet.id && (
+            <Box sx={{ display: 'flex', gap: 0.25, flexShrink: 0 }}>
+              {!isDefaultSet && (
+                <Tooltip title="Rename this set">
+                  <Box component="button" onClick={() => { setRenamingSetId(activeSet.id); setRenameValue(activeSet.name) }}
+                    sx={{ width: 24, height: 24, borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent', color: '#94a3b8', '&:hover': { background: '#f0f4f8', color: '#1e3a5f' } }}>
+                    <EditPencilIcon />
+                  </Box>
+                </Tooltip>
+              )}
+              <Tooltip title="Duplicate as new set">
+                <Box component="button" onClick={() => moveSet.createSet(`${activeSet.name} (copy)`, activeSet.id)}
+                  sx={{ width: 24, height: 24, borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent', color: '#94a3b8', '&:hover': { background: '#f0f4f8', color: '#1e3a5f' } }}>
+                  <svg style={{ width: 11, height: 11 }} viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                  </svg>
+                </Box>
+              </Tooltip>
+              <Tooltip title="Export enabled moves as JSON">
+                <Box component="button" onClick={() => moveSet.exportSetAsJson(activeSet.id)}
+                  sx={{ width: 24, height: 24, borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent', color: '#94a3b8', '&:hover': { background: '#f0f4f8', color: '#1e3a5f' } }}>
+                  <DownloadSmIcon />
+                </Box>
+              </Tooltip>
+              {sets.length > 1 && activeSet.id !== 'default' && (
+                <Tooltip title="Delete this set">
+                  <Box component="button" onClick={() => { if (window.confirm(`Delete move set "${activeSet.name}"?`)) moveSet.deleteSet(activeSet.id) }}
+                    sx={{ width: 24, height: 24, borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent', color: '#94a3b8', '&:hover': { background: '#fff5f5', color: '#ef4444' } }}>
+                    <svg style={{ width: 11, height: 11 }} viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </Box>
+                </Tooltip>
+              )}
+            </Box>
+          )}
+        </Box>
+
+        {/* Rename input — shown inline below when renaming */}
+        {renamingSetId === activeSet.id && (
+          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', mt: 0.5 }}>
+            <Box
+              component="input"
+              type="text"
+              value={renameValue}
+              autoFocus
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRenameValue(e.target.value)}
+              onKeyDown={(e: React.KeyboardEvent) => {
+                if (e.key === 'Enter' && renameValue.trim()) { moveSet.renameSet(activeSet.id, renameValue.trim()); setRenamingSetId(null) }
+                if (e.key === 'Escape') setRenamingSetId(null)
+              }}
+              sx={{ fontSize: '0.72rem', color: '#1e3a5f', border: '1px solid #8aabcc', borderRadius: '6px', p: '3px 7px', outline: 'none', background: 'white', flex: 1, maxWidth: 150, '&:focus': { boxShadow: '0 0 0 2px rgba(74,138,181,0.2)' } }}
+            />
+            <Button size="small" onClick={() => { if (renameValue.trim()) { moveSet.renameSet(activeSet.id, renameValue.trim()); setRenamingSetId(null) } }}
+              sx={{ px: 1, fontSize: '0.68rem', fontWeight: 700, textTransform: 'none', minHeight: 0, color: '#1d4ed8', '&:hover': { background: '#eff4ff' } }}>
+              Save
+            </Button>
+            <Button size="small" onClick={() => setRenamingSetId(null)}
+              sx={{ px: 1, fontSize: '0.68rem', fontWeight: 600, textTransform: 'none', minHeight: 0, color: '#64748b' }}>
+              Cancel
+            </Button>
           </Box>
-        ))}
+        )}
+
+        {/* New set input — shown inline below when adding */}
+        {addingNewSet && (
+          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', mt: 0.5 }}>
+            <Box
+              component="input"
+              type="text"
+              value={newSetName}
+              autoFocus
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSetName(e.target.value)}
+              onKeyDown={(e: React.KeyboardEvent) => {
+                if (e.key === 'Enter' && newSetName.trim()) { moveSet.createSet(newSetName.trim()); setNewSetName(""); setAddingNewSet(false) }
+                if (e.key === 'Escape') { setAddingNewSet(false); setNewSetName("") }
+              }}
+              placeholder="New set name…"
+              sx={{ fontSize: '0.72rem', color: '#1e3a5f', border: '1px solid rgba(180,200,220,0.7)', borderRadius: '6px', p: '3px 7px', outline: 'none', background: 'rgba(255,255,255,0.7)', flex: 1, maxWidth: 150, '&::placeholder': { color: '#94a3b8' }, '&:focus': { borderColor: '#8aabcc', background: 'white', boxShadow: '0 0 0 2px rgba(74,138,181,0.12)' } }}
+            />
+            <Button size="small"
+              disabled={!newSetName.trim()}
+              onClick={() => { moveSet.createSet(newSetName.trim()); setNewSetName(""); setAddingNewSet(false) }}
+              sx={{ px: 1.25, fontSize: '0.68rem', fontWeight: 700, textTransform: 'none', minHeight: 0, color: '#1d4ed8', border: '1px solid rgba(180,200,220,0.7)', borderRadius: '6px', '&:hover': { background: '#eff4ff', borderColor: '#93aeed' }, '&:disabled': { opacity: 0.4 } }}>
+              Create
+            </Button>
+            <Button size="small" onClick={() => { setAddingNewSet(false); setNewSetName("") }}
+              sx={{ px: 1, fontSize: '0.68rem', fontWeight: 600, textTransform: 'none', minHeight: 0, color: '#64748b' }}>
+              Cancel
+            </Button>
+          </Box>
+        )}
       </Box>
 
-      {/* Move generator dialog */}
+      {/* ── Local storage notice + Add button ── */}
+      <Box sx={{ px: 2, pt: 1.25, pb: 0.75, borderBottom: `1px solid #e8eef4`, display: 'flex', flexDirection: 'column', gap: 0.875 }}>
+        <Box sx={{
+          display: 'flex', alignItems: 'flex-start', gap: '6px',
+          p: '7px 10px', borderRadius: '8px',
+          background: '#fefce8', border: '1px solid #fde047',
+        }}>
+          <svg style={{ width: 13, height: 13, color: '#ca8a04', marginTop: 1, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          </svg>
+          <Typography sx={{ fontSize: '0.68rem', color: '#78350f', lineHeight: 1.45 }}>
+            Custom moves and move sets are <strong>saved in your browser</strong> and persist across sessions. They won't sync across different devices or browsers.
+          </Typography>
+        </Box>
+
+        {isDefaultSet ? (
+          <Box sx={{
+            display: 'flex', alignItems: 'flex-start', gap: 1, px: 1.25, py: 1,
+            borderRadius: '10px', border: '1px solid #c0cedb',
+            background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)',
+          }}>
+            <svg style={{ width: 13, height: 13, color: '#4a8ab5', marginTop: 1, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <Typography sx={{ fontSize: '0.68rem', color: '#2e4a68', lineHeight: 1.45 }}>
+              The default move set cannot be edited. <strong>Create a new move set</strong> to add, edit, or remove moves.
+            </Typography>
+          </Box>
+        ) : (
+          <Button
+            onClick={() => openEditor(undefined)}
+            fullWidth
+            variant="outlined"
+            sx={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75,
+              py: '8px', borderRadius: '10px',
+              background: 'linear-gradient(180deg, #e8f5e3 0%, #c5dfc0 100%)',
+              color: '#2d5a2a', borderColor: '#7ab872', textTransform: 'none',
+              fontSize: '0.8rem', fontWeight: 700,
+              boxShadow: '0 2px 6px rgba(100,155,85,0.14)',
+              '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54' },
+            }}
+          >
+            <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+            Add New Move
+          </Button>
+        )}
+      </Box>
+
+      {/* ── Move rows ── */}
+      {[
+        { label: 'Mathematical moves', subtitle: '', list: generalMoves, color: G },
+        { label: 'Logical moves', subtitle: '', list: logicalMovesActive, color: L },
+      ].map(({ label, subtitle, list, color: C }) => list.length === 0 ? null : (
+        <Box key={label}>
+          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: '6px', px: 2, py: 0.75, borderBottom: `1px solid ${C.border}` }}>
+            <Typography sx={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.med ?? C.bright, flexShrink: 0 }}>
+              {label}
+            </Typography>
+            <Typography sx={{ fontSize: '0.6rem', color: C.med ?? C.bright, opacity: 0.65, fontStyle: 'italic', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {subtitle}
+            </Typography>
+            <Box sx={{ flex: 1, minWidth: 8, height: '1px', background: C.border }} />
+          </Box>
+          {list.map((move) => {
+            const isSelected = selectedName === move.name
+            const isEnabled = moveSet.isMoveEnabled(activeSet.id, move.name)
+            const isCustom = moveSet.isMoveCustom(activeSet.id, move.name)
+            return (
+              <Box key={move.name} sx={{
+                borderBottom: `1px solid ${C.border}`,
+                opacity: isEnabled ? 1 : 0.45,
+                transition: 'opacity 0.15s',
+              }}>
+                {/* Move header row */}
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Button
+                    onClick={() => {
+                      setSelectedName(isSelected ? null : move.name)
+                      setExamplesOpen(false)
+                      resetRunState()
+                    }}
+                    sx={{
+                      flex: 1, display: 'flex', alignItems: 'center', gap: 0.75,
+                      px: 1.5, py: 1, border: 'none', justifyContent: 'flex-start',
+                      textTransform: 'none', borderRadius: 0,
+                      background: isSelected ? (C === G ? G.bg : L.bg) : 'transparent',
+                      '&:hover': { background: C === G ? G.bg : L.bg },
+                    }}
+                  >
+                    <Box sx={{ flex: 1, textAlign: 'left' }}>
+                      <Typography sx={{ fontSize: '0.82rem', fontWeight: isSelected ? 700 : 600, color: isSelected ? (C === G ? G.dark : L.dark) : '#374151' }}>
+                        {move.name}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {isCustom && (
+                        <Chip label="custom" size="small" sx={{
+                          height: 15, fontSize: '0.57rem', fontWeight: 700, letterSpacing: '0.04em',
+                          background: '#f0f4ff', color: '#3730a3', border: '1px solid #c7d2fe',
+                          '& .MuiChip-label': { px: '5px' },
+                        }} />
+                      )}
+                      <MoveKindBadge kind={move.kind} />
+                    </Box>
+                    <Box sx={{ display: 'flex', color: '#9E9E9E', transition: 'transform 0.2s', transform: isSelected ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                      <ChevronIcon />
+                    </Box>
+                  </Button>
+
+                  {/* Action buttons */}
+                  <Box sx={{ display: 'flex', gap: 0.375, pr: 1, flexShrink: 0 }}>
+                    <Tooltip title={isEnabled ? "Disable in this set" : "Enable in this set"}>
+                      <Box
+                        component="button"
+                        onClick={() => moveSet.toggleMoveEnabled(activeSet.id, move.name)}
+                        sx={{
+                          width: 26, height: 26, borderRadius: '6px', border: 'none',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer', flexShrink: 0,
+                          background: isEnabled ? 'transparent' : '#f1f5f9',
+                          color: isEnabled ? '#94a3b8' : '#64748b',
+                          '&:hover': { background: isEnabled ? '#fef2f2' : '#f0f4f8', color: isEnabled ? '#ef4444' : '#1e3a5f' },
+                        }}
+                      >
+                        {isEnabled ? (
+                          <svg style={{ width: 12, height: 12 }} viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                            <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                          </svg>
+                        ) : (
+                          <svg style={{ width: 12, height: 12 }} viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                            <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </Box>
+                    </Tooltip>
+                    {!isDefaultSet && (
+                      <Tooltip title="Edit move">
+                        <Box
+                          component="button"
+                          onClick={() => openEditor(move)}
+                          sx={{
+                            width: 26, height: 26, borderRadius: '6px', border: 'none',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', flexShrink: 0,
+                            background: 'transparent', color: '#94a3b8',
+                            '&:hover': { background: C === G ? G.bg : L.bg, color: C === G ? G.dark : L.dark },
+                          }}
+                        >
+                          <EditPencilIcon />
+                        </Box>
+                      </Tooltip>
+                    )}
+                    <Tooltip title="Export as JSON">
+                      <Box
+                        component="button"
+                        onClick={() => moveSet.exportMoveAsJson(move)}
+                        sx={{
+                          width: 26, height: 26, borderRadius: '6px', border: 'none',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer', flexShrink: 0,
+                          background: 'transparent', color: '#94a3b8',
+                          '&:hover': { background: '#f0f4f8', color: '#1e3a5f' },
+                        }}
+                      >
+                        <DownloadSmIcon />
+                      </Box>
+                    </Tooltip>
+                    {isCustom && !isDefaultSet && (
+                      <Tooltip title="Remove from set">
+                        <Box
+                          component="button"
+                          onClick={() => { moveSet.removeMove(activeSet.id, move.name); if (selectedName === move.name) setSelectedName(null) }}
+                          sx={{
+                            width: 26, height: 26, borderRadius: '6px', border: 'none',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', flexShrink: 0,
+                            background: 'transparent', color: '#94a3b8',
+                            '&:hover': { background: '#fff5f5', color: '#ef4444' },
+                          }}
+                        >
+                          <CloseXIcon />
+                        </Box>
+                      </Tooltip>
+                    )}
+                  </Box>
+                </Box>
+
+                {/* Expanded detail */}
+                {isSelected && selectedMove && (
+                  <Box sx={{ px: 2, pb: 1.5, pt: 0.5, background: '#FAFAFA', borderTop: `1px solid ${C.border}` }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.75 }}>
+                      <ClassificationBadge classification={selectedMove.classification ?? "mathematical"} />
+                      <MoveKindBadge kind={selectedMove.kind} />
+                    </Box>
+                    <Typography sx={{ mb: 0.75, fontSize: '0.78rem', wordBreak: 'break-word', lineHeight: 1.5 }}>
+                      <strong>Trigger:</strong> {selectedMove.trigger || <em style={{ color: '#9E9E9E' }}>none</em>}
+                    </Typography>
+                    <Typography sx={{ mb: 0.5, fontSize: '0.78rem', wordBreak: 'break-word', lineHeight: 1.5 }}>
+                      <strong>Action:</strong> {selectedMove.action}
+                    </Typography>
+
+                    {/* Run button */}
+                    <Box sx={{ mt: 1.25, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Button size="small" disabled={isBusy} variant="outlined"
+                        onClick={() => void handleRunMove(selectedMove)}
+                        sx={{
+                          display: 'flex', alignItems: 'center', gap: 0.75, px: 1.5,
+                          fontSize: '0.75rem', fontWeight: 700, textTransform: 'none',
+                          color: '#2d5a2a', background: 'linear-gradient(180deg, #e8f5e3 0%, #c5dfc0 100%)',
+                          borderColor: '#7ab872', borderRadius: '20px',
+                          boxShadow: '0 2px 6px rgba(100,155,85,0.18)', transition: 'all 0.2s ease',
+                          '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54', transform: 'translateY(-1px)' },
+                          '&:disabled': { opacity: 0.45, boxShadow: 'none', transform: 'none' },
+                        }}>
+                        {isBusy ? <SpinnerBox size={12} /> : <PlayIcon />}
+                        {runState.phase === 'checking' ? 'Checking…' : runState.phase === 'applying' ? 'Applying…' : 'Run'}
+                      </Button>
+                      {selections.length === 0 && (
+                        <Typography sx={{ fontSize: '0.7rem', color: '#90A4AE', fontStyle: 'italic' }}>No selection</Typography>
+                      )}
+                    </Box>
+
+                    {/* Warning */}
+                    {runState.phase === 'warning' && (
+                      <Box sx={{ mt: 1.25, p: '10px 12px', borderRadius: '8px', background: '#FFFBEB', border: '1.5px solid #FDE68A' }}>
+                        <Typography sx={{ fontSize: '0.73rem', fontWeight: 700, color: '#92400E', mb: 0.5 }}>Trigger criterion not satisfied</Typography>
+                        <Typography sx={{ fontSize: '0.73rem', color: '#78350F', lineHeight: 1.5, mb: 1 }}>{runState.warningReasoning}</Typography>
+                        <Box sx={{ display: 'flex', gap: 0.75 }}>
+                          <Button size="small" onClick={() => void handleRunMove(selectedMove, true)}
+                            sx={{ fontSize: '0.73rem', fontWeight: 700, textTransform: 'none', color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '6px', '&:hover': { background: '#FDE68A' } }}>
+                            Apply anyway
+                          </Button>
+                          <Button size="small" onClick={resetRunState}
+                            sx={{ fontSize: '0.73rem', fontWeight: 600, textTransform: 'none', color: '#6B7280', background: 'white', border: '1px solid #E5E7EB', borderRadius: '6px', '&:hover': { background: '#F3F4F6' } }}>
+                            Cancel
+                          </Button>
+                        </Box>
+                      </Box>
+                    )}
+
+                    {/* Error */}
+                    {runState.phase === 'error' && (
+                      <Box sx={{ mt: 1.25, p: '8px 12px', borderRadius: '8px', background: '#FFF5F5', border: '1.5px solid #FFCDD2', display: 'flex', alignItems: 'flex-start', gap: 0.75 }}>
+                        <Typography sx={{ fontSize: '0.73rem', color: '#C62828', lineHeight: 1.5, flex: 1 }}>{runState.errorText}</Typography>
+                        <Button size="small" onClick={resetRunState} sx={{ fontSize: '0.7rem', textTransform: 'none', color: '#C62828', minWidth: 0, p: '0 4px' }}>✕</Button>
+                      </Box>
+                    )}
+
+                    {/* Examples toggle */}
+                    {selectedMove.examples.length > 0 && (
+                      <>
+                        <Button size="small" onClick={() => setExamplesOpen(v => !v)}
+                          endIcon={<Box sx={{ display: 'flex', transition: 'transform 0.2s', transform: examplesOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}><ChevronIcon /></Box>}
+                          sx={{ mt: 1, color: G.med, background: G.bg, border: `1px solid ${G.border}`, borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'none', '&:hover': { background: '#DCEDC8' } }}>
+                          Examples ({selectedMove.examples.length})
+                        </Button>
+                        {examplesOpen && (
+                          <Box sx={{ mt: 1.25 }}>
+                            {selectedMove.examples.map((ex, i) => <ExamplePreview key={i} example={ex} idx={i} />)}
+                          </Box>
+                        )}
+                      </>
+                    )}
+                  </Box>
+                )}
+              </Box>
+            )
+          })}
+        </Box>
+      ))}
+
+      {/* ── Move Editor Dialog ── */}
       <Dialog
-        open={showGenerator}
-        onClose={() => setShowGenerator(false)}
-        maxWidth="lg"
-        fullWidth
-        slotProps={{ paper: { sx: { borderRadius: '16px', border: `1px solid ${G.border}`, height: '85vh', overflow: 'hidden' } } }}
+        open={editorOpen}
+        onClose={() => { setEditorOpen(false); setEditingMove(undefined) }}
+        maxWidth="lg" fullWidth
+        slotProps={{ paper: { sx: { borderRadius: '16px', border: `1px solid #c0cedb`, height: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' } } }}
       >
         <Box sx={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          px: 2.5, py: 1.5, borderBottom: `1px solid ${G.border}`,
+          px: 2.5, py: 1.5, borderBottom: '1px solid #c0cedb',
           background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)', flexShrink: 0,
         }}>
           <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#1E3A5F', letterSpacing: '-0.01em' }}>
-            Move Generator
+            {editingMove ? `Edit Move — ${editingMove.name}` : 'New Move'}
           </Typography>
-          <IconButton size="small" onClick={() => setShowGenerator(false)}
-            sx={{ background: 'white', border: `1px solid ${G.border}`, color: '#3A5B80', borderRadius: '8px', '&:hover': { background: '#E2E8F0' } }}>
-            <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
+          <IconButton size="small" onClick={() => { setEditorOpen(false); setEditingMove(undefined) }}
+            sx={{ background: 'white', border: '1px solid #c0cedb', color: '#3A5B80', borderRadius: '8px', '&:hover': { background: '#E2E8F0' } }}>
+            <CloseXIcon />
           </IconButton>
         </Box>
-        <DialogContent sx={{ overflowY: 'auto', p: 3, background: '#F8FAFC' }}>
-          <MoveGenerator />
+        <DialogContent sx={{ overflowY: 'auto', p: 2.5, background: '#f8fafc', flex: 1 }}>
+          <MoveGenerator
+            initialMove={editingMove}
+            onSave={handleSaveMove}
+          />
         </DialogContent>
       </Dialog>
     </Box>
