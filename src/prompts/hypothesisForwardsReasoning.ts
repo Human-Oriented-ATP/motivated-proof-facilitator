@@ -7,6 +7,7 @@ export const hypothesisFowardsReasoningPrompt: ProofDiscoverySuggestionMove = {
     applySuggestionMove: {
         name: "Add a consequence of the hypothesis to the proof state",
         kind: "strengthening",
+        classification: "mathematical",
         trigger: "",
         action: "This move adds the suggested hypothesis to the list of hypotheses in the proof state.",
         examples: []

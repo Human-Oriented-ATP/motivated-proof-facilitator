@@ -4,28 +4,9 @@ import { ProofStateSelectionContext } from '../src/core/ProofStateSelectionConte
 import { ProofStateIdContext } from '../src/core/ProofDiscoveryStateContext';
 import TypstContextProvider from '../src/components/TypstContext';
 import { ProofDiscoveryMove } from '../src/core/ProofDiscoveryMove';
+import { moves } from '../src/prompts/moves';
 
-import { goalConjunctionMove } from '../src/prompts/goalConjunction';
-import { goalDisjunctionMove } from '../src/prompts/goalDisjunction';
-import { goalEquivalenceMove } from '../src/prompts/goalEquivalence';
-import { goalExistentialMove } from '../src/prompts/goalExistential';
-import { goalImplicationMove } from '../src/prompts/goalImplication';
-import { goalContradictionMove } from '../src/prompts/goalContradiction';
-import { goalUniversalMove } from '../src/prompts/goalUniversal';
-import { hypothesisConjunctionMove } from '../src/prompts/hypothesisConjunction';
-import { hypothesisDisjunctionMove } from '../src/prompts/hypothesisDisjunction';
-
-const prompts: Record<string, ProofDiscoveryMove> = {
-    goalConjunctionMove,
-    goalDisjunctionMove,
-    goalEquivalenceMove,
-    goalExistentialMove,
-    goalImplicationMove,
-    goalContradictionMove,
-    goalUniversalMove,
-    hypothesisConjunctionMove,
-    hypothesisDisjunctionMove,
-};
+const prompts: Record<string, ProofDiscoveryMove> = Object.fromEntries(moves.map(m => [m.name, m]));
 
 const kindColors: Record<string, { bg: string; fg: string; border: string }> = {
     strengthening: { bg: '#dcfce7', fg: '#166534', border: '#86efac' },
@@ -48,7 +29,7 @@ function KindBadge({ kind }: { kind: string }): React.JSX.Element {
 type Props = { onOpenInGenerator?: (moveJson: string) => void };
 
 export default function MoveVisualizer({ onOpenInGenerator }: Props): React.JSX.Element {
-    const [selectedKey, setSelectedKey] = useState<string>(Object.keys(prompts)[0]);
+    const [selectedKey, setSelectedKey] = useState<string>(Object.keys(prompts)[0] ?? "");
     const [expandedExamples, setExpandedExamples] = useState<Set<number>>(new Set());
     const active = prompts[selectedKey];
 
@@ -64,6 +45,8 @@ export default function MoveVisualizer({ onOpenInGenerator }: Props): React.JSX.
             return n;
         });
     };
+
+    if (!active) return <div />
 
     return (
         <TypstContextProvider>
@@ -184,7 +167,7 @@ export default function MoveVisualizer({ onOpenInGenerator }: Props): React.JSX.
                                                     marginBottom: '0.375rem' }}>Input</div>
                                                 <div style={{ background: 'white', borderRadius: 8, padding: '0.75rem',
                                                     border: '1px solid #e5e7eb', overflow: 'auto', maxHeight: 220 }}>
-                                                    <ProofStateIdContext.Provider value={{ proofNodeId: 0, proofContextId: -1 }}>
+                                                    <ProofStateIdContext.Provider value={{ proofNodeId: example.selections[0]?.proofStateId.proofNodeId ?? 0, proofContextId: -1 }}>
                                                         <ProofStateSelectionContext.Provider value={{ selections: example.selections, dispatch: () => {} }}>
                                                             <ProofStateWithLibraryResultComponent
                                                                 proofState={example.inputState.proofState}

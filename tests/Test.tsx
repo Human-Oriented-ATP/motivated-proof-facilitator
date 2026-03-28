@@ -158,7 +158,7 @@ export default function Test(): JSX.Element {
              activeTest === 'proofdiscoverystates' ? <RenderProofDiscoveryStates /> :
              activeTest === 'proofdiscoveryenvironment' ? <RenderProofDiscoveryEnvironment /> :
              activeTest === 'formalizer' ? <RenderFormalizer /> :
-             activeTest === 'movegenerator' ? <MoveGenerator initialMoveJson={generatorInitialMove} /> :
+             activeTest === 'movegenerator' ? <MoveGenerator initialMove={generatorInitialMove ? JSON.parse(generatorInitialMove) : undefined} /> :
              <MoveVisualizer onOpenInGenerator={(moveJson) => { setGeneratorInitialMove(moveJson); setActiveTest('movegenerator') }} />}
         </div>
     )

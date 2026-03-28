@@ -12,7 +12,7 @@ Your task is to either
 
 Please take into careful consideration of the mathematical content and structure of the proof state, the nature of the selections, and the specifics of the move's action.
 
-If the move can be applied, return a JSON object with the following structure:
+If the move can be applied, or if \`runWithGuardrails\` is false, return a JSON object with the following structure:
 \`\`\`json
 {
   "reasoning": "A clear reasoning trace explaining what the move is trying to accomplish and how it transforms the current proof state",
@@ -20,12 +20,14 @@ If the move can be applied, return a JSON object with the following structure:
 }
 \`\`\`
 
-If the move cannot be applied, return a JSON object with the following structure:
+If the move cannot be applied, and \`runWithGuardrails\` is true, return a JSON object with the following structure:
 \`\`\`json
 {
   "reasoning": "A clear explanation of why the move cannot be applied in the current context"
 }
 \`\`\`
+
+IMPORTANT: If \`runWithGuardrails\` is true, you MUST NOT apply the move if it is not applicable in the current context. Similarly, if \`runWithGuardrails\` is false, you MUST apply the move, regardless of whether you think it is applicable.
 
 Be precise and thorough in your analysis, considering both the mathematical meaning and structural properties of the proof state and the move.
 `

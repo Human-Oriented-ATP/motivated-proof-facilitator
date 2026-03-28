@@ -7,6 +7,7 @@ export const goalBackwardsReasoningPrompt: ProofDiscoverySuggestionMove = {
     applySuggestionMove: {
         name: "Replace the goal with a sufficient condition",
         kind: "strengthening",
+        classification: "mathematical",
         trigger: "",
         action: "This move replaces the selected goal with the suggested sufficient condition.",
         examples: []

@@ -133,9 +133,9 @@ export const StatementSchema: z.ZodType<Statement> = z.lazy(() => z.union([
     kind: z.literal("highlight"),
     statement: StatementSchema
   }).describe(`This is an obsolete field, do not use it.`)
-])).describe(`Combinations of atomic statements using logical connectives. 
-It is always preferable to use a higher-level description of a statement (like "$f$ is injective") over a lower-level one (like 
-\`{ kind: "universal", variable: { name: "x", description: "$A$" }, statement: 
+])).describe(`Combinations of atomic statements using logical connectives.
+It is always preferable to use a higher-level description of a statement (like "$f$ is injective") over a lower-level one (like
+\`{ kind: "universal", variable: { name: "x", description: "$A$" }, statement:
   { kind: "universal", variable: { name: "y", description: "$A$" }, statement:
   { kind: "implication", antecedent: "$f(x) = f(y)$", consequent: "$x = y$" }}}\'.`)
 

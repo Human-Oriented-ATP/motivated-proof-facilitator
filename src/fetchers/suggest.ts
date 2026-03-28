@@ -1,18 +1,8 @@
 import { z } from "zod"
-import { ProofStateSelection, ProofStateSelectionWithPolarity, selectionPolarity } from "../core/ProofStateSelectionContext.js"
-import { AtomicStatementSchema, ContextVariable, LabelledStatementSchema, StatementSchema } from "../core/ProofStateZod.js"
-import { Statement } from "../core/ProofState.js"
-
+import { ContextVariable, LabelledStatementSchema, StatementSchema, Statement } from "../core/ProofStateZod.js"
 export interface SelectionWithPolarity {
     selection: Statement | string
     polarity: boolean | null
-}
-
-export function selectionToSelectionWithPolarity(selection: ProofStateSelection): SelectionWithPolarity {
-    return {
-        selection: typeof selection.selection === 'string' || 'kind' in selection.selection ? selection.selection : selection.selection.text,
-        polarity: selectionPolarity(selection)
-    }
 }
 
 export interface SuggestRequest {
