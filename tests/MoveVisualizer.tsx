@@ -4,28 +4,9 @@ import { ProofStateSelectionContext } from '../src/core/ProofStateSelectionConte
 import { ProofStateIdContext } from '../src/core/ProofDiscoveryStateContext';
 import TypstContextProvider from '../src/components/TypstContext';
 import { ProofDiscoveryMove } from '../src/core/ProofDiscoveryMove';
+import { moves } from '../src/prompts/moves';
 
-import { goalConjunctionMove } from '../src/prompts/goalConjunction';
-import { goalDisjunctionMove } from '../src/prompts/goalDisjunction';
-import { goalEquivalenceMove } from '../src/prompts/goalEquivalence';
-import { goalExistentialMove } from '../src/prompts/goalExistential';
-import { goalImplicationMove } from '../src/prompts/goalImplication';
-import { goalContradictionMove } from '../src/prompts/goalContradiction';
-import { goalUniversalMove } from '../src/prompts/goalUniversal';
-import { hypothesisConjunctionMove } from '../src/prompts/hypothesisConjunction';
-import { hypothesisDisjunctionMove } from '../src/prompts/hypothesisDisjunction';
-
-const prompts: Record<string, ProofDiscoveryMove> = {
-    goalConjunctionMove,
-    goalDisjunctionMove,
-    goalEquivalenceMove,
-    goalExistentialMove,
-    goalImplicationMove,
-    goalContradictionMove,
-    goalUniversalMove,
-    hypothesisConjunctionMove,
-    hypothesisDisjunctionMove,
-};
+const prompts: Record<string, ProofDiscoveryMove> = Object.fromEntries(moves.map(m => [m.name, m]));
 
 const kindColors: Record<string, { bg: string; fg: string; border: string }> = {
     strengthening: { bg: '#dcfce7', fg: '#166534', border: '#86efac' },

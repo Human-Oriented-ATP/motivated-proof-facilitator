@@ -1317,10 +1317,10 @@ function AllMovesList(): JSX.Element {
   const [renamingSetId, setRenamingSetId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState("")
 
-  const { sets, activeSet, activeMoves } = moveSet
+  const { sets, activeSet, activeMoves, allMovesInSet } = moveSet
   const isDefaultSet = activeSet.id === 'default'
 
-  const selectedMove = selectedName !== null ? activeMoves.find(m => m.name === selectedName) ?? null : null
+  const selectedMove = selectedName !== null ? allMovesInSet.find(m => m.name === selectedName) ?? null : null
   const resetRunState = () => setRunState({ phase: 'idle' })
 
   const openEditor = (move?: ProofDiscoveryMove) => {
@@ -1368,8 +1368,8 @@ function AllMovesList(): JSX.Element {
 
   const isBusy = runState.phase === 'checking' || runState.phase === 'applying'
 
-  const generalMoves = activeMoves.filter(m => m.classification !== "logical")
-  const logicalMovesActive = activeMoves.filter(m => m.classification === "logical")
+  const generalMoves = allMovesInSet.filter(m => m.classification !== "logical")
+  const logicalMovesActive = allMovesInSet.filter(m => m.classification === "logical")
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -1643,7 +1643,7 @@ function AllMovesList(): JSX.Element {
 
                   {/* Action buttons */}
                   <Box sx={{ display: 'flex', gap: 0.375, pr: 1, flexShrink: 0 }}>
-                    <Tooltip title={isEnabled ? "Disable in this set" : "Enable in this set"}>
+                    <Tooltip title={isEnabled ? "Inactivate move" : "Activate move"}>
                       <Box
                         component="button"
                         onClick={() => moveSet.toggleMoveEnabled(activeSet.id, move.name)}
@@ -1652,21 +1652,15 @@ function AllMovesList(): JSX.Element {
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: 'pointer', flexShrink: 0,
                           background: isEnabled ? 'transparent' : '#f1f5f9',
-                          color: isEnabled ? '#94a3b8' : '#64748b',
-                          '&:hover': { background: isEnabled ? '#fef2f2' : '#f0f4f8', color: isEnabled ? '#ef4444' : '#1e3a5f' },
+                          color: isEnabled ? '#94a3b8' : '#22c55e',
+                          '&:hover': { background: isEnabled ? '#fef2f2' : '#f0fdf4', color: isEnabled ? '#ef4444' : '#16a34a' },
                         }}
                       >
-                        {isEnabled ? (
-                          <svg style={{ width: 12, height: 12 }} viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
-                            <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
-                          </svg>
-                        ) : (
-                          <svg style={{ width: 12, height: 12 }} viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                            <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
+                        {/* Power button icon */}
+                        <svg style={{ width: 13, height: 13 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 2v6" />
+                          <path d="M6.343 5.343a8 8 0 1 0 11.314 0" />
+                        </svg>
                       </Box>
                     </Tooltip>
                     {!isDefaultSet && (
