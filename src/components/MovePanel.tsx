@@ -1318,6 +1318,7 @@ function AllMovesList(): JSX.Element {
   const [renameValue, setRenameValue] = useState("")
 
   const { sets, activeSet, activeMoves } = moveSet
+  const isDefaultSet = activeSet.id === 'default'
 
   const selectedMove = selectedName !== null ? activeMoves.find(m => m.name === selectedName) ?? null : null
   const resetRunState = () => setRunState({ phase: 'idle' })
@@ -1435,12 +1436,14 @@ function AllMovesList(): JSX.Element {
           {/* Active set action icons */}
           {renamingSetId !== activeSet.id && (
             <Box sx={{ display: 'flex', gap: 0.25, flexShrink: 0 }}>
-              <Tooltip title="Rename this set">
-                <Box component="button" onClick={() => { setRenamingSetId(activeSet.id); setRenameValue(activeSet.name) }}
-                  sx={{ width: 24, height: 24, borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent', color: '#94a3b8', '&:hover': { background: '#f0f4f8', color: '#1e3a5f' } }}>
-                  <EditPencilIcon />
-                </Box>
-              </Tooltip>
+              {!isDefaultSet && (
+                <Tooltip title="Rename this set">
+                  <Box component="button" onClick={() => { setRenamingSetId(activeSet.id); setRenameValue(activeSet.name) }}
+                    sx={{ width: 24, height: 24, borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent', color: '#94a3b8', '&:hover': { background: '#f0f4f8', color: '#1e3a5f' } }}>
+                    <EditPencilIcon />
+                  </Box>
+                </Tooltip>
+              )}
               <Tooltip title="Duplicate as new set">
                 <Box component="button" onClick={() => moveSet.createSet(`${activeSet.name} (copy)`, activeSet.id)}
                   sx={{ width: 24, height: 24, borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'transparent', color: '#94a3b8', '&:hover': { background: '#f0f4f8', color: '#1e3a5f' } }}>
@@ -1541,25 +1544,40 @@ function AllMovesList(): JSX.Element {
           </Typography>
         </Box>
 
-        <Button
-          onClick={() => openEditor(undefined)}
-          fullWidth
-          variant="outlined"
-          sx={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75,
-            py: '8px', borderRadius: '10px',
-            background: 'linear-gradient(180deg, #e8f5e3 0%, #c5dfc0 100%)',
-            color: '#2d5a2a', borderColor: '#7ab872', textTransform: 'none',
-            fontSize: '0.8rem', fontWeight: 700,
-            boxShadow: '0 2px 6px rgba(100,155,85,0.14)',
-            '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54' },
-          }}
-        >
-          <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-          </svg>
-          Add New Move
-        </Button>
+        {isDefaultSet ? (
+          <Box sx={{
+            display: 'flex', alignItems: 'flex-start', gap: 1, px: 1.25, py: 1,
+            borderRadius: '10px', border: '1px solid #c0cedb',
+            background: 'linear-gradient(180deg, #f8fafb 0%, #edf2f7 100%)',
+          }}>
+            <svg style={{ width: 13, height: 13, color: '#4a8ab5', marginTop: 1, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <Typography sx={{ fontSize: '0.68rem', color: '#2e4a68', lineHeight: 1.45 }}>
+              The default move set cannot be edited. <strong>Create a new move set</strong> to add, edit, or remove moves.
+            </Typography>
+          </Box>
+        ) : (
+          <Button
+            onClick={() => openEditor(undefined)}
+            fullWidth
+            variant="outlined"
+            sx={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75,
+              py: '8px', borderRadius: '10px',
+              background: 'linear-gradient(180deg, #e8f5e3 0%, #c5dfc0 100%)',
+              color: '#2d5a2a', borderColor: '#7ab872', textTransform: 'none',
+              fontSize: '0.8rem', fontWeight: 700,
+              boxShadow: '0 2px 6px rgba(100,155,85,0.14)',
+              '&:hover': { background: 'linear-gradient(180deg, #c5dfc0, #a3cfa0)', borderColor: '#5a9e54' },
+            }}
+          >
+            <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+            Add New Move
+          </Button>
+        )}
       </Box>
 
       {/* ── Move rows ── */}
@@ -1651,21 +1669,23 @@ function AllMovesList(): JSX.Element {
                         )}
                       </Box>
                     </Tooltip>
-                    <Tooltip title="Edit move">
-                      <Box
-                        component="button"
-                        onClick={() => openEditor(move)}
-                        sx={{
-                          width: 26, height: 26, borderRadius: '6px', border: 'none',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          cursor: 'pointer', flexShrink: 0,
-                          background: 'transparent', color: '#94a3b8',
-                          '&:hover': { background: C === G ? G.bg : L.bg, color: C === G ? G.dark : L.dark },
-                        }}
-                      >
-                        <EditPencilIcon />
-                      </Box>
-                    </Tooltip>
+                    {!isDefaultSet && (
+                      <Tooltip title="Edit move">
+                        <Box
+                          component="button"
+                          onClick={() => openEditor(move)}
+                          sx={{
+                            width: 26, height: 26, borderRadius: '6px', border: 'none',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', flexShrink: 0,
+                            background: 'transparent', color: '#94a3b8',
+                            '&:hover': { background: C === G ? G.bg : L.bg, color: C === G ? G.dark : L.dark },
+                          }}
+                        >
+                          <EditPencilIcon />
+                        </Box>
+                      </Tooltip>
+                    )}
                     <Tooltip title="Export as JSON">
                       <Box
                         component="button"
@@ -1681,7 +1701,7 @@ function AllMovesList(): JSX.Element {
                         <DownloadSmIcon />
                       </Box>
                     </Tooltip>
-                    {isCustom && (
+                    {isCustom && !isDefaultSet && (
                       <Tooltip title="Remove from set">
                         <Box
                           component="button"
