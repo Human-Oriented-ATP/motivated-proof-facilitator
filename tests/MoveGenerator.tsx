@@ -303,6 +303,7 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
     setCurrentInputState(empty)
     dispatch({ action: "initialize", statement: "Manual", proofState: empty.proofState })
     setWorkflowState("formalized")
+    setShowInputEditor(true)
   }
 
   const handleApplyMove = async (): Promise<void> => {
@@ -750,18 +751,20 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
                     </Box>
                   </Tooltip>
                 </Box>
-                <Box sx={{ p: 1 }}>
-                  <ProofStateIdContext.Provider value={{ proofNodeId: 0, proofContextId: -1 }}>
-                    <ProofStateSelectionContext.Provider value={{ selections, dispatch: selectionsDispatch }}>
-                      <TypstContextProvider>
-                        <ProofStateComponent
-                          proofState={currentInputState.proofState}
-                          libraryResult={currentInputState.libraryResult}
-                        />
-                      </TypstContextProvider>
-                    </ProofStateSelectionContext.Provider>
-                  </ProofStateIdContext.Provider>
-                </Box>
+                {!showInputEditor && (
+                  <Box sx={{ p: 1 }}>
+                    <ProofStateIdContext.Provider value={{ proofNodeId: 0, proofContextId: -1 }}>
+                      <ProofStateSelectionContext.Provider value={{ selections, dispatch: selectionsDispatch }}>
+                        <TypstContextProvider>
+                          <ProofStateComponent
+                            proofState={currentInputState.proofState}
+                            libraryResult={currentInputState.libraryResult}
+                          />
+                        </TypstContextProvider>
+                      </ProofStateSelectionContext.Provider>
+                    </ProofStateIdContext.Provider>
+                  </Box>
+                )}
                 {showInputEditor && (
                   <Box sx={{ px: 1.5, pb: 1.5, pt: 1, borderTop: `1px solid ${BLU.border}` }}>
                     <ProofStateEditor
@@ -843,14 +846,16 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
                         </Box>
                       </Tooltip>
                     </Box>
-                    <Box sx={{ p: 1 }}>
-                      <ProofStateContextProvider>
-                        <ProofStateComponent
-                          proofState={currentOutputState.proofState}
-                          libraryResult={currentOutputState.libraryResult}
-                        />
-                      </ProofStateContextProvider>
-                    </Box>
+                    {!showOutputEditor && (
+                      <Box sx={{ p: 1 }}>
+                        <ProofStateContextProvider>
+                          <ProofStateComponent
+                            proofState={currentOutputState.proofState}
+                            libraryResult={currentOutputState.libraryResult}
+                          />
+                        </ProofStateContextProvider>
+                      </Box>
+                    )}
                     {showOutputEditor && (
                       <Box sx={{ px: 1.5, pb: 1.5, pt: 1, borderTop: `1px solid ${BLU.border}` }}>
                         <ProofStateEditor

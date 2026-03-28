@@ -712,9 +712,9 @@ export function AllMovesList(): JSX.Element {
                         {isBusy ? <SpinnerBox size={12} /> : <PlayIcon />}
                         {runState.phase === 'checking' ? 'Checking…' : runState.phase === 'applying' ? 'Applying…' : 'Run'}
                       </Button>
-                      {selections.length === 0 && (
-                        <Typography sx={{ fontSize: '0.7rem', color: '#90A4AE', fontStyle: 'italic' }}>No selection</Typography>
-                      )}
+                      <Typography sx={{ fontSize: '0.7rem', color: '#90A4AE', fontStyle: 'italic' }}>
+                        {selections.length === 0 ? 'No selection' : `${selections.length} selection${selections.length !== 1 ? 's' : ''}`}
+                      </Typography>
                     </Box>
 
                     {/* Warning */}
