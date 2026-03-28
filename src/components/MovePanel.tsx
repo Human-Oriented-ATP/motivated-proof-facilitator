@@ -18,7 +18,8 @@ import {
   AllMovesList,
 } from "./MovesList"
 import { SuggestionPanel } from "./SuggestionPanel"
-export { getVariablesInProofState, getApplicableSuggestionMoves, fetchSuggestions, applySuggestionResult } from "./SuggestionPanel"
+export { getVariablesInProofState, fetchSuggestions, applySuggestionResult } from "./SuggestionPanel"
+import { P } from "./SuggestionPanel"
 
 /** Get all the applicable moves for a given proof state and selections. */
 export async function getApplicableMoves(
@@ -75,7 +76,7 @@ type ApplicableMove = { move: ProofDiscoveryMove, filterResponse: FilterResponse
 
 // ─── Move Panel Component ─────────────────────────────────────────────────────
 
-function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: boolean) => void }): JSX.Element {
+function MovePanelContent({ onLoadingChange, onSuggestionModeChange }: { onLoadingChange?: (isLoading: boolean) => void, onSuggestionModeChange?: (active: boolean) => void }): JSX.Element {
   const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
   const { selections, dispatch: dispatchSelections } = useContext(ProofStateSelectionContext)
 
@@ -92,6 +93,7 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
   const [showAllMovesModal, setShowAllMovesModal] = useState(false)
   const [lastMoveReasoning, setLastMoveReasoning] = useState<string | null>(null)
   const [suggestionActive, setSuggestionActive] = useState(false)
+
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -300,13 +302,44 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
     setStatus("idle")
     setApplicableMoves([])
     lastFetchedSelectionsRef.current = ""
+    setSuggestionActive(false)
+    onSuggestionModeChange?.(false)
   }
 
   const renderMoveSuggestions = () => {
+    const enterSuggestionMode = () => {
+      abortControllerRef.current?.abort()
+      abortControllerRef.current = null
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      setSuggestionActive(true)
+      onSuggestionModeChange?.(true)
+    }
+
     // After a move is applied with no selection: show reasoning trace
     if ((status === "idle" || status === "error") && selections.length === 0 && lastMoveReasoning) {
       return (
         <Box sx={{ display: 'flex', flexDirection: 'column', p: 1.5, flex: 1, minHeight: 0, gap: 1 }}>
+          <Box sx={{ px: 0, pb: 0.5 }}>
+            <Button
+              onClick={enterSuggestionMode}
+              fullWidth
+              sx={{
+                display: 'flex', alignItems: 'center', gap: 1,
+                px: 2, py: 0.875, fontSize: '0.82rem', fontWeight: 700,
+                color: 'white', background: P.med, borderRadius: '10px',
+                textTransform: 'none', border: `1.5px solid ${P.bright}`,
+                justifyContent: 'flex-start',
+                '&:hover': { background: P.dark },
+              }}
+            >
+              <Box sx={{ display: 'flex', flexShrink: 0 }}>
+                <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                </svg>
+              </Box>
+              Generate suggestions
+            </Button>
+          </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 0.5, pb: 0.5, borderBottom: `1px solid ${G.border}` }}>
             <Box sx={{ color: G.bright, display: 'flex' }}>
               <svg style={{ width: 18, height: 18 }} viewBox="0 0 20 20" fill="currentColor">
@@ -413,11 +446,28 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
 
     return (
       <>
-        <SuggestionPanel
-          graphOrder={proofDiscoveryState.graph.order}
-          onWorkflowChange={setSuggestionActive}
-          onMoveApplied={handleSuggestionMoveApplied}
-        />
+        {/* Generate suggestions button */}
+        <Box sx={{ px: 1, pt: 1, pb: 0.5 }}>
+          <Button
+            onClick={enterSuggestionMode}
+            fullWidth
+            sx={{
+              display: 'flex', alignItems: 'center', gap: 1,
+              px: 2, py: 0.875, fontSize: '0.82rem', fontWeight: 700,
+              color: 'white', background: P.med, borderRadius: '10px',
+              textTransform: 'none', border: `1.5px solid ${P.bright}`,
+              justifyContent: 'flex-start',
+              '&:hover': { background: P.dark },
+            }}
+          >
+            <Box sx={{ display: 'flex', flexShrink: 0 }}>
+              <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+              </svg>
+            </Box>
+            Generate suggestions
+          </Button>
+        </Box>
         <Box sx={{ mx: 1, my: 0.5, height: '1px', background: '#e8eef4' }} />
         {proofMovesSection()}
       </>
@@ -438,11 +488,9 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flex: 1, color: '#2e4a68' }}>
           <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#2e4a68' }}>
-            {suggestionActive
-              ? "Suggestions"
-              : status === "loaded"
-                ? `${applicableMoves.length} Move${applicableMoves.length !== 1 ? 's' : ''}`
-                : "Move Suggestions"}
+            {status === "loaded" && !suggestionActive
+              ? `${applicableMoves.length} Move${applicableMoves.length !== 1 ? 's' : ''}`
+              : "Move Suggestions"}
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 0.625 }}>
@@ -466,8 +514,10 @@ function MovePanelContent({ onLoadingChange }: { onLoadingChange?: (isLoading: b
       <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         {suggestionActive ? (
           <SuggestionPanel
-            graphOrder={proofDiscoveryState.graph.order}
-            onWorkflowChange={setSuggestionActive}
+            onWorkflowChange={(active) => {
+              setSuggestionActive(active)
+              if (!active) onSuggestionModeChange?.(false)
+            }}
             onMoveApplied={handleSuggestionMoveApplied}
           />
         ) : renderMoveSuggestions()}
@@ -659,6 +709,6 @@ function CustomMoveSection({ onHasText }: { onHasText?: (hasText: boolean) => vo
 
 // ─── Public Move Panel ────────────────────────────────────────────────────────
 
-export function MovePanel({ onLoadingChange }: { onLoadingChange?: (isLoading: boolean) => void }): JSX.Element {
-  return <MovePanelContent onLoadingChange={onLoadingChange} />
+export function MovePanel({ onLoadingChange, onSuggestionModeChange }: { onLoadingChange?: (isLoading: boolean) => void, onSuggestionModeChange?: (active: boolean) => void }): JSX.Element {
+  return <MovePanelContent onLoadingChange={onLoadingChange} onSuggestionModeChange={onSuggestionModeChange} />
 }
