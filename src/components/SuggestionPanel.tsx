@@ -26,19 +26,15 @@ export function getVariablesInProofState(proofState: ProofState): ContextVariabl
   })
 }
 
-function statementToString(statement: Statement): string {
-  if (typeof statement === 'string') return statement
-  return JSON.stringify(statement)
-}
-
 /** Get all applicable suggestion moves for a given proof state and selections. */
 export async function getApplicableSuggestionMoves(
   proofDiscoveryState: ProofDiscoveryState,
   selections: ProofStateSelection[],
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  movesToCheck: ProofDiscoverySuggestionMove[] = suggestionMoves
 ): Promise<{ move: ProofDiscoverySuggestionMove, filterResponse: FilterResponse }[]> {
   const results = await Promise.all(
-    suggestionMoves.map(async (move) => {
+    movesToCheck.map(async (move) => {
       try {
         const filterResponse = await checkMoveValidity({
           proofState: getCurrentProofState(proofDiscoveryState),
@@ -93,10 +89,10 @@ export async function applySuggestionResult(
 ): Promise<string | undefined> {
   const parts = [move.applySuggestionMove.action]
   if (result.suggestion !== null) {
-    parts.push(`The specific suggestion chosen by the user is: ${statementToString(result.suggestion)}`)
+    parts.push(`The specific suggestion chosen by the user is: ${JSON.stringify(result.suggestion)}`)
   }
   if (result.generalResult !== null) {
-    parts.push(`The following general result is provided for context — "${result.generalResult.label}": ${statementToString(result.generalResult.statement)}`)
+    parts.push(`The following general result is provided for context — "${result.generalResult.label}": ${JSON.stringify(result.generalResult.statement)}`)
   }
 
   const augmentedMove: ProofDiscoveryMove = {

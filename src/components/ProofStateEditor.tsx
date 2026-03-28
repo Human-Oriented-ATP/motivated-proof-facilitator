@@ -283,6 +283,13 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
     setSelectedContext(proofState.length)
   }
 
+  const handleDeleteContext = () => {
+    if (proofState.length <= 1) return
+    const newProofState = proofState.filter((_, i) => i !== ctxIdx)
+    onUpdate(newProofState)
+    setSelectedContext(Math.max(0, ctxIdx - 1))
+  }
+
   // ── Inline form renderers ───────────────────────────────────────────────
 
   const renderVariableForm = (isEdit: boolean) => (
@@ -425,6 +432,9 @@ export function ProofStateEditor({ proofState, onUpdate }: ProofStateEditorProps
         </div>
         <div style={{ display: "flex", gap: "6px" }}>
           <button onClick={handleAddContext} style={es.toolBtn}>+ Context</button>
+          {proofState.length > 1 && (
+            <button onClick={handleDeleteContext} style={es.toolBtn}>× Context</button>
+          )}
           <button
             onClick={() => { if (!showJson) setRawJson(JSON.stringify(proofState, null, 2)); setShowJson(v => !v); setJsonError(null) }}
             style={showJson ? es.jsonBtnActive : es.jsonBtn}
