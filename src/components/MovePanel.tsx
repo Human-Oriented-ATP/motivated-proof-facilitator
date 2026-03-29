@@ -426,7 +426,10 @@ function MovePanelContent({ onLoadingChange, onSuggestionModeChange }: { onLoadi
       if (status === "error") {
         return (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.75, px: 2, py: 1.5 }}>
-            <Typography sx={{ fontSize: '0.8rem', color: '#C62828', fontWeight: 600 }}>Error checking moves</Typography>
+            <Typography sx={{ fontSize: '0.8rem', color: '#C62828', fontWeight: 600 }}>Error</Typography>
+            {errorMessage && (
+              <Typography sx={{ fontSize: '0.75rem', color: '#C62828', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{errorMessage}</Typography>
+            )}
             <Button size="small" variant="outlined" onClick={() => void fetchMoves()}
               sx={{ color: '#C62828', borderColor: '#FFCDD2', fontSize: '0.75rem', fontWeight: 600, textTransform: 'none', borderRadius: '8px', '&:hover': { background: '#FFF5F5', borderColor: '#E53935' } }}>
               Retry
