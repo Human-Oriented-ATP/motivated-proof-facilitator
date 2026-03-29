@@ -314,15 +314,27 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
 
   // ── Polarity selection card (no location label, color-coded) ─────────────
 
-  const renderPolarityCard = (s: SelectionWithPolarity, i: number) => {
+  const renderPolarityCard = (s: SelectionWithPolarity, i: number, onRemove?: () => void) => {
     const { bg, border, accent } = polarityCardStyle(s.polarity)
     const stmt: Statement = (typeof s.selection === 'object' && 'textSelection' in s.selection) ? (s.selection.textSelection as Statement) : s.selection as Statement
     return (
       <Box key={i} sx={{
         background: bg, border: `1px solid ${border}`, borderRadius: '6px',
         borderLeft: `3px solid ${accent}`, px: 0.875, py: 0.5,
+        display: 'flex', alignItems: 'center', gap: 0.5,
       }}>
-        <Box sx={{ fontSize: '0.8rem', lineHeight: 1.4 }}><StaticStatement statement={stmt} /></Box>
+        <Box sx={{ fontSize: '0.8rem', lineHeight: 1.4, flex: 1 }}><StaticStatement statement={stmt} /></Box>
+        {onRemove && (
+          <IconButton size="small" onClick={onRemove} sx={{
+            width: 16, height: 16, p: 0, flexShrink: 0,
+            color: accent, opacity: 0.5,
+            '&:hover': { opacity: 1, background: 'transparent' },
+          }}>
+            <svg style={{ width: 10, height: 10 }} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </IconButton>
+        )}
       </Box>
     )
   }
@@ -380,7 +392,7 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
               </Typography>
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                {display.map((s, i) => renderPolarityCard(s, i))}
+                {display.map((s, i) => renderPolarityCard(s, i, selections[i] ? () => dispatchSelections({ type: 'TOGGLE_SELECTION', selection: selections[i]! }) : undefined))}
               </Box>
             )}
 
