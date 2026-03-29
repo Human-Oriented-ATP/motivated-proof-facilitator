@@ -48,6 +48,10 @@ This is because by introducing the predicate "is closed in" it makes it more lik
 Another situation where such matching would be desirable is when one of the main selections has an associated statement that resembles an additional selection of opposite polarity ("true" polarity is associated with hypothesis-like statements and "false" polarity is associated with goal-like statements). For example, if the main selection is the hypothesis "$U$ is open"
 and the additional selection is the goal "$V$ is closed",  where $U$ is a free variable and $V$ is a meta variable, both of which represent subsets of a metric space $X$, then the suggestion "$U^c$ is closed" would be preferred over the open-ball definition, since it matches quite closely with the additional selection of opposite polarity which contains metavariables that can be instantiated. 
 
+A slightly more complicated instance of the set-up is when the main selection is the hypothesis "$U$ is open" ("true" polarity) and the additional selection is the goal "$U^c sect V$ is closed" ("false" polarity), where $U$ and $V$ are now subsets of a topological space. It would still make sense to suggest "$U^c$ is closed" as a standard consequence in this case, since the it creates matches with the term "U^c" and the predicate "is closed".
+
+Another example is where the main selections are hypotheses "$a < c$" and "$b < d$" ("true" polarity), and the additional selection is the goal  $a + b < n$ ("false" polarity), where all variables are real numbers. In this case, a good suggestion would be "$a + b < c + d$" as a standard consequence, since it matches the general structure of the additional selection well by having the form "$a + b < ...$".
+
 It may be useful to offer suggestions that reduce the number of variables involved, as that is often a sign of progress.
 For example, if the main selection is the statement
 \`\`\`
