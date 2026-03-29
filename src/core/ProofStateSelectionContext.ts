@@ -103,7 +103,9 @@ export function addressPolarity(init: boolean | null, address: StatementAddress)
 }
 
 export function selectionPolarity(selection: ProofStateSelection): boolean | null {
-    return addressPolarity(locationPolarity(selection.location), selection.address)
+    return (typeof selection.selection === 'string' || 'kind' in selection.selection) ? 
+      addressPolarity(locationPolarity(selection.location), selection.address) :
+      null
 }
 
 export function toProofStateSelectionWithPolarity(selection: ProofStateSelection): ProofStateSelectionWithPolarity {

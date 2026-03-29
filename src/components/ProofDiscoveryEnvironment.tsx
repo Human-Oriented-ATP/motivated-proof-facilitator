@@ -524,7 +524,10 @@ export function ProofDiscoveryEnvironment({
         }}>
           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
             <ProofDiscoveryStateContext.Provider value={{ proofDiscoveryState, dispatchProofDiscoveryAction }}>
-              <MovePanel onLoadingChange={(isLoading) => { if (isLoading) setIsGraphExpanded(false) }} />
+              <MovePanel
+                onLoadingChange={(isLoading) => { if (isLoading) setIsGraphExpanded(false) }}
+                onSuggestionModeChange={(active) => { if (active) setIsGraphExpanded(false) }}
+              />
             </ProofDiscoveryStateContext.Provider>
           </Box>
         </Box>

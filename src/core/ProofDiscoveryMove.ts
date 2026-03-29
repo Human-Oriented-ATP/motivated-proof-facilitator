@@ -50,4 +50,4 @@ export interface ProofDiscoverySuggestionMove {
     trigger: string
     suggestionPrompt: string
     applySuggestionMove: ProofDiscoveryMove
-}
+}   
