@@ -232,6 +232,7 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
 
   const [workflow, setWorkflow] = useState<SuggestionWorkflow>({ phase: "selecting_main" })
   const [expandedGeneralResults, setExpandedGeneralResults] = useState<Set<number>>(new Set())
+  const [expandedReasoning, setExpandedReasoning] = useState<Set<number>>(new Set())
   const [activeKinds, setActiveKinds] = useState<Set<SuggestionKind>>(new Set(ALL_KINDS))
   const [filterOpen, setFilterOpen] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
@@ -563,6 +564,10 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
               const toggleGeneral = () => setExpandedGeneralResults(prev => {
                 const n = new Set(prev); n.has(originalIdx) ? n.delete(originalIdx) : n.add(originalIdx); return n
               })
+              const isReasoningExpanded = expandedReasoning.has(originalIdx)
+              const toggleReasoning = () => setExpandedReasoning(prev => {
+                const n = new Set(prev); n.has(originalIdx) ? n.delete(originalIdx) : n.add(originalIdx); return n
+              })
 
               return (
                 <Paper key={originalIdx} elevation={0} sx={{
@@ -620,6 +625,37 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
                             <StaticStatement statement={result.generalResult.statement} />
                           </Box>
                         </Box>
+                      )
+                    )}
+                    {/* Reasoning trace */}
+                    {result.reasoning && (
+                      isReasoningExpanded ? (
+                        <Box sx={{ background: '#f8f9fa', border: '1px solid #e9ecef', borderRadius: '7px', p: '6px 8px' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.25 }}>
+                            <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6c757d', flex: 1 }}>
+                              Reasoning
+                            </Typography>
+                            <IconButton size="small" onClick={toggleReasoning}
+                              sx={{ width: 16, height: 16, p: 0, color: '#6c757d', '&:hover': { color: '#343a40' } }}>
+                              <ChevronIcon rotated />
+                            </IconButton>
+                          </Box>
+                          <Typography sx={{ fontSize: '0.72rem', color: '#495057', lineHeight: 1.5 }}>
+                            {result.reasoning}
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Button size="small" onClick={toggleReasoning}
+                          endIcon={<Box sx={{ display: 'flex' }}><ChevronIcon /></Box>}
+                          sx={{
+                            alignSelf: 'flex-start', fontSize: '0.7rem', fontWeight: 600, textTransform: 'none',
+                            color: '#6c757d', background: '#f8f9fa', border: '1px solid #e9ecef',
+                            borderRadius: '6px', px: 1, py: 0.375,
+                            '&:hover': { background: '#e9ecef', borderColor: '#ced4da' },
+                          }}
+                        >
+                          Reasoning
+                        </Button>
                       )
                     )}
                     {/* Kind chip at bottom */}
