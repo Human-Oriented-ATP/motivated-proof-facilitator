@@ -127,6 +127,102 @@ as a suggestion over the lower-level definition
 Prefer generating structured statements composed of simpler atomic sentences with logical connectives over
 long and convoluted atomic statements.
 
+Some examples of statements include:
+\`\`\`
+{
+    kind: "universal",
+    variable: { name: "$N$", description: "$NN$" },
+    statement: {
+        kind: "existential",
+        variable: { name: "$p$", description: "$NN$" },
+        statement: {
+            kind: "conjunction",
+            statements: [
+                "$p$ is prime",
+                "$p + 2$ is prime",
+                "$p > N$"
+            ]
+        }
+    }
+}
+\'\'\'
+
+\`\`\`
+{
+    "kind": "universal",
+    "variable": {
+    "name": "$delta$",
+    "description": "$RR_(>0)$"
+    },
+    "statement": {
+    "kind": "universal",
+    "variable": {
+        "name": "$k$",
+        "description": "$NN$"
+    },
+    "statement": {
+        "kind": "existential",
+        "variable": {
+        "name": "$N$",
+        "description": "$NN$"
+        },
+        "statement": {
+        "kind": "universal",
+        "variable": {
+            "name": "$A$",
+            "description": "subset of $ {1, 2, dots, N} $"
+        },
+        "statement": {
+            "kind": "implication",
+            "antecedent": "$bar.v A bar.v gt.eq delta dot N$",
+            "consequent": {
+            "kind": "existential",
+            "variable": {
+                "name": "$P$",
+                "description": "subset of $ {1, 2, dots, N} $"
+            },
+            "statement": {
+                "kind": "conjunction",
+                "statements": [
+                "$P$ is an arithmetic progression",
+                "$P$ is a subset of $A$",
+                "$P$ has length $k$"
+                ]
+            }
+            }
+        }
+        }
+    }
+    }
+}
+\`\`\`
+
+\`\`\`
+{
+    kind: "universal",
+    variable: { name: "$n$", description: "$NN$" },
+    statement: {
+        kind: "universal",
+        variable: { name: "$x$", description: "$NN$" },
+        statement: {
+            kind: "universal",
+            variable: { name: "$y$", description: "$NN$" },
+            statement: {
+                kind: "implication",
+                antecedent: {
+                    kind: "conjunction",
+                    statements: [
+                        "$n > 2$",
+                        "$x^n + y^n = z^n$"
+                    ]
+                },
+                consequent: "$x dot y dot z = 0$"
+                }
+            }
+        }
+    }
+\`\`\`
+
 In some cases, you may be required to output a statement that is relevant to the selections,
 along with a general theorem statement that relates the two.
 
