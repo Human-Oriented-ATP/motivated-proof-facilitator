@@ -1044,7 +1044,7 @@ export const moves: ProofDiscoveryMove[] =
     "name": "Simplify the selected expression",
     "kind": "equivalence",
     "runWithGuardrails": true, "classification": "mathematical",
-    "trigger": "This move is relevant when the proof state has a single selected expression or statement, ideally representing a term that can be simplified. This move also applies to statements that can be simplified, not just expressions within atomic statements.",
+    "trigger": "This move is relevant when the proof state has a single selection, ideally representing a term that can be simplified. This move also applies to composite statements that can be simplified, not just expressions within atomic statements.",
     "action": "This move replaces the selected expression with an equivalent one that is simpler in an intuitive sense.",
     "examples": [
       {
@@ -1399,7 +1399,7 @@ export const moves: ProofDiscoveryMove[] =
     "name": "Discharge obviously true goal",
     "kind": "strengthening",
     "runWithGuardrails": true, "classification": "mathematical",
-    "trigger": "This move appears when the only selection is a goal statement that is a simple fact that feels obviously true.",
+    "trigger": "This move appears when the selections contain a single goal statement and any number of hypotheses, where the goal is a simple fact that is trivially true given the selected hypotheses.",
     "action": "Remove the goal from the list of goals.",
     "examples": [
       {
@@ -1599,9 +1599,15 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Perform goal-directed forwards reasoning",
     "kind": "strengthening",
-    "runWithGuardrails": true, "classification": "mathematical",
+    "runWithGuardrails": false, "classification": "mathematical",
     "trigger": "This move appears when the user has selected at least one hypothesis and at least one goal in the same proof context.",
-    "action": "This move creates a new hypothesis that is derived from some of the selected hypotheses and is syntactically similar to at least one of the selected goals. Avoid dropping the level of abstraction; ideally, the new hypothesis should be syntactically similar to one of the selected goals (and not just have semantic resemblance). Avoid introducing hypotheses that already exist in the proof state.",
+    "action": `This move creates a new hypothesis that is derived from some of the selected hypotheses and is syntactically similar to at least one of the selected goals. 
+    
+    This means that the parse tree of the new hypothesis matches better with that of one of the selected goals. 
+    For example, if the selected hypothesis is $n is even$ and the selected goal is $k divides n$, where $k$ is a metavariable, 
+    a good suggestion would be to introduce the hypothesis $2 divides n$, which is syntactically similar to the goal and equivalent to the hypothesis.
+
+    Avoid dropping the level of abstraction, and avoid introducing hypotheses that already exist in the proof state.`,
     "examples": [
       {
         "description": "",
