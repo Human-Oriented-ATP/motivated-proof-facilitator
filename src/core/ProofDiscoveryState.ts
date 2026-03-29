@@ -1,7 +1,7 @@
 import Graph from 'graphology';
 import { LabelledStatement, ProofState, Statement } from './ProofStateZod'
 
-export type MoveKind = "strengthening" | "weakening" | "equivalence" | "other"
+export type MoveKind = "strengthening" | "weakening" | "equivalence" | "backtrack" | "other"
 
 export interface MoveDescription {
     kind: MoveKind
@@ -43,6 +43,7 @@ export type ProofDiscoveryAction =
     move: MoveDescription,
     newProofState: ProofState }
 | { action: "addToLibrary", statement: LabelledStatement }
+| { action: "backtrack", nodeId: ProofNodeId }
 | { action: "setHighlightedStatement", index: number }
 | { action: "clearHighlightedStatement" }
 | { action: "finish" }
@@ -124,6 +125,56 @@ export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: P
                 highlightedLibraryStatement: state.library.length
             }
         }
+        case "backtrack": {
+            if (!state.graph.hasNode(action.nodeId)) {
+                throw new Error(`Node with ID ${action.nodeId} does not exist.`)
+            }
+            const leaves = getLeafDescendants(state.graph, action.nodeId)
+
+            // Collect all goals from leaf nodes
+            const allGoals = leaves.flatMap(leafId =>
+                state.graph.getNodeAttribute(leafId, 'proofState').flatMap(ctx => ctx.goals)
+            )
+
+            // Build the negated conjunction hypothesis
+            const negatedStatement: Statement = allGoals.length === 1
+                ? { kind: "negation", statement: allGoals[0]!.statement }
+                : { kind: "negation", statement: { kind: "conjunction", statements: allGoals.map(g => g.statement) } }
+
+            const backtrackedHypothesis: LabelledStatement = {
+                label: "backtrack_hypothesis",
+                statement: negatedStatement
+            }
+
+            // New node: selected node's proof state with the hypothesis added to the first context
+            const selectedProofState = state.graph.getNodeAttribute(action.nodeId, 'proofState')
+            const newProofState = selectedProofState.map((ctx, i) =>
+                i === 0 ? { ...ctx, hypotheses: [...ctx.hypotheses, backtrackedHypothesis] } : ctx
+            )
+
+            const newNodeId = state.graph.order
+            const newGraph = state.graph.copy()
+            newGraph.addNode(newNodeId, { proofState: newProofState })
+
+            // Connect new node to each leaf via backtrack edges
+            for (const leafId of leaves) {
+                newGraph.addDirectedEdge(newNodeId, leafId, {
+                    kind: "backtrack",
+                    description: "Close goals through backtracking"
+                })
+            }
+
+            newGraph.addDirectedEdge(newNodeId, action.nodeId, {
+                kind: "backtrack",
+                description: "Revisit node with new hypothesis from backtracking"
+            })
+
+            return {
+                ...state,
+                graph: newGraph,
+                currentNodeId: newNodeId
+            }
+        }
         case "setHighlightedStatement": {
             return {
                 ...state,
@@ -139,6 +190,48 @@ export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: P
         default:
             return state
     }
+}
+
+/**
+ * Returns all leaf descendants of a node reachable via strengthening and equivalence edges.
+ * Leaf nodes are those with no strengthening children (no in-edges of kind "strengthening").
+ */
+function getLeafDescendants(graph: ProofDiscoveryGraph, nodeId: ProofNodeId): ProofNodeId[] {
+    const visited = new Set<string>()
+    const queue: string[] = [nodeId.toString()]
+    visited.add(nodeId.toString())
+    const leaves: ProofNodeId[] = []
+
+    while (queue.length > 0) {
+        const current = queue.shift()!
+        let hasStrengthenChildren = false
+
+        // Strengthening children: nodes Y where Y -> current (current is parent, Y is descendant)
+        graph.forEachInEdge(current, (_edge, attrs, source) => {
+            if (attrs.kind !== 'strengthening') return
+            hasStrengthenChildren = true
+            if (!visited.has(source)) {
+                visited.add(source)
+                queue.push(source)
+            }
+        })
+
+        // Equivalence neighbors: traverse the equivalence class at this level
+        graph.forEachUndirectedEdge(current, (_edge, attrs, source, target) => {
+            if (attrs.kind !== 'equivalence') return
+            const other = source === current ? target : source
+            if (!visited.has(other)) {
+                visited.add(other)
+                queue.push(other)
+            }
+        })
+
+        if (!hasStrengthenChildren) {
+            leaves.push(parseInt(current))
+        }
+    }
+
+    return leaves
 }
 
 export function getCurrentProofState(proofDiscoveryState: ProofDiscoveryState): ProofState {
