@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { ContextVariable, LabelledStatementSchema, StatementSchema, Statement } from "../core/ProofStateZod.js"
 export interface SelectionWithPolarity {
-    selection: Statement | string
+    selection: Statement | { textSelection: string }
     polarity: boolean | null
 }
 
@@ -30,7 +30,8 @@ Suggestions can fall into one of the following categories:
 - Sufficient conditions: Statements that imply the main selections in the proof state, obtained by reasoning backwards from them.
 - Equivalent statements: Statements that are mathematically equivalent to the main selections in the proof state, usually obtained by simplifying the main selection or unfolding or refolding definitions within.
 - Constructions: Atomic statements representing mathematical objects associated with the main selections in the proof state.
-`)
+`),
+    reasoning: z.string().describe("A clear and concise explanation of why the suggestion is relevant to the selections, and how it relates to them.")
 }).describe("A suggestion made in response to the user's selections in the proof state. The suggestion may include a precise, structured and specific statement that is relevant to the selections, as well as a more general mathematical result that relates to the selections. The general result can provide context and justification for the suggestion, or can serve as a standalone theorem for the user to keep in mind as they continue working on the proof.")
 
 export const SuggestResultsSchema = z.object({

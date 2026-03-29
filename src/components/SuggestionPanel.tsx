@@ -1,6 +1,6 @@
-import React, { JSX, useContext, useState, useEffect } from "react"
+import React, { JSX, useContext, useState, useEffect, useRef } from "react"
 import {
-  Box, Typography, Button, IconButton, Paper, Chip,
+  Box, Typography, Button, IconButton, Paper, Chip, Tooltip,
 } from "@mui/material"
 import { ProofStateSelection, ProofStateSelectionContext, ProofStateLocationContext, selectionPolarity, toProofStateSelectionWithPolarity } from "../core/ProofStateSelectionContext"
 import { ContextVariable, ProofState, Statement } from "../core/ProofStateZod"
@@ -8,7 +8,7 @@ import { getCurrentProofState, ProofDiscoveryAction, ProofDiscoveryState } from 
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
 import { ProofDiscoveryStateContext, ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
 import { MathStatement } from "./MathStatement"
-import { suggestStatements, SuggestResult, SuggestResults, SuggestionKind } from "../fetchers/suggest"
+import { suggestStatements, SuggestResult, SuggestResults, SuggestionKind, SelectionWithPolarity } from "../fetchers/suggest"
 import { applyMove, ChevronIcon, PlayIcon, SpinnerBox } from "./MovesList"
 
 // ─── Exported helpers ─────────────────────────────────────────────────────────
@@ -34,11 +34,11 @@ export async function fetchSuggestions(
   return suggestStatements({
     variables: getVariablesInProofState(getCurrentProofState(proofDiscoveryState)),
     mainSelections: mainSelections.map(selection => ({
-      selection: typeof selection.selection === 'string' || 'kind' in selection.selection ? selection.selection : selection.selection.text,
+      selection: typeof selection.selection === 'string' || (typeof selection.selection === 'object' && 'kind' in selection.selection) ? selection.selection : selection.selection.text,
       polarity: selectionPolarity(selection)
     })),
     additionalSelections: additionalSelections.map(selection => ({
-      selection: typeof selection.selection === 'string' || 'kind' in selection.selection ? selection.selection : selection.selection.text,
+      selection: typeof selection.selection === 'string' || (typeof selection.selection === 'object' && 'kind' in selection.selection) ? selection.selection : selection.selection.text,
       polarity: selectionPolarity(selection)
     })),
     instructions
@@ -108,38 +108,40 @@ export function applyMoveFromKindAndPolarity(kind: SuggestionKind, polarity: boo
         case "standard_consequence":
           return { ...base, name: "Add a hypothesis to the proof state", kind: "strengthening", action: "This move adds the suggested statement as a new hypothesis to the proof state." }
         case "equivalent_statement":
-          return { ...base, name: "Replace hypothesiswith an equivalent statement", kind: "equivalence", action: `This move replaces the selected expression or statement with the equivalent suggestion.` }
+          return { ...base, name: "Replace hypothesis with an equivalent statement", kind: "equivalence", action: `This move replaces the selected expression or statement with the equivalent suggestion.` }
         case "construction":
           return { ...base, name: "Introduce a construction", kind: "strengthening", action: "This move introduces the constructed object into the proof state as a new let variable with a suitable name." }
       }
+    // falls through
     case false:
-        switch (kind) {
-          case "sufficient_condition":
-            return { ...base, name: "Replace the goal with a sufficient condition", kind: "strengthening", action: "This move replaces the selected goals with the suggested sufficient condition." }
-          case "standard_consequence":
-            return { ...base, name: "Reason forwards from the goal", kind: "weakening", action: "This move adds the suggested statement as a new goal to the proof state." }
-          case "equivalent_statement":
-            return { ...base, name: "Replace goal with an equivalent statement", kind: "equivalence", action: `This move replaces the selected expression or statement with the equivalent suggestion.` }
-          case "construction":
-            return { ...base, name: "Introduce a construction", kind: "strengthening", action: "This move introduces the constructed object into the proof state as a new let variable with a suitable name." }
-        }
-    case null:
-        switch (kind) {
-          case "sufficient_condition":
-            return { ...base, name: "Replace statement with a sufficient condition", kind: "strengthening", action: "This move replaces the selected statement with the suggested sufficient condition if the statement is a goal, and fails otherwise." }
-          case "standard_consequence":
-            return { ...base, name: "Add a hypothesis to the proof state", kind: "strengthening", action: "This move adds the suggested statement as a new hypothesis to the proof state if the selected statement is a hypothesis, and fails otherwise." }
-          case "equivalent_statement":
-            return { ...base, name: "Replace with an equivalent statement", kind: "equivalence", action: `This move replaces the selected expression or statement with the equivalent suggestion.` }
-          case "construction":
-            return { ...base, name: "Introduce a construction", kind: "strengthening", action: "This move introduces the constructed object into the proof state as a new let variable with a suitable name." }
+      switch (kind) {
+        case "sufficient_condition":
+          return { ...base, name: "Replace the goal with a sufficient condition", kind: "strengthening", action: "This move replaces the selected goals with the suggested sufficient condition." }
+        case "standard_consequence":
+          return { ...base, name: "Reason forwards from the goal", kind: "weakening", action: "This move adds the suggested statement as a new goal to the proof state." }
+        case "equivalent_statement":
+          return { ...base, name: "Replace goal with an equivalent statement", kind: "equivalence", action: `This move replaces the selected expression or statement with the equivalent suggestion.` }
+        case "construction":
+          return { ...base, name: "Introduce a construction", kind: "strengthening", action: "This move introduces the constructed object into the proof state as a new let variable with a suitable name." }
+      }
+    // falls through
+    default:
+      switch (kind) {
+        case "sufficient_condition":
+          return { ...base, name: "Replace statement with a sufficient condition", kind: "strengthening", action: "This move replaces the selected statement with the suggested sufficient condition if the statement is a goal, and fails otherwise." }
+        case "standard_consequence":
+          return { ...base, name: "Add a hypothesis to the proof state", kind: "strengthening", action: "This move adds the suggested statement as a new hypothesis to the proof state if the selected statement is a hypothesis, and fails otherwise." }
+        case "equivalent_statement":
+          return { ...base, name: "Replace with an equivalent statement", kind: "equivalence", action: `This move replaces the selected expression or statement with the equivalent suggestion.` }
+        case "construction":
+          return { ...base, name: "Introduce a construction", kind: "strengthening", action: "This move introduces the constructed object into the proof state as a new let variable with a suitable name." }
       }
   }
 }
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
-// Purple palette — suggestion moves
+// Purple palette — suggestion panel
 export const P = {
   dark:   '#4c1d95',
   med:    '#7c3aed',
@@ -149,30 +151,62 @@ export const P = {
   border: '#ede9fe',
 }
 
-// ─── Kind labels ──────────────────────────────────────────────────────────────
+// Soft purple button — matches the general panel style
+export const shinyPurpleBtn = {
+  color: '#4c1d95',
+  background: 'linear-gradient(180deg, #ffffff 0%, #faf5ff 100%)',
+  boxShadow: '0 1px 2px rgba(124,58,237,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
+  border: '1.5px solid #ede9fe',
+  textTransform: 'none' as const,
+  fontWeight: 700,
+  '&:hover': {
+    background: 'linear-gradient(180deg, #faf5ff 0%, #ddd6fe 100%)',
+    borderColor: '#8b5cf6',
+    boxShadow: '0 2px 5px rgba(124,58,237,0.18)',
+  },
+  '&:disabled': { opacity: 0.45, boxShadow: 'none' },
+}
+
+// ─── Kind palette ─────────────────────────────────────────────────────────────
+
+type KindStyle = { bg: string; border: string; text: string; accent: string; chipBg: string }
+
+const KIND_STYLES: Record<SuggestionKind, KindStyle> = {
+  sufficient_condition: { bg: '#EFF6FF', border: '#BFDBFE', text: '#1D4ED8', accent: '#3B82F6', chipBg: '#DBEAFE' },
+  standard_consequence: { bg: '#FFFBEB', border: '#FDE68A', text: '#92400E', accent: '#F59E0B', chipBg: '#FEF3C7' },
+  equivalent_statement: { bg: '#ECFDF5', border: '#A7F3D0', text: '#065F46', accent: '#10B981', chipBg: '#D1FAE5' },
+  construction:         { bg: '#F5F3FF', border: '#DDD6FE', text: '#5B21B6', accent: '#7C3AED', chipBg: '#EDE9FE' },
+}
 
 const KIND_LABELS: Record<SuggestionKind, string> = {
   sufficient_condition: "Sufficient Condition",
   standard_consequence: "Standard Consequence",
   equivalent_statement: "Equivalent Statement",
-  construction: "Construction",
+  construction:         "Construction",
 }
 
 const ALL_KINDS: SuggestionKind[] = ["sufficient_condition", "standard_consequence", "equivalent_statement", "construction"]
+
+// ─── Polarity card colors ─────────────────────────────────────────────────────
+
+function polarityCardStyle(polarity: boolean | null): { bg: string; border: string; accent: string } {
+  if (polarity === true)  return { bg: 'rgba(255,140,0,0.07)',  border: 'rgba(255,140,0,0.30)',  accent: '#FF8C00' }
+  if (polarity === false) return { bg: 'rgba(33,150,243,0.07)', border: 'rgba(33,150,243,0.30)', accent: '#2196F3' }
+  return                         { bg: 'rgba(130,130,130,0.06)', border: 'rgba(130,130,130,0.22)', accent: '#9E9E9E' }
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SuggestionWorkflow =
   | { phase: "selecting_main" }
   | { phase: "selecting_additional"; mainSelections: ProofStateSelection[] }
-  | { phase: "loading"; mainSelections: ProofStateSelection[] }
-  | { phase: "loaded"; mainSelections: ProofStateSelection[]; results: SuggestResults }
-  | { phase: "applying"; mainSelections: ProofStateSelection[]; results: SuggestResults; applyingIdx: number }
-  | { phase: "error"; mainSelections: ProofStateSelection[]; error: string }
+  | { phase: "loading";              mainSelections: ProofStateSelection[] }
+  | { phase: "loaded";               mainSelections: ProofStateSelection[]; results: SuggestResults }
+  | { phase: "applying";             mainSelections: ProofStateSelection[]; results: SuggestResults; applyingIdx: number }
+  | { phase: "error";                mainSelections: ProofStateSelection[]; error: string }
 
 // ─── StaticStatement ──────────────────────────────────────────────────────────
 
-/** Render a Statement non-interactively (no selection toggling). */
 function StaticStatement({ statement }: { statement: Statement }): JSX.Element {
   return (
     <ProofStateIdContext.Provider value={{ proofNodeId: -99, proofContextId: -1 }}>
@@ -199,14 +233,14 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
   const [workflow, setWorkflow] = useState<SuggestionWorkflow>({ phase: "selecting_main" })
   const [expandedGeneralResults, setExpandedGeneralResults] = useState<Set<number>>(new Set())
   const [activeKinds, setActiveKinds] = useState<Set<SuggestionKind>>(new Set(ALL_KINDS))
+  const [filterOpen, setFilterOpen] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
 
-  // Notify parent that workflow is active when this component is mounted
   useEffect(() => {
     onWorkflowChange(true)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Reset when graph changes (a move was applied)
   useEffect(() => {
     setWorkflow({ phase: "selecting_main" })
     setExpandedGeneralResults(new Set())
@@ -220,17 +254,30 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
     return selections.filter(s => !mainKeys.has(JSON.stringify(s)))
   }
 
+  const toSelectionWithPolarity = (sel: ProofStateSelection): SelectionWithPolarity =>
+    ({
+      selection: typeof sel.selection === 'string' || (typeof sel.selection === 'object' && 'kind' in sel.selection) ? sel.selection : { textSelection: `$${sel.selection.text}$` },
+      polarity: selectionPolarity(sel),
+    })
+
   const refreshSuggestions = async (mainSelections: ProofStateSelection[]) => {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     const additional = getAdditionalSelections(mainSelections)
-    const polarity = aggregatePolarity(mainSelections)
     const instructions = ""
     setWorkflow({ phase: "loading", mainSelections })
     setExpandedGeneralResults(new Set())
     try {
       const results = await fetchSuggestions(proofDiscoveryState, instructions, mainSelections, additional)
-      setWorkflow({ phase: "loaded", mainSelections, results })
+      if (!controller.signal.aborted) {
+        setWorkflow({ phase: "loaded", mainSelections, results })
+      }
     } catch (err) {
-      setWorkflow({ phase: "error", mainSelections, error: err instanceof Error ? err.message : "Failed to fetch suggestions" })
+      if (!controller.signal.aborted) {
+        setWorkflow({ phase: "error", mainSelections, error: err instanceof Error ? err.message : "Failed to fetch suggestions" })
+      }
     }
   }
 
@@ -255,7 +302,6 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
     setActiveKinds(prev => {
       const n = new Set(prev)
       if (n.has(kind)) {
-        // Don't allow deselecting all
         if (n.size === 1) return prev
         n.delete(kind)
       } else {
@@ -265,26 +311,24 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
     })
   }
 
-  // ── Selection card renderer ───────────────────────────────────────────────
+  // ── Polarity selection card (no location label, color-coded) ─────────────
 
-  const selectionStatement = (s: ProofStateSelection): Statement =>
-    typeof s.selection !== 'string' && 'text' in s.selection
-      ? `$${s.selection.text}$`
-      : s.selection as Statement
-
-  const renderSelectionCard = (s: ProofStateSelection, i: number) => {
-    const locLabel = s.location.kind === 'goal' ? 'Goal' : (s.location.label ?? s.location.kind)
+  const renderPolarityCard = (s: SelectionWithPolarity, i: number) => {
+    const { bg, border, accent } = polarityCardStyle(s.polarity)
+    const stmt: Statement = (typeof s.selection === 'object' && 'textSelection' in s.selection) ? (s.selection.textSelection as Statement) : s.selection as Statement
     return (
-      <Box key={i} sx={{ background: P.light, border: `1px solid ${P.border}`, borderRadius: '6px', px: 0.875, py: 0.375 }}>
-        <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: P.med, mb: 0.25 }}>{locLabel}</Typography>
-        <Box sx={{ fontSize: '0.8rem', lineHeight: 1.4 }}><StaticStatement statement={selectionStatement(s)} /></Box>
+      <Box key={i} sx={{
+        background: bg, border: `1px solid ${border}`, borderRadius: '6px',
+        borderLeft: `3px solid ${accent}`, px: 0.875, py: 0.5,
+      }}>
+        <Box sx={{ fontSize: '0.8rem', lineHeight: 1.4 }}><StaticStatement statement={stmt} /></Box>
       </Box>
     )
   }
 
   // ── Workflow header ───────────────────────────────────────────────────────
 
-  const renderHeader = (title: string, onBack: (() => void) | null) => (
+  const renderHeader = (title: string, onBack: (() => void) | null, actions?: React.ReactNode) => (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, px: 1.5, py: 0.875, borderBottom: `1px solid ${P.border}`, background: P.bg, flexShrink: 0 }}>
       {onBack && (
         <IconButton size="small" onClick={onBack}
@@ -294,9 +338,10 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
           </svg>
         </IconButton>
       )}
-      <Typography sx={{ flex: 1, fontSize: '0.75rem', fontWeight: 700, color: P.dark, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <Typography sx={{ flex: 1, fontSize: '0.75rem', fontWeight: 700, color: P.dark }}>
         {title}
       </Typography>
+      {actions}
     </Box>
   )
 
@@ -304,23 +349,40 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
 
   const renderSelectingMain = () => {
     const mixed = hasMixedPolarity(selections)
+    const display = selections.map(toSelectionWithPolarity)
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         {renderHeader("Generate Suggestions", () => { onWorkflowChange(false) })}
         <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', p: '1.25rem 1.5rem', gap: 1.25 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            {/* Main selections heading with info bubble */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.med }}>
                 Main selections
               </Typography>
-              {selections.length === 0 ? (
-                <Typography sx={{ fontSize: '0.75rem', color: P.med, fontStyle: 'italic' }}>
-                  No selections yet. Click on terms in the proof state.
-                </Typography>
-              ) : (
-                selections.map((s, i) => renderSelectionCard(s, i))
-              )}
+              <Tooltip
+                title="Main selections decide the location in the proof state where suggestions will be inserted. They can be thought of as the terms that suggestions can in principle replace."
+                placement="right"
+                arrow
+              >
+                <Box component="span" sx={{ display: 'flex', color: P.bright, cursor: 'default', opacity: 0.7, '&:hover': { opacity: 1 } }}>
+                  <svg style={{ width: 13, height: 13 }} viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </Box>
+              </Tooltip>
             </Box>
+
+            {display.length === 0 ? (
+              <Typography sx={{ fontSize: '0.75rem', color: P.med, fontStyle: 'italic' }}>
+                No selections yet.
+              </Typography>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                {display.map((s, i) => renderPolarityCard(s, i))}
+              </Box>
+            )}
+
             {mixed && (
               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.75, p: '8px 10px', background: '#FFF3E0', border: '1px solid #FFB74D', borderRadius: '7px' }}>
                 <svg style={{ width: 14, height: 14, color: '#E65100', flexShrink: 0, marginTop: 1 }} viewBox="0 0 20 20" fill="currentColor">
@@ -331,21 +393,13 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
                 </Typography>
               </Box>
             )}
-            <Typography sx={{ fontSize: '0.75rem', color: P.med, lineHeight: 1.5 }}>
-              Modify your selections in the proof state, then confirm to proceed.
-            </Typography>
+
             <Button
               onClick={() => setWorkflow({ phase: "selecting_additional", mainSelections: [...selections] })}
               disabled={mixed || selections.length === 0}
-              sx={{
-                alignSelf: 'flex-start', px: 2, py: 0.875, fontSize: '0.82rem', fontWeight: 700,
-                color: 'white', background: P.med, borderRadius: '20px',
-                textTransform: 'none', border: `1.5px solid ${P.bright}`,
-                '&:hover': { background: P.dark },
-                '&:disabled': { opacity: 0.4 },
-              }}
+              sx={{ alignSelf: 'flex-start', px: 2, py: 0.875, fontSize: '0.82rem', borderRadius: '20px', ...shinyPurpleBtn }}
             >
-              Confirm selections
+              Confirm main selections
             </Button>
           </Box>
         </Box>
@@ -357,6 +411,8 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
 
   const renderSelectingAdditional = (mainSelections: ProofStateSelection[]) => {
     const additional = getAdditionalSelections(mainSelections)
+    const mainDisplay = mainSelections.map(toSelectionWithPolarity)
+    const additionalDisplay = additional.map(toSelectionWithPolarity)
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         {renderHeader("Generate Suggestions", () => {
@@ -367,28 +423,36 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
           <Box sx={{ display: 'flex', flexDirection: 'column', p: '1.25rem 1.5rem', gap: 1.25 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
               <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.med }}>
-                Main selections
+                Confirmed selections
               </Typography>
-              {mainSelections.map((s, i) => renderSelectionCard(s, i))}
+              {mainDisplay.map((s, i) => renderPolarityCard(s, i))}
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.med }}>
+                Additional context
+              </Typography>
+              <Tooltip
+                title="Additional selections provide extra context to guide the suggestion generation."
+                placement="right"
+                arrow
+              >
+                <Box component="span" sx={{ display: 'flex', color: P.bright, cursor: 'default', opacity: 0.7, '&:hover': { opacity: 1 } }}>
+                  <svg style={{ width: 13, height: 13 }} viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </Box>
+              </Tooltip>
             </Box>
             <Typography sx={{ fontSize: '0.75rem', color: P.med, lineHeight: 1.5 }}>
               Make additional selections in the proof state to provide extra context if necessary, then generate suggestions.
             </Typography>
-            {additional.length > 0 && (
+            {additionalDisplay.length > 0 && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.med }}>
-                  Additional context
-                </Typography>
-                {additional.map((s, i) => renderSelectionCard(s, i))}
+                {additionalDisplay.map((s, i) => renderPolarityCard(s, i))}
               </Box>
             )}
             <Button onClick={() => void refreshSuggestions(mainSelections)}
-              sx={{
-                alignSelf: 'flex-start', px: 2, py: 0.875, fontSize: '0.82rem', fontWeight: 700,
-                color: 'white', background: P.med, borderRadius: '20px',
-                textTransform: 'none', border: `1.5px solid ${P.bright}`,
-                '&:hover': { background: P.dark },
-              }}
+              sx={{ alignSelf: 'flex-start', px: 2, py: 0.875, fontSize: '0.82rem', borderRadius: '20px', ...shinyPurpleBtn }}
             >
               Generate suggestions
             </Button>
@@ -400,9 +464,12 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
 
   // ── Phase: loading ────────────────────────────────────────────────────────
 
-  const renderLoading = () => (
+  const renderLoading = (mainSelections: ProofStateSelection[]) => (
     <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-      {renderHeader("Generate Suggestions", null)}
+      {renderHeader("Generate Suggestions", () => {
+        abortRef.current?.abort()
+        setWorkflow({ phase: "selecting_additional", mainSelections })
+      })}
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, p: '2rem 1.5rem', flex: 1 }}>
         <SpinnerBox size={24} trackColor={P.border} spinColor={P.bright} />
         <Typography sx={{ color: P.dark, fontSize: '0.85rem', fontWeight: 500 }}>Fetching suggestions…</Typography>
@@ -430,41 +497,67 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
 
   const renderResults = (mainSelections: ProofStateSelection[], results: SuggestResults, applyingIdx: number | null) => {
     const isApplying = applyingIdx !== null
+    const polarity = aggregatePolarity(mainSelections)
+    const presentKinds = ALL_KINDS.filter(k => results.suggestions.some(r => r.kind === k))
     const filtered = results.suggestions.filter(r => activeKinds.has(r.kind))
+
+    const filterActions = (
+      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+        <Tooltip title="Filter by kind">
+          <IconButton size="small" onClick={() => setFilterOpen(v => !v)}
+            sx={{
+              width: 26, height: 26, borderRadius: '6px',
+              border: `1px solid ${filterOpen ? P.bright : P.border}`,
+              color: filterOpen ? P.med : P.bright,
+              background: filterOpen ? P.light : 'white',
+              '&:hover': { background: P.light, borderColor: P.bright },
+            }}>
+            <svg style={{ width: 13, height: 13 }} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-.293.707L13 9.414V15a1 1 0 01-.553.894l-4 2A1 1 0 017 17v-7.586L3.293 5.707A1 1 0 013 5V3z" clipRule="evenodd" />
+            </svg>
+          </IconButton>
+        </Tooltip>
+      </Box>
+    )
 
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-        {renderHeader("Suggestions", () => setWorkflow({ phase: "selecting_additional", mainSelections }))}
-        <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-          {/* Kind filter chips */}
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, px: 1, pt: 1, pb: 0.5 }}>
-            {ALL_KINDS.filter(k => results.suggestions.some(r => r.kind === k)).map(kind => (
-              <Chip
-                key={kind}
-                label={KIND_LABELS[kind]}
-                size="small"
-                onClick={() => toggleKind(kind)}
-                sx={{
-                  fontSize: '0.65rem', fontWeight: 700, height: 22,
-                  background: activeKinds.has(kind) ? P.light : 'white',
-                  border: `1px solid ${activeKinds.has(kind) ? P.bright : P.border}`,
-                  color: activeKinds.has(kind) ? P.dark : '#9E9E9E',
-                  cursor: 'pointer',
-                  '&:hover': { background: P.light },
-                }}
-              />
-            ))}
-          </Box>
+        {renderHeader("Suggestions", () => setWorkflow({ phase: "selecting_additional", mainSelections }), filterActions)}
 
+        {/* Filter chips (toggleable) */}
+        {filterOpen && (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, px: 1.25, py: 0.75, borderBottom: `1px solid ${P.border}`, background: P.bg, flexShrink: 0 }}>
+            {presentKinds.map(kind => {
+              const ks = KIND_STYLES[kind]
+              const active = activeKinds.has(kind)
+              return (
+                <Chip key={kind} label={KIND_LABELS[kind]} size="small" onClick={() => toggleKind(kind)}
+                  sx={{
+                    fontSize: '0.65rem', fontWeight: 700, height: 22,
+                    background: active ? ks.chipBg : 'white',
+                    border: `1px solid ${active ? ks.accent : '#E0E0E0'}`,
+                    color: active ? ks.text : '#9E9E9E',
+                    cursor: 'pointer',
+                    '&:hover': { background: ks.chipBg },
+                  }}
+                />
+              )
+            })}
+          </Box>
+        )}
+
+        <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', p: 1, gap: 0.75 }}>
             {filtered.length === 0 ? (
               <Typography sx={{ p: '2rem', textAlign: 'center', fontSize: '0.85rem', color: '#78909C', fontStyle: 'italic' }}>
                 No suggestions for the selected filters.
               </Typography>
-            ) : filtered.map((result, idx) => {
+            ) : filtered.map((result, _) => {
               const originalIdx = results.suggestions.indexOf(result)
               const thisApplying = isApplying && applyingIdx === originalIdx
               const isDisabled = isApplying
+              const ks = KIND_STYLES[result.kind]
+              const moveName = applyMoveFromKindAndPolarity(result.kind, polarity).name
               const hasBoth = result.suggestion !== null && result.generalResult !== null
               const isGeneralExpanded = expandedGeneralResults.has(originalIdx)
               const toggleGeneral = () => setExpandedGeneralResults(prev => {
@@ -473,26 +566,19 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
 
               return (
                 <Paper key={originalIdx} elevation={0} sx={{
-                  display: 'flex', flexDirection: 'column',
-                  background: 'white', border: `1px solid ${P.border}`, borderRadius: '10px', overflow: 'hidden',
+                  display: 'flex', flexDirection: 'row', alignItems: 'stretch',
+                  background: 'white', border: `1px solid ${ks.border}`, borderRadius: '10px', overflow: 'hidden',
                   transition: 'box-shadow 0.15s',
-                  '&:hover': { boxShadow: `0 2px 8px rgba(139,92,246,0.12)` },
+                  '&:hover': { boxShadow: `0 2px 8px ${ks.accent}28` },
                 }}>
-                  {/* Kind badge */}
-                  <Box sx={{ px: '12px', pt: '8px' }}>
-                    <Chip
-                      label={KIND_LABELS[result.kind]}
-                      size="small"
-                      sx={{ fontSize: '0.6rem', fontWeight: 700, height: 18, background: P.bg, border: `1px solid ${P.border}`, color: P.med }}
-                    />
-                  </Box>
-                  <Box sx={{ p: '6px 12px 10px', display: 'flex', flexDirection: 'column', gap: 0.875 }}>
+                  {/* Left accent bar */}
+                  <Box sx={{ width: 3, flexShrink: 0, background: ks.accent, borderRadius: '10px 0 0 10px' }} />
+
+                  {/* Content */}
+                  <Box sx={{ flex: 1, p: '8px 10px', display: 'flex', flexDirection: 'column', gap: 0.75, minWidth: 0 }}>
                     {result.suggestion !== null && (
-                      <Box>
-                        <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: P.med, mb: 0.5 }}>Suggestion</Typography>
-                        <Box sx={{ fontSize: '0.83rem', lineHeight: 1.5 }}>
-                          <StaticStatement statement={result.suggestion} />
-                        </Box>
+                      <Box sx={{ fontSize: '0.83rem', lineHeight: 1.5 }}>
+                        <StaticStatement statement={result.suggestion} />
                       </Box>
                     )}
                     {result.generalResult !== null && (
@@ -512,45 +598,56 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
                           General result
                         </Button>
                       ) : (
-                        <Box sx={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: '7px', p: '7px 10px' }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.375 }}>
-                            <svg style={{ width: 12, height: 12, color: P.med, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
+                        <Box sx={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: '7px', p: '6px 8px' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.25 }}>
+                            <svg style={{ width: 11, height: 11, color: P.med, flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
                               <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                             </svg>
-                            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: P.med, flex: 1 }}>
+                            <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: P.med, flex: 1 }}>
                               General result — saved to library
                             </Typography>
                             {hasBoth && (
                               <IconButton size="small" onClick={toggleGeneral}
-                                sx={{ width: 18, height: 18, p: 0, color: P.med, '&:hover': { color: P.dark } }}>
+                                sx={{ width: 16, height: 16, p: 0, color: P.med, '&:hover': { color: P.dark } }}>
                                 <ChevronIcon rotated />
                               </IconButton>
                             )}
                           </Box>
-                          <Typography sx={{ fontSize: '0.7rem', color: P.dark, fontWeight: 600, mb: 0.375 }}>
+                          <Typography sx={{ fontSize: '0.7rem', color: P.dark, fontWeight: 600, mb: 0.25 }}>
                             {result.generalResult.label}
                           </Typography>
-                          <Box sx={{ fontSize: '0.8rem', lineHeight: 1.5 }}>
+                          <Box sx={{ fontSize: '0.78rem', lineHeight: 1.5 }}>
                             <StaticStatement statement={result.generalResult.statement} />
                           </Box>
                         </Box>
                       )
                     )}
+                    {/* Kind chip at bottom */}
+                    <Box>
+                      <Chip label={KIND_LABELS[result.kind]} size="small"
+                        sx={{ fontSize: '0.6rem', fontWeight: 700, height: 17, background: ks.chipBg, border: `1px solid ${ks.border}`, color: ks.text, '& .MuiChip-label': { px: '6px' } }}
+                      />
+                    </Box>
                   </Box>
-                  <Box sx={{ borderTop: `1px solid ${P.border}`, p: '6px 8px', display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button size="small" disabled={isDisabled} onClick={() => void handleApplySuggestion(result, originalIdx)}
-                      sx={{
-                        display: 'flex', alignItems: 'center', gap: 0.75,
-                        px: 1.5, fontSize: '0.75rem', fontWeight: 700, textTransform: 'none',
-                        color: P.dark, background: `linear-gradient(180deg, ${P.bg} 0%, ${P.light} 100%)`,
-                        border: `1.5px solid ${P.light}`, borderRadius: '20px',
-                        '&:hover': { background: P.light, borderColor: P.bright },
-                        '&:disabled': { opacity: 0.5 },
-                      }}
-                    >
-                      {thisApplying ? <SpinnerBox size={12} trackColor={P.border} spinColor={P.bright} /> : <PlayIcon />}
-                      Apply
-                    </Button>
+
+                  {/* Apply button — right side */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', px: '8px', borderLeft: `1px solid ${ks.border}`, flexShrink: 0, background: `${ks.bg}88` }}>
+                    <Tooltip title={moveName} placement="left">
+                      <span>
+                        <IconButton size="small" disabled={isDisabled} onClick={() => void handleApplySuggestion(result, originalIdx)}
+                          sx={{
+                            width: 32, height: 32, borderRadius: '8px',
+                            border: `1.5px solid ${ks.border}`,
+                            color: ks.text,
+                            background: `linear-gradient(180deg, white 0%, ${ks.chipBg} 100%)`,
+                            boxShadow: `0 1px 2px ${ks.accent}22, inset 0 1px 0 rgba(255,255,255,0.8)`,
+                            '&:hover': { background: ks.chipBg, borderColor: ks.accent, boxShadow: `0 2px 5px ${ks.accent}33` },
+                            '&:disabled': { opacity: 0.45 },
+                          }}>
+                          {thisApplying ? <SpinnerBox size={14} trackColor={ks.border} spinColor={ks.accent} /> : <PlayIcon />}
+                        </IconButton>
+                      </span>
+                    </Tooltip>
                   </Box>
                 </Paper>
               )
@@ -564,17 +661,11 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
   // ── Render ────────────────────────────────────────────────────────────────
 
   switch (workflow.phase) {
-    case "selecting_main":
-      return renderSelectingMain()
-    case "selecting_additional":
-      return renderSelectingAdditional(workflow.mainSelections)
-    case "loading":
-      return renderLoading()
-    case "loaded":
-      return renderResults(workflow.mainSelections, workflow.results, null)
-    case "applying":
-      return renderResults(workflow.mainSelections, workflow.results, workflow.applyingIdx)
-    case "error":
-      return renderError(workflow.mainSelections, workflow.error)
+    case "selecting_main":      return renderSelectingMain()
+    case "selecting_additional": return renderSelectingAdditional(workflow.mainSelections)
+    case "loading":              return renderLoading(workflow.mainSelections)
+    case "loaded":               return renderResults(workflow.mainSelections, workflow.results, null)
+    case "applying":             return renderResults(workflow.mainSelections, workflow.results, workflow.applyingIdx)
+    case "error":                return renderError(workflow.mainSelections, workflow.error)
   }
 }
