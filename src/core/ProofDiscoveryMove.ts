@@ -1,5 +1,5 @@
-import { ProofStateSelection, ProofStateSelectionWithPolarity } from "./ProofStateSelectionContext";
-import { ProofStateWithLibraryResult } from "./ProofStateZod";
+import { ProofStateSelection } from "./ProofStateSelectionContext"
+import { ProofStateWithLibraryResult } from "./ProofStateZod"
 
 export type MoveKind = "strengthening" | "weakening" | "equivalence" | "other"
 

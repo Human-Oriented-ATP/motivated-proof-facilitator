@@ -1,13 +1,13 @@
-import { ProofDiscoveryMove, ProofDiscoverySuggestionMove } from "../core/ProofDiscoveryMove"
-import { goalBackwardsReasoningPrompt } from "./goalBackwardsReasoning"
-import { hypothesisFowardsReasoningPrompt } from "./hypothesisForwardsReasoning"
-import { equivalentStatementsPrompt } from "./equivalentStatements"
+import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
+// import { goalBackwardsReasoningPrompt } from "./goalBackwardsReasoning"
+// import { hypothesisFowardsReasoningPrompt } from "./hypothesisForwardsReasoning"
+// import { equivalentStatementsPrompt } from "./equivalentStatements"
 
-export const suggestionMoves: ProofDiscoverySuggestionMove[] = [
-    equivalentStatementsPrompt,
-    hypothesisFowardsReasoningPrompt,
-    goalBackwardsReasoningPrompt
-]
+// export const suggestionMoves: ProofDiscoverySuggestionMove[] = [
+//     equivalentStatementsPrompt,
+//     hypothesisFowardsReasoningPrompt,
+//     goalBackwardsReasoningPrompt
+// ]
 
 export const moves: ProofDiscoveryMove[] = 
 [
