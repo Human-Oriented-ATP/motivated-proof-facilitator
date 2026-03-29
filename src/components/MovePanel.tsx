@@ -342,7 +342,12 @@ function MovePanelContent({ onLoadingChange, onSuggestionModeChange }: { onLoadi
       return (
         <Box sx={{ display: 'flex', flexDirection: 'column', p: 1.5, flex: 1, minHeight: 0, gap: 1 }}>
           <GenerateSuggestionsButton onClick={enterSuggestionMode} />
-          <Box sx={{ px: 0.5, mt: 0.25 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mx: 0, my: 0, gap: 1 }}>
+            <Box sx={{ flex: 1, height: '1px', background: '#e8eef4' }} />
+            <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#b0bec5', letterSpacing: '0.08em' }}>OR</Typography>
+            <Box sx={{ flex: 1, height: '1px', background: '#e8eef4' }} />
+          </Box>
+          <Box sx={{ px: 0.5 }}>
             <Typography sx={{ fontSize: '0.75rem', color: '#90A4AE', lineHeight: 1.5 }}>
               Select terms to see applicable proof moves.
             </Typography>
