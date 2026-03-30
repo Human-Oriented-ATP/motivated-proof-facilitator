@@ -19,7 +19,7 @@ They can be thought of as the terms that suggestions can in principle replace.
 Additional selections provide extra context to guide the suggestion generation, 
 but are not meant to be modified by the suggestions.
 
-Consult the list of variables to properly interpret the selections.
+Consult the list of variables to properly interpret the selections. Importantly, if a variable is not mentioned in the hypotheses or goals (but might still have a residual mention in the variable declarations), then it should not be involved in any suggestions.
 
 Assume that the user has chosen a minimal collection of selections of interests and use **all** the main and additional selections to guide the generation of suggestions.
 Selections may either be used as facts necessary to justify the suggestions, or as templates indicating the form that the suggestions or terms within them should take, or both.
@@ -138,7 +138,7 @@ as a suggestion over the lower-level definition
 \`\`\`
 
 Prefer generating structured statements composed of simpler atomic sentences with logical connectives over
-long and convoluted atomic statements.
+long and convoluted atomic statements. Avoid free form natural language phrases like "for every", "for all", "there exists", and "is not", preferring the logical connectives like { kind: "universal" | "existential" | "negation" ..., ... } etc. instead. This is because the structured statements are easier to parse and manipulate, and are more likely to be directly useful for the user in their proof development.
 
 Some examples of statements include:
 \`\`\`
