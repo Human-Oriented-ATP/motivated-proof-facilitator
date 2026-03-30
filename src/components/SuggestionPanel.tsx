@@ -326,9 +326,9 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
         <Box sx={{ fontSize: '0.8rem', lineHeight: 1.4, flex: 1, minWidth: 0, overflow: 'hidden' }}><StaticStatement statement={stmt} /></Box>
         {onRemove && (
           <IconButton size="small" onClick={onRemove} sx={{
-            width: 16, height: 16, p: 0, flexShrink: 0,
-            color: accent, opacity: 0.5,
-            '&:hover': { opacity: 1, background: 'transparent' },
+            width: 20, height: 20, p: 0, flexShrink: 0,
+            color: 'white', background: accent, opacity: 0.7, borderRadius: '50%',
+            '&:hover': { opacity: 1 },
           }}>
             <svg style={{ width: 10, height: 10 }} viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -355,6 +355,14 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
         {title}
       </Typography>
       {actions}
+      <Tooltip title="Close suggestion panel">
+        <IconButton size="small" onClick={() => onWorkflowChange(false)}
+          sx={{ width: 28, height: 28, borderRadius: '7px', border: `1px solid ${P.border}`, color: P.med, background: 'white', flexShrink: 0, '&:hover': { background: P.light } }}>
+          <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        </IconButton>
+      </Tooltip>
     </Box>
   )
 
