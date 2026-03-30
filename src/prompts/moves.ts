@@ -1297,12 +1297,12 @@ export const moves: ProofDiscoveryMove[] =
     ]
   },
   {
-    "name": "Isolate the selected variable in the equality",
+    "name": "Isolate the selected variable in the (in)equality",
     "kind": "equivalence",
-    "runWithGuardrails": true,
     "classification": "mathematical",
-    "trigger": "This move is relevant when the proof state contains two selections, one of which is an equation and the other is a variable within that equation.",
-    "action": "Manipulate the equality using valid operations to make one of the sides the selected variable and the other an expression which does not contain the variable.",
+    "runWithGuardrails": true,
+    "trigger": "This move is relevant when the proof state contains two selections, one of which is an equation or inequality, and the other is a variable within that equation or inequality.",
+    "action": "Manipulate the equality or inequality using valid operations to make one of the sides the selected variable and the other an expression which does not contain the variable.",
     "examples": [
       {
         "description": "",
@@ -1397,16 +1397,228 @@ export const moves: ProofDiscoveryMove[] =
           ]
         },
         "kind": "example"
+      },
+      {
+        "description": "",
+        "inputState": {
+          "proofState": [
+            {
+              "variables": [
+                {
+                  "kind": "free",
+                  "name": "$a$",
+                  "description": "$RR$",
+                  "value": ""
+                },
+                {
+                  "kind": "free",
+                  "name": "$b$",
+                  "description": "$RR$",
+                  "value": ""
+                },
+                {
+                  "kind": "free",
+                  "name": "$c$",
+                  "description": "$RR$",
+                  "value": ""
+                }
+              ],
+              "hypotheses": [],
+              "goals": [
+                {
+                  "label": "main_goal",
+                  "statement": "$5 (a - c) <= b$"
+                }
+              ]
+            }
+          ]
+        },
+        "selections": [
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "goal",
+              "label": "main_goal"
+            },
+            "address": [],
+            "selection": {
+              "text": "a",
+              "source_start": 3,
+              "source_end": 4,
+              "index": 0
+            }
+          },
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "goal",
+              "label": "main_goal"
+            },
+            "address": [],
+            "selection": {
+              "text": "5 (a - c) <= b",
+              "source_start": 0,
+              "source_end": 14,
+              "index": 0
+            }
+          }
+        ],
+        "outputState": {
+          "proofState": [
+            {
+              "variables": [
+                {
+                  "name": "$a$",
+                  "description": "$RR$",
+                  "kind": "free",
+                  "value": ""
+                },
+                {
+                  "name": "$b$",
+                  "description": "$RR$",
+                  "kind": "free",
+                  "value": ""
+                },
+                {
+                  "name": "$c$",
+                  "description": "$RR$",
+                  "kind": "free",
+                  "value": ""
+                }
+              ],
+              "hypotheses": [],
+              "goals": [
+                {
+                  "label": "main_goal",
+                  "statement": "$a <= (b/5 + c)$"
+                }
+              ]
+            }
+          ]
+        },
+        "kind": "example"
+      },
+      {
+        "description": "",
+        "inputState": {
+          "proofState": [
+            {
+              "variables": [
+                {
+                  "name": "$a$",
+                  "description": "$RR_(>0)$",
+                  "kind": "free",
+                  "value": ""
+                },
+                {
+                  "name": "$b$",
+                  "description": "$RR$",
+                  "kind": "free",
+                  "value": ""
+                },
+                {
+                  "name": "$c$",
+                  "description": "$RR$",
+                  "kind": "free",
+                  "value": ""
+                }
+              ],
+              "hypotheses": [],
+              "goals": [
+                {
+                  "label": "main_goal",
+                  "statement": "$log(a) + b < c$"
+                }
+              ]
+            }
+          ]
+        },
+        "selections": [
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "goal",
+              "label": "main_goal"
+            },
+            "address": [],
+            "selection": {
+              "text": "a",
+              "source_start": 4,
+              "source_end": 5,
+              "index": 0
+            }
+          },
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "goal",
+              "label": "main_goal"
+            },
+            "address": [],
+            "selection": {
+              "text": "log(a) + b < c",
+              "source_start": 0,
+              "source_end": 14,
+              "index": 0
+            }
+          }
+        ],
+        "outputState": {
+          "proofState": [
+            {
+              "variables": [
+                {
+                  "name": "$a$",
+                  "description": "$RR_(>0)$",
+                  "kind": "free",
+                  "value": ""
+                },
+                {
+                  "name": "$b$",
+                  "description": "$RR$",
+                  "kind": "free",
+                  "value": ""
+                },
+                {
+                  "name": "$c$",
+                  "description": "$RR$",
+                  "kind": "free",
+                  "value": ""
+                }
+              ],
+              "hypotheses": [],
+              "goals": [
+                {
+                  "label": "main_goal",
+                  "statement": "$a < exp(c - b)$"
+                }
+              ]
+            }
+          ]
+        },
+        "kind": "example"
       }
     ]
   },
   {
     "name": "Discharge obviously true goal",
     "kind": "strengthening",
-    "runWithGuardrails": true,
     "classification": "mathematical",
-    "trigger": "This move appears when the selections contain a single goal statement and any number of hypotheses, where the goal is a simple fact that is trivially true given the selected hypotheses.",
-    "action": "Remove the goal from the list of goals.",
+    "runWithGuardrails": true,
+    "trigger": "This move appears when the selections contain a single goal statement and any number of hypotheses, where the goal is a simple fact that is trivially true given the selected hypotheses, and the proof does not rely on any unselected hypotheses.",
+    "action": "Remove the goal from the list of goals. Include a proof that the goal can be deduced from the selected hypotheses. ",
     "examples": [
       {
         "description": "",
@@ -2102,6 +2314,125 @@ export const moves: ProofDiscoveryMove[] =
           ]
         },
         "comment": "This is a good suggestion since it matches very well with the goal, having the \"dot\" operation as the root node of the parse tree instead of a \"+\", and $a$ as the left leaf - just like the goal - and $d$ is a meta variable, making this an even better match than if it were a free variable.",
+        "kind": "example"
+      },
+      {
+        "description": "",
+        "inputState": {
+          "proofState": [
+            {
+              "variables": [
+                {
+                  "kind": "free",
+                  "name": "$theta$",
+                  "description": "$RR$",
+                  "value": ""
+                },
+                {
+                  "kind": "meta",
+                  "name": "$x$",
+                  "description": "$RR$",
+                  "value": ""
+                }
+              ],
+              "hypotheses": [
+                {
+                  "label": "sin_geq_0",
+                  "statement": "$sin(theta) >= 0$"
+                },
+                {
+                  "label": "theta_bounds",
+                  "statement": "$0 <= theta <= pi/2$"
+                }
+              ],
+              "goals": [
+                {
+                  "label": "x_ge_0",
+                  "statement": "$x >= 0$"
+                }
+              ]
+            }
+          ]
+        },
+        "selections": [
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "hypothesis",
+              "label": "sin_geq_0"
+            },
+            "address": [],
+            "selection": "$sin(theta) >= 0$"
+          },
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "hypothesis",
+              "label": "theta_bounds"
+            },
+            "address": [],
+            "selection": "$0 <= theta <= pi/2$"
+          },
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "goal",
+              "label": "x_ge_0"
+            },
+            "address": [],
+            "selection": "$x >= 0$"
+          }
+        ],
+        "outputState": {
+          "proofState": [
+            {
+              "variables": [
+                {
+                  "name": "$theta$",
+                  "description": "$RR$",
+                  "kind": "free",
+                  "value": ""
+                },
+                {
+                  "name": "$x$",
+                  "description": "$RR$",
+                  "kind": "meta",
+                  "value": ""
+                }
+              ],
+              "hypotheses": [
+                {
+                  "label": "sin_geq_0",
+                  "statement": "$sin(theta) >= 0$"
+                },
+                {
+                  "label": "theta_bounds",
+                  "statement": "$0 <= theta <= pi/2$"
+                },
+                {
+                  "label": "cos_theta_ge_0_derived",
+                  "statement": "$cos(theta) >= 0$"
+                }
+              ],
+              "goals": [
+                {
+                  "label": "x_ge_0",
+                  "statement": "$x >= 0$"
+                }
+              ]
+            }
+          ]
+        },
+        "comment": "This is a good deduction since it uses both selected hypotheses. In contrast, a suggestion like $sin^2(theta) >=0$ would have been sub-optimal since it doesn't use the second hypothesis or `sin`.",
         "kind": "example"
       }
     ]
@@ -3680,10 +4011,10 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Peel existentially quantified variable in the goal",
     "kind": "equivalence",
-    "runWithGuardrails": true,
     "classification": "logical",
+    "runWithGuardrails": true,
     "trigger": "This move is relevant when the only selection in the proof state is either an existentially quantified statement in the goal, or the existentially quantified variable within such a goal.",
-    "action": "Introduce the existentially quantified variable as a new metavariable at the bottom of the variables list and replace the goal with the body of the existential statement. If a variable of that name already exists in the list of variables, please rename the existential variable in the statement before proceeding. If there are other goals remaining, split into two proof contexts: one containing the newly introduced metavariable and the body as the new goal, and another containing the original variables and the remaining goals.",
+    "action": "Introduce the existentially quantified variable as a new metavariable at the bottom of the variables list and replace the goal with the body of the existential statement. If a variable of that name already exists in the list of variables, please rename the existential variable in the statement before proceeding. The behaviour of this move is the same even when there are multiple goals in the proof context.",
     "examples": [
       {
         "description": "A minimal abstract example with the whole goal selected",
@@ -3841,7 +4172,7 @@ export const moves: ProofDiscoveryMove[] =
         "kind": "example"
       },
       {
-        "description": "An abstract example with multiple goals: the selected goal is split off into a new proof context",
+        "description": "An abstract example with multiple goals",
         "inputState": {
           "proofState": [
             {
@@ -3923,33 +4254,33 @@ export const moves: ProofDiscoveryMove[] =
               "variables": [
                 {
                   "name": "$A$",
+                  "description": "$#text[Proposition]$",
                   "kind": "free",
-                  "value": "",
-                  "description": "$#text[Proposition]$"
+                  "value": ""
                 },
                 {
                   "name": "$B$",
+                  "description": "$#text[Proposition]$",
                   "kind": "free",
-                  "value": "",
-                  "description": "$#text[Proposition]$"
+                  "value": ""
                 },
                 {
                   "name": "$C$",
+                  "description": "$#text[Proposition]$",
                   "kind": "free",
-                  "value": "",
-                  "description": "$#text[Proposition]$"
+                  "value": ""
                 },
                 {
                   "name": "$P$",
+                  "description": "$NN -> \"Proposition\"$",
                   "kind": "free",
-                  "value": "",
-                  "description": "$NN -> \"Proposition\"$"
+                  "value": ""
                 },
                 {
                   "name": "$a$",
+                  "description": "$NN$",
                   "kind": "meta",
-                  "value": "",
-                  "description": "$NN$"
+                  "value": ""
                 }
               ],
               "hypotheses": [],
@@ -3957,38 +4288,7 @@ export const moves: ProofDiscoveryMove[] =
                 {
                   "label": "exists_goal",
                   "statement": "$P(a)$"
-                }
-              ]
-            },
-            {
-              "variables": [
-                {
-                  "name": "$A$",
-                  "kind": "free",
-                  "value": "",
-                  "description": "$#text[Proposition]$"
                 },
-                {
-                  "name": "$B$",
-                  "kind": "free",
-                  "value": "",
-                  "description": "$#text[Proposition]$"
-                },
-                {
-                  "name": "$C$",
-                  "kind": "free",
-                  "value": "",
-                  "description": "$#text[Proposition]$"
-                },
-                {
-                  "name": "$P$",
-                  "kind": "free",
-                  "value": "",
-                  "description": "$NN -> \"Proposition\"$"
-                }
-              ],
-              "hypotheses": [],
-              "goals": [
                 {
                   "label": "other_goal",
                   "statement": "$B$"
@@ -6621,10 +6921,10 @@ export const moves: ProofDiscoveryMove[] =
     ]
   },
   {
-    "name": "Unify hypothesis with goal",
+    "name": "Close goal with hypothesis",
     "kind": "strengthening",
-    "runWithGuardrails": true,
     "classification": "logical",
+    "runWithGuardrails": true,
     "trigger": "This move is relevant if the selections are a hypothesis and a goal in the same proof state context that are roughly the same structurally and which can potentially unify.",
     "action": "This move examines both expressions, and if they are structurally identical apart from metavariables, it instantiates the metavariables to the values that make the two expressions equal and then clears the goal. Instantiating a metavariable involves first checking whether the term it is being assigned to has the same type as the metavariable and contains only variables that occur above the metavariable in the list of variables. If this is the case, the metavariable is replaced with a let variable with the term as its value, and all occurrences of the metavariable in the proof state are replaced with the term.",
     "examples": [

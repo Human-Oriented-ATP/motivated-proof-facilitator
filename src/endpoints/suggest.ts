@@ -85,7 +85,7 @@ For example, if the main selection is the statement
 \`\`\`
 where $G$ is a group, a suggestion "$G$ is non-abelian" would be a good suggestion, as it eliminates the variables $x$ and $y$. 
 
-Suggestions deduced using all the information in the selected hypothesis-like statements should be preferred. For example, suppose the hypotheses $sin(theta) >= 0$ and $0 <= theta <= pi$ are the main selections, and the goal $x >= 0$ is the additional selection, $x$ is a real number that is a metavariable. Then the deduction $sin^2(theta) >= 0$ would be bad because it follows just from the type of theta. By contrast, $cos(theta) >= 0$ would be good because it genuinely uses the two hypotheses.
+Suggestions deduced using all the information in the selected hypothesis-like statements should be preferred. For example, suppose the hypotheses $sin(theta) >= 0$ and $0 <= theta <= pi$ are the main selections, and the goal $x >= 0$ is the additional selection, $x$ is a real number that is a metavariable. Then the deduction $sin^2(theta) >= 0$ would be bad because it follows just from the type of $sin(theta)$. By contrast, $cos(theta) >= 0$ would be good because it genuinely uses the two hypotheses.
 Another example. Let $G$ be a group and suppose we have selected the hypothesis "$H$ is a normal subgroup of $G$" as well as the variable $x$ (which is an element of $G$) hypothesis $y in H$. Then the deduction $y^(-1) in H$ would be perfectly valid, but would not be good because it wouldn't use the selected variable $x$ or the fact that $H$ is normal. By contrast, the deductions $x y x^(-1) in H$ and $x^(-1) y x in H$ would be good.
 
 Favour strengthenings, weakenings and unfoldings that are *minimal*, in the sense of not going any further than they need to.
