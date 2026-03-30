@@ -13,6 +13,7 @@ export const AtomicStatementSchema = z.string().describe(`A basic statement with
 Some examples are:
 - "$f$ is injective"
 - "$G$ is abelian"
+- "$x y x^(-1)$ has order 2" 
 - "$x^2 + 1$ is an irreducible polynomial over $RR$
 
 When expressions contain infix operators, it becomes difficult for Typst to recognize sequences of symbols that form a single mathematical expression. In such cases, it is recommended to use parentheses to group the expression together, for example, $x = (a + b + c)$ instead of $x = a + b + c$.
