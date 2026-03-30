@@ -209,6 +209,7 @@ function getLeafDescendants(graph: ProofDiscoveryGraph, nodeId: ProofNodeId): Pr
         // Strengthening children: nodes Y where Y -> current (current is parent, Y is descendant)
         graph.forEachInEdge(current, (_edge, attrs, source) => {
             if (attrs.kind !== 'strengthening') return
+            if (parseInt(source) <= nodeId) return
             hasStrengthenChildren = true
             if (!visited.has(source)) {
                 visited.add(source)
@@ -220,6 +221,7 @@ function getLeafDescendants(graph: ProofDiscoveryGraph, nodeId: ProofNodeId): Pr
         graph.forEachUndirectedEdge(current, (_edge, attrs, source, target) => {
             if (attrs.kind !== 'equivalence') return
             const other = source === current ? target : source
+            if (parseInt(other) <= nodeId) return
             if (!visited.has(other)) {
                 visited.add(other)
                 queue.push(other)
