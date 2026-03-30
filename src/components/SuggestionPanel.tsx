@@ -438,7 +438,15 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
               <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.med }}>
                 Confirmed selections
               </Typography>
-              {mainDisplay.map((s, i) => renderPolarityCard(s, i))}
+              {mainDisplay.map((s, i) => renderPolarityCard(s, i, () => {
+                dispatchSelections({ type: 'TOGGLE_SELECTION', selection: mainSelections[i]! })
+                const updated = mainSelections.filter((_, j) => j !== i)
+                if (updated.length === 0) {
+                  setWorkflow({ phase: "selecting_main" })
+                } else {
+                  setWorkflow({ phase: "selecting_additional", mainSelections: updated })
+                }
+              }))}
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.med }}>
