@@ -193,31 +193,30 @@ export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: P
 }
 
 /**
- * Returns all leaf descendants of a node reachable via strengthening and equivalence edges.
- * Leaf nodes are those with no strengthening children (no in-edges of kind "strengthening").
+ * Returns all leaf descendants of a node reachable via strengthening and equivalence edges,
+ * only considering nodes with ID strictly greater than nodeId.
+ *
+ * Phase 1: BFS to collect all reachable descendants.
+ * Phase 2: A node is a leaf if none of the collected nodes are its strengthening children.
  */
 function getLeafDescendants(graph: ProofDiscoveryGraph, nodeId: ProofNodeId): ProofNodeId[] {
+    // Phase 1: collect all reachable descendants (including nodeId itself as the starting point)
     const visited = new Set<string>()
     const queue: string[] = [nodeId.toString()]
     visited.add(nodeId.toString())
-    const leaves: ProofNodeId[] = []
 
     while (queue.length > 0) {
         const current = queue.shift()!
-        let hasStrengthenChildren = false
 
-        // Strengthening children: nodes Y where Y -> current (current is parent, Y is descendant)
         graph.forEachInEdge(current, (_edge, attrs, source) => {
             if (attrs.kind !== 'strengthening') return
             if (parseInt(source) <= nodeId) return
-            hasStrengthenChildren = true
             if (!visited.has(source)) {
                 visited.add(source)
                 queue.push(source)
             }
         })
 
-        // Equivalence neighbors: traverse the equivalence class at this level
         graph.forEachUndirectedEdge(current, (_edge, attrs, source, target) => {
             if (attrs.kind !== 'equivalence') return
             const other = source === current ? target : source
@@ -227,10 +226,28 @@ function getLeafDescendants(graph: ProofDiscoveryGraph, nodeId: ProofNodeId): Pr
                 queue.push(other)
             }
         })
+    }
 
-        if (!hasStrengthenChildren) {
-            leaves.push(parseInt(current))
-        }
+    // Phase 2: a node is a leaf if:
+    //   - none of the visited nodes are its strengthening children, AND
+    //   - it has no equivalence neighbour in visited with a strictly greater ID
+    const leaves: ProofNodeId[] = []
+    for (const nodeStr of visited) {
+        const id = parseInt(nodeStr)
+        let isLeaf = true
+
+        graph.forEachInEdge(nodeStr, (_edge, attrs, source) => {
+            if (attrs.kind !== 'strengthening') return
+            if (visited.has(source)) isLeaf = false
+        })
+
+        graph.forEachUndirectedEdge(nodeStr, (_edge, attrs, source, target) => {
+            if (attrs.kind !== 'equivalence') return
+            const other = source === nodeStr ? target : source
+            if (visited.has(other) && parseInt(other) > id) isLeaf = false
+        })
+
+        if (isLeaf) leaves.push(id)
     }
 
     return leaves
