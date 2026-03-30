@@ -323,7 +323,7 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
         borderLeft: `3px solid ${accent}`, px: 0.875, py: 0.5,
         display: 'flex', alignItems: 'center', gap: 0.5,
       }}>
-        <Box sx={{ fontSize: '0.8rem', lineHeight: 1.4, flex: 1 }}><StaticStatement statement={stmt} /></Box>
+        <Box sx={{ fontSize: '0.8rem', lineHeight: 1.4, flex: 1, minWidth: 0, overflow: 'hidden' }}><StaticStatement statement={stmt} /></Box>
         {onRemove && (
           <IconButton size="small" onClick={onRemove} sx={{
             width: 16, height: 16, p: 0, flexShrink: 0,
@@ -461,7 +461,7 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
             </Typography>
             {additionalDisplay.length > 0 && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                {additionalDisplay.map((s, i) => renderPolarityCard(s, i))}
+                {additionalDisplay.map((s, i) => renderPolarityCard(s, i, () => dispatchSelections({ type: 'TOGGLE_SELECTION', selection: additional[i]! })))}
               </Box>
             )}
             <Button onClick={() => void refreshSuggestions(mainSelections)}
