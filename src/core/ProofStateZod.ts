@@ -33,7 +33,7 @@ export type AtomicStatement = z.infer<typeof AtomicStatementSchema>
 export const VariableSchema = z.object({
   name: z.string().describe("The name of the variable. This should be a single letter or a short word surrounded by dollar quotes."),
   description: AtomicStatementSchema.describe(`The type information of the variable. 
-  For type variables, use "$#text[Type]", and for propositions, use "$#text[Proposition]$".
+  For type variables, use "$#text[Set]$", and for propositions, use "$#text[Proposition]$".
   Avoid phrases such as "element of" or "belongs to" in the type signature; they are understood.
   Avoid making the types too complicated. It is always better to introduce extra hypotheses rather than having a complicated type.
   
@@ -46,6 +46,10 @@ export const VariableSchema = z.object({
  - { name: "n", description: "$NN$" }
  - { name: "G", description: "$#text[Group]$" }
  - { name: "f", description: "$A -> B$" }
+ - { name: "d", description: "$X times X -> RR_(>=0)$" }
+ - { name: "S", description: "$#text[Set]$" }
+ - { name: "A", description: "subset of $B$" }
+ - { name: "H", description: "subgroup of $G$" }
  `)
 export type Variable = z.infer<typeof VariableSchema>
 
