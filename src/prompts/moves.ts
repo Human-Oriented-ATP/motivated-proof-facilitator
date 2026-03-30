@@ -14,7 +14,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Prove by contradiction",
     "kind": "equivalence",
-    "runWithGuardrails": true, "classification": "mathematical",
+    "runWithGuardrails": true,
+    "classification": "mathematical",
     "trigger": "This move is relevant when the only selection in the proof state is a goal statement with \"negative content\".",
     "action": "Assume the negation of the goal as a new hypothesis, simplified by pushing the negation through all logical connectives using standard equivalences: De Morgan's laws ($not (A and B) <=> not A or not B$, $not (A or B) <=> not A and not B$), negation of implication ($not (A => B) <=> A and not B$), negation of quantifiers ($not forall x, P(x) <=> exists x, not P(x)$, $not exists x, P(x) <=> forall x, not P(x)$), and double negation elimination ($not not A <=> A$). Replace the goal with a contradiction ($bot$). If there are other goals remaining, split into two proof contexts: one containing the new negated hypothesis and the contradiction as the new goal, and another containing the original hypotheses and the remaining goals.",
     "examples": [
@@ -421,7 +422,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Rewrite using equality result",
     "kind": "strengthening",
-    "runWithGuardrails": true, "classification": "mathematical",
+    "runWithGuardrails": true,
+    "classification": "mathematical",
     "trigger": "This move is relevant when the proof state has exactly two selections, one of which is a hypothesis or library result whose conclusion is an equality, and the second selection is a term.",
     "action": "Rewrite the selected term using the selected equality result, i.e., replace the selected term with an expression derived from one side of the equality if the other side matches the selected term. If the equality is conditional on other statements, introduce those statements as new goals. If the equality involves universally quantified variables, instantiate them appropriately while performing the rewrite. \n\nModify only the selected term and keep the rest of the proof state (included the selected equality result) intact. ",
     "examples": [
@@ -726,7 +728,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Unfold the definition",
     "kind": "equivalence",
-    "runWithGuardrails": true, "classification": "mathematical",
+    "runWithGuardrails": true,
+    "classification": "mathematical",
     "trigger": "This move is relevant when there is a single selection in the proof state, ideally representing a definition that can be unfold to something more concrete.",
     "action": "This move unfolds the selected definition and replaces it with an equivalent expression, usually conceptually simpler than the original. When there are multiple possibilities, definitions at a higher level of abstraction are favoured. Care must be taken to ensure that the variable names in the unfolded definition, including bound variable names, do not clash with existing variable names in the proof state. Use different letters of the alphabet for new variable names wherever possible.",
     "examples": [
@@ -1043,7 +1046,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Simplify the selected expression",
     "kind": "equivalence",
-    "runWithGuardrails": true, "classification": "mathematical",
+    "runWithGuardrails": true,
+    "classification": "mathematical",
     "trigger": "This move is relevant when the proof state has a single selection, ideally representing a term that can be simplified. This move also applies to composite statements that can be simplified, not just expressions within atomic statements.",
     "action": "This move replaces the selected expression with an equivalent one that is simpler in an intuitive sense.",
     "examples": [
@@ -1295,7 +1299,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Isolate the selected variable in the equality",
     "kind": "equivalence",
-    "runWithGuardrails": true, "classification": "mathematical",
+    "runWithGuardrails": true,
+    "classification": "mathematical",
     "trigger": "This move is relevant when the proof state contains two selections, one of which is an equation and the other is a variable within that equation.",
     "action": "Manipulate the equality using valid operations to make one of the sides the selected variable and the other an expression which does not contain the variable.",
     "examples": [
@@ -1398,7 +1403,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Discharge obviously true goal",
     "kind": "strengthening",
-    "runWithGuardrails": true, "classification": "mathematical",
+    "runWithGuardrails": true,
+    "classification": "mathematical",
     "trigger": "This move appears when the selections contain a single goal statement and any number of hypotheses, where the goal is a simple fact that is trivially true given the selected hypotheses.",
     "action": "Remove the goal from the list of goals.",
     "examples": [
@@ -1602,7 +1608,7 @@ export const moves: ProofDiscoveryMove[] =
     "classification": "mathematical",
     "runWithGuardrails": false,
     "trigger": "This move appears when the user has selected at least one hypothesis and at least one goal in the same proof context.",
-    "action": "This move creates a new hypothesis that is derived from some of the selected hypotheses and is syntactically similar to at least one of the selected goals. \nSyntactic similarity means that the parse tree of the new hypothesis matches better with that of one of the selected goals. \nIt is important that the new statement is a mathematical consequence of the selected hypotheses.\nAvoid dropping the level of abstraction, and avoid introducing hypotheses that already exist in the proof state.",
+    "action": "This move creates a new hypothesis that is derived from some of the selected hypotheses and is syntactically similar to at least one of the selected goals. \nSyntactic similarity means that the parse tree of the new hypothesis matches better with that of one of the selected goals.\n\nIt is important that the new statement is a mathematical consequence of the selected hypotheses. Include a proof of the fact that the suggestion follows from the selected hypotheses in the reasoning trace. Do not make deductions from unselected hypotheses.\n\nFavour suggestions that use all information in the hypotheses and create strong matches with one of the selected goals.\n\nAvoid dropping the level of abstraction, and avoid introducing hypotheses that already exist in the proof state.",
     "examples": [
       {
         "description": "",
@@ -2103,7 +2109,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Solve one open goal using another ",
     "kind": "strengthening",
-    "runWithGuardrails": true, "classification": "mathematical",
+    "runWithGuardrails": true,
+    "classification": "mathematical",
     "trigger": "This move is relevant when there are two goals within the same proof context of the proof state selected, where one goal is an easy consequence of the other.",
     "action": "Remove the goal that can be easily deduced from the other.",
     "examples": [
@@ -2264,7 +2271,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Split a conjunction in the goal",
     "kind": "equivalence",
-    "runWithGuardrails": true, "classification": "logical",
+    "runWithGuardrails": true,
+    "classification": "logical",
     "trigger": "This move is relevant when the only selection in the proof state is a goal statement that is a conjunction.",
     "action": "Split the conjunction into separate goals, one corresponding to each conjunct.",
     "examples": [
@@ -2645,7 +2653,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Choose a branch in a disjunctive goal",
     "kind": "strengthening",
-    "runWithGuardrails": true, "classification": "logical",
+    "runWithGuardrails": true,
+    "classification": "logical",
     "trigger": "This move is relevant when the only selection in the proof state is a single disjunct within a goal statement that is a disjunction.",
     "action": "Replace the disjunctive goal with the selected disjunct as the new goal.",
     "examples": [
@@ -3088,7 +3097,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Split an equivalence in the goal into two implications",
     "kind": "equivalence",
-    "runWithGuardrails": true, "classification": "logical",
+    "runWithGuardrails": true,
+    "classification": "logical",
     "trigger": "This move is relevant when the only selection in the proof state is a goal statement that is a biconditional (equivalence).",
     "action": "Replace the equivalence goal $A <=> B$ with two implication goals: $A => B$ (the forward direction) and $B => A$ (the backward direction), keeping all other goals unchanged.",
     "examples": [
@@ -3670,7 +3680,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Peel existentially quantified variable in the goal",
     "kind": "equivalence",
-    "runWithGuardrails": true, "classification": "logical",
+    "runWithGuardrails": true,
+    "classification": "logical",
     "trigger": "This move is relevant when the only selection in the proof state is either an existentially quantified statement in the goal, or the existentially quantified variable within such a goal.",
     "action": "Introduce the existentially quantified variable as a new metavariable at the bottom of the variables list and replace the goal with the body of the existential statement. If a variable of that name already exists in the list of variables, please rename the existential variable in the statement before proceeding. If there are other goals remaining, split into two proof contexts: one containing the newly introduced metavariable and the body as the new goal, and another containing the original variables and the remaining goals.",
     "examples": [
@@ -4097,7 +4108,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Introduce hypothesis from an implication in the goal",
     "kind": "equivalence",
-    "runWithGuardrails": true, "classification": "logical",
+    "runWithGuardrails": true,
+    "classification": "logical",
     "trigger": "This move is relevant when the only selection in the proof state is either a goal statement that is an implication, or the antecedent of such a goal.",
     "action": "Move the antecedent of the implication into the hypotheses as a new hypothesis and replace the goal with the consequent of the implication. If there are other goals remaining, split into two proof contexts: one containing the new hypothesis and the consequent as the new goal, and another containing the original hypotheses and the remaining goals.",
     "examples": [
@@ -4643,7 +4655,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Peel universally quantified variable in the goal",
     "kind": "equivalence",
-    "runWithGuardrails": true, "classification": "logical",
+    "runWithGuardrails": true,
+    "classification": "logical",
     "trigger": "This move is relevant when the only selection in the proof state is either a goal statement that is a universally quantified statement, or the universally quantified variable within such a goal.",
     "action": "Introduce the universally quantified variable as a new free variable and replace the goal with the body of the universally quantified statement. If a variable of that name already exists in the list of variables, please rename the universally quantified variable in the statement before proceeding. If there are other goals remaining, split into two proof contexts: one containing the newly introduced variable and the body as the new goal, and another containing the original variables and the remaining goals.",
     "examples": [
@@ -5172,7 +5185,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Split a conjunction in a hypothesis",
     "kind": "equivalence",
-    "runWithGuardrails": true, "classification": "logical",
+    "runWithGuardrails": true,
+    "classification": "logical",
     "trigger": "This move is relevant when the only selection in the proof state is a hypothesis statement that is a conjunction.",
     "action": "Split the conjunction into separate hypotheses, one corresponding to each conjunct.",
     "examples": [
@@ -5579,7 +5593,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Perform case distinction on a disjunctive hypothesis",
     "kind": "strengthening",
-    "runWithGuardrails": true, "classification": "logical",
+    "runWithGuardrails": true,
+    "classification": "logical",
     "trigger": "This move is relevant when the only selection in the proof state is a hypothesis statement that is a disjunction.",
     "action": "Split the disjunction into separate proof states (cases), one corresponding to each disjunct. In each case, the disjunctive hypothesis is replaced by the corresponding disjunct as a new hypothesis.",
     "examples": [
@@ -6079,7 +6094,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Obtain a witness from an existentially quantified hypothesis",
     "kind": "equivalence",
-    "runWithGuardrails": true, "classification": "logical",
+    "runWithGuardrails": true,
+    "classification": "logical",
     "trigger": "This move is relevant when the only selection in the proof state is an existentially quantified hypothesis.",
     "action": "Peel the existentially quantified variable from the statement and insert it into the list of variables *immediately below* all the variables used in the statement, instead of defaulting to the bottom of the list. If a variable of that name already exists in the list of variables, please rename the existential variable in the statement before proceeding. Replace the hypothesis with the body of the existentially quantified statement.",
     "examples": [
@@ -6437,7 +6453,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Instantiate metavariables in equality",
     "kind": "strengthening",
-    "runWithGuardrails": true, "classification": "logical",
+    "runWithGuardrails": true,
+    "classification": "logical",
     "trigger": "This move is relevant when the proof state contains a single selection which is an equality.",
     "action": "This move examines both sides of the equality, and if they are structurally identical apart from metavariables, it instantiates the metavariables to the values that make the two sides equal. Instantiating a metavariable involves first checking whether the term it is being assigned to has the same type as the metavariable and contains only variables that occur above the metavariable in the list of variables. If this is the case, the metavariable is replaced with a let variable with the term as its value, and all occurrences of the metavariable in the proof state are replaced with the term.",
     "examples": [
@@ -6606,7 +6623,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Unify hypothesis with goal",
     "kind": "strengthening",
-    "runWithGuardrails": true, "classification": "logical",
+    "runWithGuardrails": true,
+    "classification": "logical",
     "trigger": "This move is relevant if the selections are a hypothesis and a goal in the same proof state context that are roughly the same structurally and which can potentially unify.",
     "action": "This move examines both expressions, and if they are structurally identical apart from metavariables, it instantiates the metavariables to the values that make the two expressions equal and then clears the goal. Instantiating a metavariable involves first checking whether the term it is being assigned to has the same type as the metavariable and contains only variables that occur above the metavariable in the list of variables. If this is the case, the metavariable is replaced with a let variable with the term as its value, and all occurrences of the metavariable in the proof state are replaced with the term.",
     "examples": [
@@ -6863,7 +6881,8 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Perform modus ponens",
     "kind": "strengthening",
-    "runWithGuardrails": true, "classification": "logical",
+    "runWithGuardrails": true,
+    "classification": "logical",
     "trigger": "This move is relevant when there are two selections within a proof state context, one of which is a hypothesis and the other is either the antecedent of an implication hypothesis or the whole implication hypothesis itself. Moreover, the hypothesis needs to be structurally similar and must potentially unify with the antecedent.",
     "action": "This move examines the hypothesis and the antecedent of the implication hypothesis, and if they are structurally identical apart from metavariables or universally quantified variables, it instantiates the metavariables to the values that make the two expressions equal and then replaces the implication hypothesis with just its consequent.",
     "examples": [
@@ -7108,6 +7127,312 @@ export const moves: ProofDiscoveryMove[] =
           ]
         },
         "kind": "example"
+      }
+    ]
+  },
+  {
+    "name": "Instantiate metavariable with selected expression",
+    "kind": "strengthening",
+    "classification": "logical",
+    "runWithGuardrails": true,
+    "trigger": "This move is relevant when there are two expressions selected in the proof state, one of which is a metavariable.",
+    "action": "This move instantiates the metavariable with the other selected term. Instantiating a metavariable involves first checking whether the term it is being assigned to has the same type as the metavariable and contains only variables that occur above the metavariable in the list of variables. If this is the case, the metavariable is replaced with a let variable with the term as its value, and all occurrences of the metavariable in the proof state are replaced with the term.",
+    "examples": [
+      {
+        "description": "",
+        "inputState": {
+          "proofState": [
+            {
+              "variables": [
+                {
+                  "kind": "free",
+                  "name": "$a$",
+                  "description": "$NN$",
+                  "value": ""
+                },
+                {
+                  "kind": "free",
+                  "name": "$b$",
+                  "description": "$NN$",
+                  "value": ""
+                },
+                {
+                  "kind": "meta",
+                  "name": "$x$",
+                  "description": "$NN$",
+                  "value": ""
+                }
+              ],
+              "hypotheses": [],
+              "goals": [
+                {
+                  "label": "main_goal",
+                  "statement": "$x <= (a + b)$"
+                }
+              ]
+            }
+          ]
+        },
+        "selections": [
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "variable",
+              "label": "$x$"
+            },
+            "address": [],
+            "selection": {
+              "text": "x",
+              "source_start": 0,
+              "source_end": 1,
+              "index": 0
+            }
+          },
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "goal",
+              "label": "main_goal"
+            },
+            "address": [],
+            "selection": {
+              "text": "(a + b)",
+              "source_start": 5,
+              "source_end": 12,
+              "index": 0
+            }
+          }
+        ],
+        "outputState": {
+          "proofState": [
+            {
+              "variables": [
+                {
+                  "name": "$a$",
+                  "description": "$NN$",
+                  "kind": "free",
+                  "value": ""
+                },
+                {
+                  "name": "$b$",
+                  "description": "$NN$",
+                  "kind": "free",
+                  "value": ""
+                },
+                {
+                  "name": "$x$",
+                  "description": "$NN$",
+                  "kind": "let",
+                  "value": "$(a + b)$"
+                }
+              ],
+              "hypotheses": [],
+              "goals": [
+                {
+                  "label": "main_goal",
+                  "statement": "$(a + b) <= (a + b)$"
+                }
+              ]
+            }
+          ]
+        },
+        "kind": "example"
+      },
+      {
+        "description": "",
+        "inputState": {
+          "proofState": [
+            {
+              "variables": [
+                {
+                  "kind": "free",
+                  "name": "$A$",
+                  "description": "$#text[Group]$",
+                  "value": ""
+                },
+                {
+                  "kind": "meta",
+                  "name": "$B$",
+                  "description": "$#text[Group]$",
+                  "value": ""
+                }
+              ],
+              "hypotheses": [
+                {
+                  "label": "A_abelian",
+                  "statement": "$A$ is abelian"
+                }
+              ],
+              "goals": [
+                {
+                  "label": "prod_is_abelian",
+                  "statement": "$B times B$ is abelian"
+                }
+              ]
+            }
+          ]
+        },
+        "selections": [
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "variable",
+              "label": "$B$"
+            },
+            "address": [],
+            "selection": {
+              "text": "B",
+              "source_start": 0,
+              "source_end": 1,
+              "index": 0
+            }
+          },
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "hypothesis",
+              "label": "A_abelian"
+            },
+            "address": [],
+            "selection": {
+              "text": "A",
+              "source_start": 0,
+              "source_end": 1,
+              "index": 0
+            }
+          }
+        ],
+        "outputState": {
+          "proofState": [
+            {
+              "variables": [
+                {
+                  "name": "$A$",
+                  "description": "$#text[Group]$",
+                  "kind": "free",
+                  "value": ""
+                },
+                {
+                  "name": "$B$",
+                  "description": "$#text[Group]$",
+                  "kind": "let",
+                  "value": "$A$"
+                }
+              ],
+              "hypotheses": [
+                {
+                  "label": "A_abelian",
+                  "statement": "$A$ is abelian"
+                }
+              ],
+              "goals": [
+                {
+                  "label": "prod_is_abelian",
+                  "statement": "$A times A$ is abelian"
+                }
+              ]
+            }
+          ]
+        },
+        "kind": "example"
+      },
+      {
+        "description": "",
+        "inputState": {
+          "proofState": [
+            {
+              "variables": [
+                {
+                  "kind": "free",
+                  "name": "$a$",
+                  "description": "$NN$",
+                  "value": ""
+                },
+                {
+                  "kind": "meta",
+                  "name": "$m$",
+                  "description": "$NN$",
+                  "value": ""
+                },
+                {
+                  "kind": "free",
+                  "name": "$b$",
+                  "description": "$NN$",
+                  "value": ""
+                },
+                {
+                  "kind": "free",
+                  "name": "$c$",
+                  "description": "$NN$",
+                  "value": ""
+                }
+              ],
+              "hypotheses": [
+                {
+                  "label": "hyp",
+                  "statement": "$c = (a + b)$"
+                }
+              ],
+              "goals": [
+                {
+                  "label": "goal",
+                  "statement": "$m >= a$"
+                }
+              ]
+            }
+          ]
+        },
+        "selections": [
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "variable",
+              "label": "$m$"
+            },
+            "address": [],
+            "selection": {
+              "text": "m",
+              "source_start": 0,
+              "source_end": 1,
+              "index": 0
+            }
+          },
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "hypothesis",
+              "label": "hyp"
+            },
+            "address": [],
+            "selection": {
+              "text": "(a + b)",
+              "source_start": 4,
+              "source_end": 11,
+              "index": 0
+            }
+          }
+        ],
+        "outputState": null,
+        "comment": "Since $b$ occurs below the metavariable $m$, $m$ cannot be instantiated with $(a + b)$ in this proof state.",
+        "kind": "non-example"
       }
     ]
   }
