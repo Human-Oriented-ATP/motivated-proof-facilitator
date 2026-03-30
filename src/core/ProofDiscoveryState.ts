@@ -44,6 +44,7 @@ export type ProofDiscoveryAction =
     newProofState: ProofState }
 | { action: "addToLibrary", statement: LabelledStatement }
 | { action: "backtrack", nodeId: ProofNodeId }
+| { action: "undo" }
 | { action: "setHighlightedStatement", index: number }
 | { action: "clearHighlightedStatement" }
 | { action: "finish" }
@@ -173,6 +174,32 @@ export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: P
                 ...state,
                 graph: newGraph,
                 currentNodeId: newNodeId
+            }
+        }
+        case "undo": {
+            // Find the parent: the neighbor with the smallest ID.
+            // Since node IDs are always increasing, the parent is always
+            // the minimum-ID neighbor regardless of edge kind or direction.
+            let parentId: string | undefined
+            state.graph.forEachEdge(state.currentNodeId, (_edge, _attrs, source, target) => {
+                const other = source === state.currentNodeId.toString() ? target : source
+                if (parentId === undefined || parseInt(other) < parseInt(parentId)) {
+                    parentId = other
+                }
+            })
+
+            if (parentId === undefined) {
+                // Root node — nothing to undo
+                return state
+            }
+
+            const undoneGraph = state.graph.copy()
+            undoneGraph.dropNode(state.currentNodeId)
+
+            return {
+                ...state,
+                graph: undoneGraph,
+                currentNodeId: parseInt(parentId)
             }
         }
         case "setHighlightedStatement": {
