@@ -1599,15 +1599,10 @@ export const moves: ProofDiscoveryMove[] =
   {
     "name": "Perform goal-directed forwards reasoning",
     "kind": "strengthening",
-    "runWithGuardrails": false, "classification": "mathematical",
+    "classification": "mathematical",
+    "runWithGuardrails": false,
     "trigger": "This move appears when the user has selected at least one hypothesis and at least one goal in the same proof context.",
-    "action": `This move creates a new hypothesis that is derived from some of the selected hypotheses and is syntactically similar to at least one of the selected goals. 
-    
-    This means that the parse tree of the new hypothesis matches better with that of one of the selected goals. 
-    For example, if the selected hypothesis is $n is even$ and the selected goal is $k divides n$, where $k$ is a metavariable, 
-    a good suggestion would be to introduce the hypothesis $2 divides n$, which is syntactically similar to the goal and equivalent to the hypothesis.
-
-    Avoid dropping the level of abstraction, and avoid introducing hypotheses that already exist in the proof state.`,
+    "action": "This move creates a new hypothesis that is derived from some of the selected hypotheses and is syntactically similar to at least one of the selected goals. \nSyntactic similarity means that the parse tree of the new hypothesis matches better with that of one of the selected goals. \nIt is important that the new statement is a mathematical consequence of the selected hypotheses.\nAvoid dropping the level of abstraction, and avoid introducing hypotheses that already exist in the proof state.",
     "examples": [
       {
         "description": "",
@@ -1879,6 +1874,228 @@ export const moves: ProofDiscoveryMove[] =
             }
           ]
         },
+        "kind": "example"
+      },
+      {
+        "description": "",
+        "inputState": {
+          "proofState": [
+            {
+              "variables": [
+                {
+                  "kind": "free",
+                  "name": "$n$",
+                  "description": "$NN$",
+                  "value": ""
+                },
+                {
+                  "kind": "meta",
+                  "name": "$k$",
+                  "description": "$NN$",
+                  "value": ""
+                }
+              ],
+              "hypotheses": [
+                {
+                  "label": "n_even",
+                  "statement": "$n$ is even"
+                }
+              ],
+              "goals": [
+                {
+                  "label": "k_div_n",
+                  "statement": "$k divides n$ "
+                }
+              ]
+            }
+          ]
+        },
+        "selections": [
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "hypothesis",
+              "label": "n_even"
+            },
+            "address": [],
+            "selection": "$n$ is even"
+          },
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "goal",
+              "label": "k_div_n"
+            },
+            "address": [],
+            "selection": "$k divides n$ "
+          }
+        ],
+        "outputState": {
+          "proofState": [
+            {
+              "variables": [
+                {
+                  "name": "$n$",
+                  "description": "$NN$",
+                  "kind": "free",
+                  "value": ""
+                },
+                {
+                  "name": "$k$",
+                  "description": "$NN$",
+                  "kind": "meta",
+                  "value": ""
+                }
+              ],
+              "hypotheses": [
+                {
+                  "label": "n_even",
+                  "statement": "$n$ is even"
+                },
+                {
+                  "label": "two_div_n",
+                  "statement": "$2 divides n$"
+                }
+              ],
+              "goals": [
+                {
+                  "label": "k_div_n",
+                  "statement": "$k divides n$ "
+                }
+              ]
+            }
+          ]
+        },
+        "comment": "$2 divides n$ is an especially good match with the goal in this situation not only because it matches the syntax tree of the goal very well, but also because the variable $k$ in the goal is a metavariable, which makes it possible to set it to any suitable value to match it up with the newly generated hypothesis, unlike a free variable.",
+        "kind": "example"
+      },
+      {
+        "description": "",
+        "inputState": {
+          "proofState": [
+            {
+              "variables": [
+                {
+                  "kind": "free",
+                  "name": "$a$",
+                  "description": "$NN$",
+                  "value": ""
+                },
+                {
+                  "kind": "free",
+                  "name": "$b$",
+                  "description": "$NN$",
+                  "value": ""
+                },
+                {
+                  "kind": "free",
+                  "name": "$c$",
+                  "description": "$NN$",
+                  "value": ""
+                },
+                {
+                  "kind": "meta",
+                  "name": "$d$",
+                  "description": "$NN$",
+                  "value": ""
+                }
+              ],
+              "hypotheses": [
+                {
+                  "label": "hyp",
+                  "statement": "$a dot b + a dot c$"
+                }
+              ],
+              "goals": [
+                {
+                  "label": "goal",
+                  "statement": "$a dot d$"
+                }
+              ]
+            }
+          ]
+        },
+        "selections": [
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "hypothesis",
+              "label": "hyp"
+            },
+            "address": [],
+            "selection": "$a dot b + a dot c$"
+          },
+          {
+            "proofStateId": {
+              "proofNodeId": 0,
+              "proofContextId": 0
+            },
+            "location": {
+              "kind": "goal",
+              "label": "goal"
+            },
+            "address": [],
+            "selection": "$a dot d$"
+          }
+        ],
+        "outputState": {
+          "proofState": [
+            {
+              "variables": [
+                {
+                  "name": "$a$",
+                  "description": "$NN$",
+                  "kind": "free",
+                  "value": ""
+                },
+                {
+                  "name": "$b$",
+                  "description": "$NN$",
+                  "kind": "free",
+                  "value": ""
+                },
+                {
+                  "name": "$c$",
+                  "description": "$NN$",
+                  "kind": "free",
+                  "value": ""
+                },
+                {
+                  "name": "$d$",
+                  "description": "$NN$",
+                  "kind": "meta",
+                  "value": ""
+                }
+              ],
+              "hypotheses": [
+                {
+                  "label": "hyp",
+                  "statement": "$a dot b + a dot c$"
+                },
+                {
+                  "label": "derived_goal_like",
+                  "statement": "$a dot (b + c)$"
+                }
+              ],
+              "goals": [
+                {
+                  "label": "goal",
+                  "statement": "$a dot d$"
+                }
+              ]
+            }
+          ]
+        },
+        "comment": "This is a good suggestion since it matches very well with the goal, having the \"dot\" operation as the root node of the parse tree instead of a \"+\", and $a$ as the left leaf - just like the goal - and $d$ is a meta variable, making this an even better match than if it were a free variable.",
         "kind": "example"
       }
     ]
