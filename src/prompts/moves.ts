@@ -6756,7 +6756,7 @@ export const moves: ProofDiscoveryMove[] =
     "runWithGuardrails": true,
     "classification": "logical",
     "trigger": "This move is relevant when the proof state contains a single selection which is an equality.",
-    "action": "This move examines both sides of the equality, and if they are structurally identical apart from metavariables, it instantiates the metavariables to the values that make the two sides equal. Instantiating a metavariable involves first checking whether the term it is being assigned to has the same type as the metavariable and contains only variables that occur above the metavariable in the list of variables. If this is the case, the metavariable is replaced with a let variable with the term as its value, and all occurrences of the metavariable in the proof state are replaced with the term.",
+    "action": "This move examines both sides of the equality, and if they are structurally identical apart from metavariables, it instantiates the metavariables to the values that make the two sides equal. Instantiating a metavariable involves first checking whether the term it is being assigned to has the same type as the metavariable, and contains only either variables that occur above the metavariable in the list of variables, or metavariables that occur below but depend on the same set of free variables. If this is the case, the metavariable is replaced with a let variable with the term as its value, and all occurrences of the metavariable in the proof state are replaced with the term.",
     "examples": [
       {
         "description": "",
@@ -6926,7 +6926,7 @@ export const moves: ProofDiscoveryMove[] =
     "classification": "logical",
     "runWithGuardrails": true,
     "trigger": "This move is relevant if the selections are a hypothesis and a goal in the same proof state context that are roughly the same structurally and which can potentially unify.",
-    "action": "This move examines both expressions, and if they are structurally identical apart from metavariables, it instantiates the metavariables to the values that make the two expressions equal and then clears the goal. Instantiating a metavariable involves first checking whether the term it is being assigned to has the same type as the metavariable and contains only variables that occur above the metavariable in the list of variables. If this is the case, the metavariable is replaced with a let variable with the term as its value, and all occurrences of the metavariable in the proof state are replaced with the term.",
+    "action": "This move examines both expressions, and if they are structurally identical apart from metavariables, it instantiates the metavariables to the values that make the two expressions equal and then clears the goal. Instantiating a metavariable involves first checking whether the term it is being assigned to has the same type as the metavariable, and contains only either variables that occur above the metavariable in the list of variables, or metavariables that occur below but depend on the same set of free variables. If this is the case, the metavariable is replaced with a let variable with the term as its value, and all occurrences of the metavariable in the proof state are replaced with the term.",
     "examples": [
       {
         "description": "",
@@ -7436,7 +7436,7 @@ export const moves: ProofDiscoveryMove[] =
     "classification": "logical",
     "runWithGuardrails": true,
     "trigger": "This move is relevant when there are two expressions selected in the proof state, one of which is a metavariable.",
-    "action": "This move instantiates the metavariable with the other selected term. Instantiating a metavariable involves first checking whether the term it is being assigned to has the same type as the metavariable and contains only variables that occur above the metavariable in the list of variables. If this is the case, the metavariable is replaced with a let variable with the term as its value, and all occurrences of the metavariable in the proof state are replaced with the term.",
+    "action": "This move instantiates the metavariable with the other selected term. Instantiating a metavariable involves first checking whether the term it is being assigned to has the same type as the metavariable, and contains only either variables that occur above the metavariable in the list of variables, or metavariables that occur below but depend on the same set of free variables. If this is the case, the metavariable is replaced with a let variable with the term as its value, and all occurrences of the metavariable in the proof state are replaced with the term.",
     "examples": [
       {
         "description": "",
