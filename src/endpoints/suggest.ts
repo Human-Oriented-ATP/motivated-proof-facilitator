@@ -288,8 +288,8 @@ For example, if the suggestion is derived from some selected hypotheses, then th
 
 Please keep the suggestions simple, precise, structured, direct and relevant, avoiding wordy phrasing.
 
-Output up to 5 suggestions that could be relevant to the selections.
-If there are fewer than 5 suggestions that could be relevant, return only those.
+Output up to 10 suggestions that could be relevant to the selections.
+If there are fewer than 10 suggestions that could be relevant, return only those.
 Ensure that there are no duplicate suggestions. 
 
 Order the suggestions from most relevant to least relevant, where relevance is determined
