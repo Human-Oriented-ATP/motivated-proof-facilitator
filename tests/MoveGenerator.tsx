@@ -891,6 +891,25 @@ export default function MoveGenerator({ initialMove, onSave, onHasUnsavedChanges
                   )}
 
                   <Box>
+                    <FieldLabel>Description</FieldLabel>
+                    <Box
+                      component="input"
+                      type="text"
+                      value={exampleDescription}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setExampleDescription(e.target.value)}
+                      placeholder="Short label for this example…"
+                      sx={{
+                        width: '100%', fontSize: '0.82rem', color: BLU.dark,
+                        border: `1.5px solid rgba(180,200,220,0.7)`, borderRadius: '8px',
+                        p: '7px 10px', outline: 'none', background: 'rgba(255,255,255,0.7)',
+                        boxSizing: 'border-box', display: 'block', fontFamily: 'inherit',
+                        '&::placeholder': { color: '#8aabcc' },
+                        '&:focus': { borderColor: BLU.bright, background: 'rgba(255,255,255,0.95)', boxShadow: `0 0 0 3px rgba(74,138,181,0.12)` },
+                      }}
+                    />
+                  </Box>
+
+                  <Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.5 }}>
                       <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: BLU.dark }}>
                         Comment {failureReasoning ? "(failure reason)" : "(optional)"}
