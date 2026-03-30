@@ -2,7 +2,7 @@ import { generateText, Output } from "ai"
 import { SuggestRequest, SuggestResultsSchema } from "../fetchers/suggest.js"
 import { MODELS } from "./models.js"
 
-const SUGGEST_PROMPT = 
+export const SUGGEST_PROMPT = 
 `
 Your task is to suggest useful statements that fall within the "cluster" of statements related to the given selections, in the form of
 - standard equivalent formulations
@@ -24,10 +24,12 @@ Consult the list of variables to properly interpret the selections.
 Please keep the suggestions simple, precise, structured, direct and relevant, avoiding wordy phrasing.
 
 The more a suggestion deviates from the "cluster" of related statements around the main selections,
-the more oriented it must be towards the additional selections, and the more terms it should produce that match with 
+the more oriented it must be towards the additional selections, and the more terms it should have that are syntactically similar to 
 ones in the additional selections.
 
-For example, if the main selection is "$f$ is continuous" and a goal "$A$ is closed in $X$" has been selected, then the closed-sets formulation of "$f$ is continuous" would be a good suggestion.
+[Syntactic similarity means that the parse tree of the new statement matches better with that of one of the additional selections. The expression $a dot (b + c)$ matches the syntax tree of $a dot d$ better $a dot b + a dot c$, since the former has head symbol "dot" and left child $a$, just like $a dot d$, while the latter has head symbol "+".]  
+
+For example, if the main selection is "$f$ is continuous" and a goal "$A$ is closed in $X$" is the additional selection, then the closed-sets formulation of "$f$ is continuous" would be a good suggestion.
 \`\`\`
 {
     "kind": "universal",
@@ -43,10 +45,18 @@ For example, if the main selection is "$f$ is continuous" and a goal "$A$ is clo
 }
 \`\`\`
 
-This is because by introducing the predicate "is closed in" it makes it more likely that a purely logical deduction will be possible. By contrast, if closed sets haven't been mentioned at all, then the closed-sets formulation would be rather arbitrary and unmotivated, and therefore not a good fit for the list of suggestions.
+This is because by introducing the predicate "is closed in" it makes it more likely that a purely logical deduction will be possible. By contrast, if closed sets haven't been mentioned at all, then the closed-sets formulation would be rather arbitrary and unmotivated, and therefore not a good fit for the list of suggestions. 
 
-Another situation where such matching would be desirable is when one of the main selections has an associated statement that resembles an additional selection of opposite polarity ("true" polarity is associated with hypothesis-like statements and "false" polarity is associated with goal-like statements). For example, if the main selection is the hypothesis "$U$ is open"
-and the additional selection is the goal "$V$ is closed",  where $U$ is a free variable and $V$ is a meta variable, both of which represent subsets of a metric space $X$, then the suggestion "$U^c$ is closed" would be preferred over the open-ball definition, since it matches quite closely with the additional selection of opposite polarity which contains metavariables that can be instantiated. 
+It is also important to pay attention to the polarities of the statements involved. The "true" polarity is associated with statements that are hypothesis-like, and the "false" polarity is associated with statements that are goal-like. Replacing a statement in goal-like polarity with a stronger statement strengthens the overall statement, while replacing a statement in hypothesis-like polarity with a stronger statement weakens the overall statement. The polarity flips underneath a negation and in the antecedent of an implication, and stays the same otherwise. 
+
+What makes the example above a particularly good suggestion is that the polarity of the conclusion "$f^(-1)(C)$ is closed in $X$" has hypothesis-like polarity, while the goal "$A$ is closed in $X$" has goal-like polarity, and creating syntactically similar statements of opposite polarity is good since it potentially allows them to be matched up.
+
+Another example is if the main selection is the hypothesis "$U$ is open"
+and the additional selection is the goal "$V$ is closed",  where $U$ is a free variable and $V$ is a meta variable, both of which represent subsets of a metric space $X$. The suggestion "$U^c$ is closed" would be preferred, since it matches quite closely with the additional selection of opposite polarity.
+
+Note that since one of the variables is a meta variable, the parse tree resemblance is much stronger than if both variables had been free variables, since meta variables can take on any value to make the statements match up. Suggestions that create opportunities for matching up statements of opposite polarity with meta variables are particularly good, since they indicate a clear way to make progress.
+
+As another example, if the main selection is a hypothesis $n is even$ and the additional selection is a goal $k divides n$, where $k$ is a met avariable, a good suggestion would be to introduce the hypothesis $2 divides n$, which is syntactically similar to the goal and equivalent to the hypothesis, and the syntactic similar is greatly strengthened by the fact that $k$ is a meta variable, making it possible to match the statements up in principle.
 
 A slightly more complicated instance of the set-up is when the main selection is the hypothesis "$U$ is open" ("true" polarity) and the additional selection is the goal "$U^c sect V$ is closed" ("false" polarity), where $U$ and $V$ are now subsets of a topological space. It would still make sense to suggest "$U^c$ is closed" as a standard consequence in this case, since the it creates matches with the term "U^c" and the predicate "is closed".
 
