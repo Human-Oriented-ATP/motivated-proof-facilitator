@@ -165,7 +165,7 @@ export function proofDiscoveryStateReducer(state: ProofDiscoveryState, action: P
             }
 
             newGraph.addDirectedEdge(newNodeId, action.nodeId, {
-                kind: "backtrack",
+                kind: "strengthening",
                 description: "Revisit node with new hypothesis from backtracking"
             })
 
