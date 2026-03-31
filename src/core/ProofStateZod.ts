@@ -45,13 +45,13 @@ export const VariableSchema = z.object({
 
   Surround text in $#text[...]$ and use [Typst](https://typst.app/) syntax within dollar quotes ($ ... $).`)
 }).describe(`Some examples are:
- - { name: "n", description: "$NN$" }
- - { name: "G", description: "$#text[Group]$" }
- - { name: "f", description: "$A -> B$" }
- - { name: "d", description: "$X times X -> RR_(>=0)$" }
- - { name: "S", description: "$#text[Set]$" }
- - { name: "A", description: "subset of $B$" }
- - { name: "H", description: "subgroup of $G$" }
+ - { name: "$n$", description: "$NN$" }
+ - { name: "$G$", description: "$#text[Group]$" }
+ - { name: "$f$", description: "$A -> B$" }
+ - { name: "$d$", description: "$X times X -> RR_(>=0)$" }
+ - { name: "$S$", description: "$#text[Set]$" }
+ - { name: "$A$", description: "subset of $B$" }
+ - { name: "$H$", description: "subgroup of $G$" }
  `)
 export type Variable = z.infer<typeof VariableSchema>
 
