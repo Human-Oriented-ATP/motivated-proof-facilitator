@@ -110,6 +110,7 @@ export function applyMoveFromKindAndPolarity(kind: SuggestionKind, polarity: boo
         case "equivalent_statement":
           return { ...base, name: "Replace hypothesis with an equivalent statement", kind: "equivalence", action: `This move replaces the selected expression or statement with the equivalent suggestion.` }
         case "construction":
+        case "instantiation":
           return { ...base, name: "Introduce a construction", kind: "strengthening", action: "This move introduces the constructed object into the proof state as a new let variable with a suitable name." }
       }
     // falls through
@@ -122,6 +123,7 @@ export function applyMoveFromKindAndPolarity(kind: SuggestionKind, polarity: boo
         case "equivalent_statement":
           return { ...base, name: "Replace goal with an equivalent statement", kind: "equivalence", action: `This move replaces the selected expression or statement with the equivalent suggestion.` }
         case "construction":
+        case "instantiation":
           return { ...base, name: "Introduce a construction", kind: "strengthening", action: "This move introduces the constructed object into the proof state as a new let variable with a suitable name." }
       }
     // falls through
@@ -135,6 +137,11 @@ export function applyMoveFromKindAndPolarity(kind: SuggestionKind, polarity: boo
           return { ...base, name: "Replace with an equivalent statement", kind: "equivalence", action: `This move replaces the selected expression or statement with the equivalent suggestion.` }
         case "construction":
           return { ...base, name: "Introduce a construction", kind: "strengthening", action: "This move introduces the constructed object into the proof state as a new let variable with a suitable name." }
+        case "instantiation":
+          return { ...base, name: "Instantiate the metavariable", kind: "strengthening", action: 
+            `This move instantiates the selected metavariable with the suggested term. 
+             Instantiating a metavariable involves first checking whether the term it is being assigned to has the same type as the metavariable, and contains only either variables that occur above the metavariable in the list of variables, or metavariables that occur below but depend on the same set of free variables.
+             If this is the case, the metavariable is replaced with a let variable with the term as its value, and all occurrences of the metavariable in the proof state are replaced with the term.` }
       }
   }
 }
@@ -176,6 +183,7 @@ const KIND_STYLES: Record<SuggestionKind, KindStyle> = {
   standard_consequence: { bg: '#FFFBEB', border: '#FDE68A', text: '#92400E', accent: '#F59E0B', chipBg: '#FEF3C7' },
   equivalent_statement: { bg: '#ECFDF5', border: '#A7F3D0', text: '#065F46', accent: '#10B981', chipBg: '#D1FAE5' },
   construction:         { bg: '#F5F3FF', border: '#DDD6FE', text: '#5B21B6', accent: '#7C3AED', chipBg: '#EDE9FE' },
+  instantiation:        { bg: '#FEF2F2', border: '#FECACA', text: '#991B1B', accent: '#EF4444', chipBg: '#FEE2E2' }
 }
 
 const KIND_LABELS: Record<SuggestionKind, string> = {
@@ -183,9 +191,10 @@ const KIND_LABELS: Record<SuggestionKind, string> = {
   standard_consequence: "Standard Consequence",
   equivalent_statement: "Equivalent Statement",
   construction:         "Construction",
+  instantiation:        "Instantiation"
 }
 
-const ALL_KINDS: SuggestionKind[] = ["sufficient_condition", "standard_consequence", "equivalent_statement", "construction"]
+const ALL_KINDS: SuggestionKind[] = ["sufficient_condition", "standard_consequence", "equivalent_statement", "construction", "instantiation"]
 
 // ─── Polarity card colors ─────────────────────────────────────────────────────
 
