@@ -1616,9 +1616,9 @@ export const moves: ProofDiscoveryMove[] =
     "name": "Discharge obviously true goal",
     "kind": "strengthening",
     "classification": "mathematical",
-    "runWithGuardrails": true,
-    "trigger": "This move appears when the selections contain a single goal statement and any number of hypotheses, where the goal is a simple fact that is trivially true given the selected hypotheses, and the proof does not rely on any unselected hypotheses.",
-    "action": "Remove the goal from the list of goals. Include a proof that the goal can be deduced from the selected hypotheses. ",
+    "runWithGuardrails": false,
+    "trigger": "This move appears when the selections contain a single goal statement and any number of hypotheses, where the goal is a simple fact that is easily deducible from the given the selected hypotheses, and the proof does not rely on any unselected hypotheses.",
+    "action": "Remove the goal from the list of goals. Include a proof that the goal can be deduced from the selected hypotheses in the reasoning trace. ",
     "examples": [
       {
         "description": "",
