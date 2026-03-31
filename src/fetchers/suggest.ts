@@ -35,7 +35,7 @@ Suggestions can fall into one of the following categories:
 }).describe("A suggestion made in response to the user's selections in the proof state. The suggestion may include a precise, structured and specific statement that is relevant to the selections, as well as a more general mathematical result that relates to the selections. The general result can provide context and justification for the suggestion, or can serve as a standalone theorem for the user to keep in mind as they continue working on the proof. Suggestions can be one of several kinds, including standard consequences, sufficient conditions, equivalent statements and constructions.")
 
 export const SuggestResultsSchema = z.object({
-    suggestions: z.array(SuggestResultSchema).max(10, "Can only return up to 10 suggestions")
+    suggestions: z.array(SuggestResultSchema) //.max(10, "Can only return up to 10 suggestions")
 }).describe("The list of suggestions generated in response to the user's selections in the proof state.") 
 
 export type SuggestResult = z.infer<typeof SuggestResultSchema>
