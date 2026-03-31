@@ -7434,7 +7434,7 @@ export const moves: ProofDiscoveryMove[] =
     "name": "Instantiate metavariable with selected expression",
     "kind": "strengthening",
     "classification": "logical",
-    "runWithGuardrails": true,
+    "runWithGuardrails": false,
     "trigger": "This move is relevant when there are two expressions selected in the proof state, one of which is a metavariable.",
     "action": "This move instantiates the metavariable with the other selected term. Instantiating a metavariable involves first checking whether the term it is being assigned to has the same type as the metavariable, and contains only either variables that occur above the metavariable in the list of variables, or metavariables that occur below but depend on the same set of free variables. If this is the case, the metavariable is replaced with a let variable with the term as its value, and all occurrences of the metavariable in the proof state are replaced with the term.",
     "examples": [
