@@ -9,8 +9,7 @@ export const SuggestionKindSchema = z.enum([
     "sufficient_condition",
     "standard_consequence",
     "equivalent_statement",
-    "construction",
-    "instantiation"
+    "construction"
 ])
 
 export type SuggestionKind = z.infer<typeof SuggestionKindSchema>
@@ -31,7 +30,6 @@ Suggestions can fall into one of the following categories:
 - Sufficient conditions: Statements that imply the main selections in the proof state, obtained by reasoning backwards from them.
 - Equivalent statements: Statements that are mathematically equivalent to the main selections in the proof state, usually obtained by simplifying the main selection or unfolding or refolding definitions within.
 - Constructions: Atomic statements representing mathematical objects associated with the main selections in the proof state.
-- Instantiations: The simplest, maximal or minimal instances of a metavariable in the main selection, satisfying all the goals in the additional selections.
 `),
     reasoning: z.string().describe("A clear and concise explanation of why the suggestion is relevant to the selections, and how it relates to them. If some selections are used as relevant facts in deriving the suggestion, the mathematical relationship between those selections and the suggestion should be made clear in the reasoning. If some selections are used as templates for the suggestion, the syntactic relationship between those selections and the suggestion should be explained in the reasoning.")
 }).describe("A suggestion made in response to the user's selections in the proof state. The suggestion may include a precise, structured and specific statement that is relevant to the selections, as well as a more general mathematical result that relates to the selections. The general result can provide context and justification for the suggestion, or can serve as a standalone theorem for the user to keep in mind as they continue working on the proof. Suggestions can be one of several kinds, including standard consequences, sufficient conditions, equivalent statements and constructions.")
