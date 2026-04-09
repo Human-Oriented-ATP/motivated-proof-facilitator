@@ -13,9 +13,12 @@ export const AtomicStatementSchema = z.string().describe(`A basic statement with
 Some examples are:
 - "$f$ is injective"
 - "$G$ is abelian"
+- "$x y x^(-1)$ has order 2" 
 - "$x^2 + 1$ is an irreducible polynomial over $RR$
 
-When expressions contain infix operators, it becomes difficult for Typst to recognize sequences of symbols that form a single mathematical expression. In such cases, it is recommended to use parentheses to group the expression together, for example, $x = (a + b + c)$ instead of $x = a + b + c$.
+When expressions contain infix operators, it becomes difficult for Typst to recognize sequences of symbols that form a single mathematical expression. 
+In such cases, it is recommended to use parentheses to group the expression together, for example, $x = (a + b + c)$ instead of $x = a + b + c$.
+The same applies to terms like $r_u(x)$ or $g^u(v)$, where brackets around them in larger expressions like $(r_u(x)) >= 0$ or $(g^u(v)) in H$ could help make them selectable as a single unit.
 "
 
 Atomic statements usually express a single fact, with a preference for a higher-level description over a lower level one.`)
@@ -32,7 +35,7 @@ export type AtomicStatement = z.infer<typeof AtomicStatementSchema>
 export const VariableSchema = z.object({
   name: z.string().describe("The name of the variable. This should be a single letter or a short word surrounded by dollar quotes."),
   description: AtomicStatementSchema.describe(`The type information of the variable. 
-  For type variables, use "$#text[Type]", and for propositions, use "$#text[Proposition]$".
+  For type variables, use "$#text[Set]$", and for propositions, use "$#text[Proposition]$".
   Avoid phrases such as "element of" or "belongs to" in the type signature; they are understood.
   Avoid making the types too complicated. It is always better to introduce extra hypotheses rather than having a complicated type.
   
@@ -42,9 +45,13 @@ export const VariableSchema = z.object({
 
   Surround text in $#text[...]$ and use [Typst](https://typst.app/) syntax within dollar quotes ($ ... $).`)
 }).describe(`Some examples are:
- - { name: "n", description: "$NN$" }
- - { name: "G", description: "$#text[Group]$" }
- - { name: "f", description: "$A -> B$" }
+ - { name: "$n$", description: "$NN$" }
+ - { name: "$G$", description: "$#text[Group]$" }
+ - { name: "$f$", description: "$A -> B$" }
+ - { name: "$d$", description: "$X times X -> RR_(>=0)$" }
+ - { name: "$S$", description: "$#text[Set]$" }
+ - { name: "$A$", description: "subset of $B$" }
+ - { name: "$H$", description: "subgroup of $G$" }
  `)
 export type Variable = z.infer<typeof VariableSchema>
 

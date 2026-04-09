@@ -110,6 +110,7 @@ export function applyMoveFromKindAndPolarity(kind: SuggestionKind, polarity: boo
         case "equivalent_statement":
           return { ...base, name: "Replace hypothesis with an equivalent statement", kind: "equivalence", action: `This move replaces the selected expression or statement with the equivalent suggestion.` }
         case "construction":
+        case "instantiation":
           return { ...base, name: "Introduce a construction", kind: "strengthening", action: "This move introduces the constructed object into the proof state as a new let variable with a suitable name." }
       }
     // falls through
@@ -122,6 +123,7 @@ export function applyMoveFromKindAndPolarity(kind: SuggestionKind, polarity: boo
         case "equivalent_statement":
           return { ...base, name: "Replace goal with an equivalent statement", kind: "equivalence", action: `This move replaces the selected expression or statement with the equivalent suggestion.` }
         case "construction":
+        case "instantiation":
           return { ...base, name: "Introduce a construction", kind: "strengthening", action: "This move introduces the constructed object into the proof state as a new let variable with a suitable name." }
       }
     // falls through
@@ -135,6 +137,11 @@ export function applyMoveFromKindAndPolarity(kind: SuggestionKind, polarity: boo
           return { ...base, name: "Replace with an equivalent statement", kind: "equivalence", action: `This move replaces the selected expression or statement with the equivalent suggestion.` }
         case "construction":
           return { ...base, name: "Introduce a construction", kind: "strengthening", action: "This move introduces the constructed object into the proof state as a new let variable with a suitable name." }
+        case "instantiation":
+          return { ...base, name: "Instantiate the metavariable", kind: "strengthening", action: 
+            `This move instantiates the selected metavariable with the suggested term. 
+             Instantiating a metavariable involves first checking whether the term it is being assigned to has the same type as the metavariable, and contains only either variables that occur above the metavariable in the list of variables, or metavariables that occur below but depend on the same set of free variables.
+             If this is the case, the metavariable is replaced with a let variable with the term as its value, and all occurrences of the metavariable in the proof state are replaced with the term.` }
       }
   }
 }
@@ -176,6 +183,7 @@ const KIND_STYLES: Record<SuggestionKind, KindStyle> = {
   standard_consequence: { bg: '#FFFBEB', border: '#FDE68A', text: '#92400E', accent: '#F59E0B', chipBg: '#FEF3C7' },
   equivalent_statement: { bg: '#ECFDF5', border: '#A7F3D0', text: '#065F46', accent: '#10B981', chipBg: '#D1FAE5' },
   construction:         { bg: '#F5F3FF', border: '#DDD6FE', text: '#5B21B6', accent: '#7C3AED', chipBg: '#EDE9FE' },
+  instantiation:        { bg: '#FEF2F2', border: '#FECACA', text: '#991B1B', accent: '#EF4444', chipBg: '#FEE2E2' }
 }
 
 const KIND_LABELS: Record<SuggestionKind, string> = {
@@ -183,9 +191,10 @@ const KIND_LABELS: Record<SuggestionKind, string> = {
   standard_consequence: "Standard Consequence",
   equivalent_statement: "Equivalent Statement",
   construction:         "Construction",
+  instantiation:        "Instantiation"
 }
 
-const ALL_KINDS: SuggestionKind[] = ["sufficient_condition", "standard_consequence", "equivalent_statement", "construction"]
+const ALL_KINDS: SuggestionKind[] = ["sufficient_condition", "standard_consequence", "equivalent_statement", "construction", "instantiation"]
 
 // ─── Polarity card colors ─────────────────────────────────────────────────────
 
@@ -314,15 +323,27 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
 
   // ── Polarity selection card (no location label, color-coded) ─────────────
 
-  const renderPolarityCard = (s: SelectionWithPolarity, i: number) => {
+  const renderPolarityCard = (s: SelectionWithPolarity, i: number, onRemove?: () => void) => {
     const { bg, border, accent } = polarityCardStyle(s.polarity)
     const stmt: Statement = (typeof s.selection === 'object' && 'textSelection' in s.selection) ? (s.selection.textSelection as Statement) : s.selection as Statement
     return (
       <Box key={i} sx={{
         background: bg, border: `1px solid ${border}`, borderRadius: '6px',
         borderLeft: `3px solid ${accent}`, px: 0.875, py: 0.5,
+        display: 'flex', alignItems: 'center', gap: 0.5,
       }}>
-        <Box sx={{ fontSize: '0.8rem', lineHeight: 1.4 }}><StaticStatement statement={stmt} /></Box>
+        <Box sx={{ fontSize: '0.8rem', lineHeight: 1.4, flex: 1, minWidth: 0, overflow: 'hidden' }}><StaticStatement statement={stmt} /></Box>
+        {onRemove && (
+          <IconButton size="small" onClick={onRemove} sx={{
+            width: 20, height: 20, p: 0, flexShrink: 0,
+            color: 'white', background: accent, opacity: 0.7, borderRadius: '50%',
+            '&:hover': { opacity: 1 },
+          }}>
+            <svg style={{ width: 10, height: 10 }} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </IconButton>
+        )}
       </Box>
     )
   }
@@ -343,6 +364,14 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
         {title}
       </Typography>
       {actions}
+      <Tooltip title="Close suggestion panel">
+        <IconButton size="small" onClick={() => onWorkflowChange(false)}
+          sx={{ width: 28, height: 28, borderRadius: '7px', border: `1px solid ${P.border}`, color: P.med, background: 'white', flexShrink: 0, '&:hover': { background: P.light } }}>
+          <svg style={{ width: 14, height: 14 }} viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        </IconButton>
+      </Tooltip>
     </Box>
   )
 
@@ -380,7 +409,7 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
               </Typography>
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                {display.map((s, i) => renderPolarityCard(s, i))}
+                {display.map((s, i) => renderPolarityCard(s, i, selections[i] ? () => dispatchSelections({ type: 'TOGGLE_SELECTION', selection: selections[i]! }) : undefined))}
               </Box>
             )}
 
@@ -426,7 +455,15 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
               <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.med }}>
                 Confirmed selections
               </Typography>
-              {mainDisplay.map((s, i) => renderPolarityCard(s, i))}
+              {mainDisplay.map((s, i) => renderPolarityCard(s, i, () => {
+                dispatchSelections({ type: 'TOGGLE_SELECTION', selection: mainSelections[i]! })
+                const updated = mainSelections.filter((_, j) => j !== i)
+                if (updated.length === 0) {
+                  setWorkflow({ phase: "selecting_main" })
+                } else {
+                  setWorkflow({ phase: "selecting_additional", mainSelections: updated })
+                }
+              }))}
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.med }}>
@@ -449,7 +486,7 @@ export function SuggestionPanel({ onWorkflowChange, onMoveApplied }: SuggestionP
             </Typography>
             {additionalDisplay.length > 0 && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                {additionalDisplay.map((s, i) => renderPolarityCard(s, i))}
+                {additionalDisplay.map((s, i) => renderPolarityCard(s, i, () => dispatchSelections({ type: 'TOGGLE_SELECTION', selection: additional[i]! })))}
               </Box>
             )}
             <Button onClick={() => void refreshSuggestions(mainSelections)}

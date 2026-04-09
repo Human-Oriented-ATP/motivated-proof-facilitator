@@ -57,6 +57,18 @@ export type ProofDiscoveryGraphLoaderProps = {
 function ProofNode({ data }: { data: ProofNodeData }): JSX.Element {
   const { proofNodeId, proofState, isCurrentNode, isSolved } = data
   const { dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+
+  useEffect(() => {
+    if (!contextMenu) return
+    const close = () => setContextMenu(null)
+    document.addEventListener('click', close)
+    document.addEventListener('contextmenu', close, true)
+    return () => {
+      document.removeEventListener('click', close)
+      document.removeEventListener('contextmenu', close, true)
+    }
+  }, [contextMenu])
 
   return (
     <div
@@ -75,6 +87,12 @@ function ProofNode({ data }: { data: ProofNodeData }): JSX.Element {
         cursor: 'pointer',
       }}
       onClick={() => dispatchProofDiscoveryAction({ action: 'focus', nodeId: proofNodeId })}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        const rect = e.currentTarget.getBoundingClientRect()
+        setContextMenu({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+      }}
     >
       {/* Invisible handles at both top and bottom for both source and target */}
       <Handle type="target" position={Position.Top}    id="target-top"    style={{ opacity: 0 }} />
@@ -116,6 +134,49 @@ function ProofNode({ data }: { data: ProofNodeData }): JSX.Element {
           <ProofStateComponent proofState={proofState} />
         </ProofStateIdContext.Provider>
       </div>
+
+      {/* Context menu */}
+      {contextMenu && (
+        <div
+          style={{
+            position: 'absolute',
+            top: contextMenu.y,
+            left: contextMenu.x,
+            background: '#1a1a1a',
+            border: '1px solid #333',
+            borderRadius: 10,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            zIndex: 10000,
+            minWidth: 380,
+            padding: '6px 0',
+            pointerEvents: 'all',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            style={{
+              display: 'block',
+              width: '100%',
+              padding: '12px 20px',
+              background: 'none',
+              border: 'none',
+              textAlign: 'left',
+              cursor: 'pointer',
+              fontSize: 15,
+              color: '#e2e8f0',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#2d2d2d' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'none' }}
+            onClick={() => {
+              dispatchProofDiscoveryAction({ action: 'backtrack', nodeId: proofNodeId })
+              setContextMenu(null)
+            }}
+          >
+            Backtrack to this proof state with additional information (experimental)
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -147,6 +208,12 @@ const EDGE_STYLE = {
     strokeWidth: 2,
     strokeDasharray: '5,5',
     markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
+  },
+  backtrack: {
+    stroke: '#cbd5e1',      // Silver — backtrack edge
+    strokeWidth: 2,
+    strokeDasharray: '7,4',
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#cbd5e1' },
   },
 } as Record<MoveKind, {
   stroke: string
@@ -223,7 +290,7 @@ export function ProofDiscoveryState({ proofDiscoveryState }: ProofDiscoveryState
         rfTarget = target.toString()
         sourceHandle = 'source-bottom'
         targetHandle = 'target-top'
-      } else if (kind === 'strengthening' || kind === 'other') {
+      } else if (kind === 'strengthening' || kind === 'other' || kind === 'backtrack') {
         // Swap: child (graphology source) ← parent (graphology target)
         // Arrow goes from parent (above) DOWN to child (below)
         rfSource = target.toString()  // parent
@@ -388,7 +455,7 @@ function computeLayout(nodes: Node<ProofNodeData>[], graph: any): Node<ProofNode
       }
 
       const kind: MoveKind = attrs.kind
-      if (kind === 'strengthening' || kind === 'other') {
+      if (kind === 'strengthening' || kind === 'other' || kind === 'backtrack') {
         if (s === nodeId && ranks.has(t)) { rank = ranks.get(t)! + 1; par = t }
       } else if (kind === 'weakening') {
         if (t === nodeId && ranks.has(s)) { rank = ranks.get(s)! - 1; par = s }

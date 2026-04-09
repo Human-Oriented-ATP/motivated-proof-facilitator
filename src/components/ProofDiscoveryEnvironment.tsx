@@ -72,6 +72,11 @@ const IconFullscreen = () => (
     <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clipRule="evenodd" />
   </svg>
 )
+const IconUndo = () => (
+  <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M7.707 3.293a1 1 0 010 1.414L5.414 7H11a7 7 0 110 14 1 1 0 110-2 5 5 0 100-10H5.414l2.293 2.293a1 1 0 11-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+  </svg>
+)
 const LoadingSpinner = () => (
   <svg style={{ width: 13, height: 13, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24">
     <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -165,6 +170,7 @@ export function ProofDiscoveryEnvironment({
   const [newLibraryLoading, setNewLibraryLoading] = useState(false)
   const [newLibraryError, setNewLibraryError] = useState<string | null>(null)
   const [isFinishScreenOpen, setIsFinishScreenOpen] = useState(false)
+  const [isUndoConfirmOpen, setIsUndoConfirmOpen] = useState(false)
   const [jsonCopied, setJsonCopied] = useState(false)
   const { selections, dispatch: selectionsDispatch } = useContext(ProofStateSelectionContext)
 
@@ -496,6 +502,20 @@ export function ProofDiscoveryEnvironment({
               </span>
             </Tooltip>
 
+            <Tooltip title="Undo the current move and return to the previous proof state">
+              <span>
+                <Button
+                  variant="outlined" size="small"
+                  startIcon={<IconUndo />}
+                  onClick={() => setIsUndoConfirmOpen(true)}
+                  disabled={proofDiscoveryState.currentNodeId === 0}
+                  sx={{ ...actionBtnSx, color: '#92400e', borderColor: '#d97706', '&:hover': { borderColor: '#92400e', background: 'rgba(255,245,235,0.98)' } }}
+                >
+                  Undo move
+                </Button>
+              </span>
+            </Tooltip>
+
             {selections.length > 0 && (
               <Chip
                 label={`${selections.length} sel.`}
@@ -620,6 +640,32 @@ export function ProofDiscoveryEnvironment({
         </DialogContent>
         <DialogActions sx={{ borderTop: '1px solid #c0cedb', px: 2.5, py: 1.25 }}>
           <Button variant="outlined" size="small" onClick={() => setIsInformalizePopupOpen(false)} sx={actionBtnSx}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Undo confirmation */}
+      <Dialog open={isUndoConfirmOpen} onClose={() => setIsUndoConfirmOpen(false)} maxWidth="xs" fullWidth
+        slotProps={{ paper: { sx: { borderRadius: '14px', border: '1.5px solid #fcd34d' } } }}>
+        <Box sx={{ px: 3, pt: 2.5, pb: 1 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#78350f', mb: 1 }}>Undo move?</Typography>
+          <Typography variant="body2" sx={{ color: '#44403c', lineHeight: 1.6 }}>
+            This will <strong>permanently delete</strong> the current proof state from the proof discovery graph and return to the previous state. This action cannot be undone.
+          </Typography>
+        </Box>
+        <DialogActions sx={{ px: 2.5, py: 1.5, gap: 1 }}>
+          <Button variant="outlined" size="small" onClick={() => setIsUndoConfirmOpen(false)} sx={actionBtnSx}>
+            Cancel
+          </Button>
+          <Button
+            variant="outlined" size="small"
+            onClick={() => {
+              dispatchProofDiscoveryAction({ action: 'undo' })
+              setIsUndoConfirmOpen(false)
+            }}
+            sx={{ ...actionBtnSx, color: '#92400e', borderColor: '#d97706', '&:hover': { borderColor: '#92400e', background: 'rgba(255,245,235,0.98)' } }}
+          >
+            Undo
+          </Button>
         </DialogActions>
       </Dialog>
 

@@ -257,7 +257,7 @@ function ClassificationBadge({ classification }: { classification: "mathematical
 // ─── AllMovesList ─────────────────────────────────────────────────────────────
 
 type RunPhase = 'idle' | 'checking' | 'warning' | 'applying' | 'error'
-type RunState = { phase: RunPhase; warningReasoning?: string; errorText?: string }
+type RunState = { phase: RunPhase; warningReasoning?: string; warningKind?: 'trigger' | 'apply'; errorText?: string }
 
 export function AllMovesList(): JSX.Element {
   const { proofDiscoveryState, dispatchProofDiscoveryAction } = useContext(ProofDiscoveryStateContext)
@@ -316,7 +316,7 @@ export function AllMovesList(): JSX.Element {
           triggerCriterion: move.trigger
         })
         if (!filterResponse.meetsCondition) {
-          setRunState({ phase: 'warning', warningReasoning: filterResponse.reasoning })
+          setRunState({ phase: 'warning', warningReasoning: filterResponse.reasoning, warningKind: 'trigger' })
           return
         }
       } catch (err) {
@@ -329,7 +329,11 @@ export function AllMovesList(): JSX.Element {
       await applyMove(proofDiscoveryState, selections, move, dispatchProofDiscoveryAction, dispatchSelections)
       resetRunState()
     } catch (err) {
-      setRunState({ phase: 'error', errorText: err instanceof Error ? err.message : 'Failed to apply move' })
+      if (move.runWithGuardrails) {
+        setRunState({ phase: 'warning', warningReasoning: err instanceof Error ? err.message : 'Failed to apply move', warningKind: 'apply' })
+      } else {
+        setRunState({ phase: 'error', errorText: err instanceof Error ? err.message : 'Failed to apply move' })
+      }
     }
   }
 
@@ -725,13 +729,22 @@ export function AllMovesList(): JSX.Element {
                     {/* Warning */}
                     {runState.phase === 'warning' && (
                       <Box sx={{ mt: 1.25, p: '10px 12px', borderRadius: '8px', background: '#FFFBEB', border: '1.5px solid #FDE68A', animation: 'slideInUp 0.2s ease-out' }}>
-                        <Typography sx={{ fontSize: '0.73rem', fontWeight: 700, color: '#92400E', mb: 0.5 }}>Trigger criterion not satisfied</Typography>
+                        <Typography sx={{ fontSize: '0.73rem', fontWeight: 700, color: '#92400E', mb: 0.5 }}>
+                          {runState.warningKind === 'apply' ? 'Move was not applied' : 'Trigger criterion not satisfied'}
+                        </Typography>
                         <Typography sx={{ fontSize: '0.73rem', color: '#78350F', lineHeight: 1.5, mb: 1 }}>{runState.warningReasoning}</Typography>
                         <Box sx={{ display: 'flex', gap: 0.75 }}>
-                          <Button size="small" onClick={() => void handleRunMove(selectedMove, true)}
-                            sx={{ fontSize: '0.73rem', fontWeight: 700, textTransform: 'none', color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '6px', transition: 'all 0.2s ease', '&:hover': { background: '#FDE68A', boxShadow: '0 2px 6px rgba(146,64,14,0.15)' } }}>
-                            Apply anyway
-                          </Button>
+                          {runState.warningKind === 'apply' ? (
+                            <Button size="small" onClick={() => void handleRunMove({ ...selectedMove!, runWithGuardrails: false }, true)}
+                              sx={{ fontSize: '0.73rem', fontWeight: 700, textTransform: 'none', color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '6px', transition: 'all 0.2s ease', '&:hover': { background: '#FDE68A', boxShadow: '0 2px 6px rgba(146,64,14,0.15)' } }}>
+                              Run without guardrails
+                            </Button>
+                          ) : (
+                            <Button size="small" onClick={() => void handleRunMove(selectedMove, true)}
+                              sx={{ fontSize: '0.73rem', fontWeight: 700, textTransform: 'none', color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '6px', transition: 'all 0.2s ease', '&:hover': { background: '#FDE68A', boxShadow: '0 2px 6px rgba(146,64,14,0.15)' } }}>
+                              Apply anyway
+                            </Button>
+                          )}
                           <Button size="small" onClick={resetRunState}
                             sx={{ fontSize: '0.73rem', fontWeight: 600, textTransform: 'none', color: '#6B7280', background: 'white', border: '1px solid #E5E7EB', borderRadius: '6px', transition: 'all 0.2s ease', '&:hover': { background: '#F3F4F6', borderColor: '#D1D5DB' } }}>
                             Cancel

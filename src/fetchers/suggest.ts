@@ -9,7 +9,8 @@ export const SuggestionKindSchema = z.enum([
     "sufficient_condition",
     "standard_consequence",
     "equivalent_statement",
-    "construction"
+    "construction",
+    "instantiation"
 ])
 
 export type SuggestionKind = z.infer<typeof SuggestionKindSchema>
@@ -22,7 +23,7 @@ export interface SuggestRequest {
 }
 
 const SuggestResultSchema = z.object({
-    suggestion: StatementSchema.nullable().describe("A suggestion that is offered to the user in relation to certain selections in the proof state. Suggestions are precise, structured and specific statements that are often meant to directly replace or supplement the main selections in the proof state."),
+    suggestion: StatementSchema.nullable().describe("A suggestion that is offered to the user in relation to certain selections in the proof state. Suggestions are precise, structured and specific statements that are often meant to directly replace or supplement the main selections in the proof state, and be syntactically similar to or make use of the additional selections."),
     generalResult: LabelledStatementSchema.nullable().describe("A general mathematical statement, corresponding to a result one might find in a textbook or a paper, that relates to the selections. In some cases, the general result is meant to be presented alongside the suggestion as a more general reason for why the suggestion is valid. In other cases, the general result is meant to be the main content of the response, especially when the user is looking for theorems to store and use a few steps down the line in the proof. Include the general result only when explicitly requested or when the suggested statement is non-trivially related to the selections; omit it otherwise."),
     kind: SuggestionKindSchema.describe(`
 Suggestions can fall into one of the following categories:
@@ -30,12 +31,13 @@ Suggestions can fall into one of the following categories:
 - Sufficient conditions: Statements that imply the main selections in the proof state, obtained by reasoning backwards from them.
 - Equivalent statements: Statements that are mathematically equivalent to the main selections in the proof state, usually obtained by simplifying the main selection or unfolding or refolding definitions within.
 - Constructions: Atomic statements representing mathematical objects associated with the main selections in the proof state.
+- Instantiations: The simplest, maximal or minimal instances of a metavariable in the main selection, satisfying all the goals in the additional selections.
 `),
-    reasoning: z.string().describe("A clear and concise explanation of why the suggestion is relevant to the selections, and how it relates to them.")
-}).describe("A suggestion made in response to the user's selections in the proof state. The suggestion may include a precise, structured and specific statement that is relevant to the selections, as well as a more general mathematical result that relates to the selections. The general result can provide context and justification for the suggestion, or can serve as a standalone theorem for the user to keep in mind as they continue working on the proof.")
+    reasoning: z.string().describe("A clear and concise explanation of why the suggestion is relevant to the selections, and how it relates to them. If some selections are used as relevant facts in deriving the suggestion, the mathematical relationship between those selections and the suggestion should be made clear in the reasoning. If some selections are used as templates for the suggestion, the syntactic relationship between those selections and the suggestion should be explained in the reasoning.")
+}).describe("A suggestion made in response to the user's selections in the proof state. The suggestion may include a precise, structured and specific statement that is relevant to the selections, as well as a more general mathematical result that relates to the selections. The general result can provide context and justification for the suggestion, or can serve as a standalone theorem for the user to keep in mind as they continue working on the proof. Suggestions can be one of several kinds, including standard consequences, sufficient conditions, equivalent statements and constructions.")
 
 export const SuggestResultsSchema = z.object({
-    suggestions: z.array(SuggestResultSchema).max(5, "Can only return up to 5 suggestions")
+    suggestions: z.array(SuggestResultSchema) //.max(10, "Can only return up to 10 suggestions")
 }).describe("The list of suggestions generated in response to the user's selections in the proof state.") 
 
 export type SuggestResult = z.infer<typeof SuggestResultSchema>

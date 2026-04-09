@@ -21,8 +21,6 @@ export async function checkMoveValidity(
       req: FilterRequest, 
       signal?: AbortSignal): Promise<FilterResponse> {
     
-    throw new Error("Move filtering has been temporarily disabled.") 
-    
     const response = await fetch("/api/filter", {
         method: "POST",
         mode: "cors",
