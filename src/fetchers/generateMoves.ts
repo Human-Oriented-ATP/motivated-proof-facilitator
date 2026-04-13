@@ -1,6 +1,6 @@
 import { z } from "zod"
-import { ProofStateSelectionWithPolarity } from "../core/ProofStateSelectionContext"
-import { ProofState, ProofStateSchema } from "../core/ProofStateZod"
+import { ProofStateSelectionWithPolarity } from "../core/ProofStateSelectionContext.js"
+import { ProofState, ProofStateSchema } from "../core/ProofStateZod.js"
 
 export interface GenerateMovesRequest { 
     proofState: ProofState
