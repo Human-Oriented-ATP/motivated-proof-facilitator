@@ -762,7 +762,8 @@ export function AllMovesList(): JSX.Element {
                     )}
 
                     {/* Examples toggle */}
-                    {selectedMove.examples.length > 0 && (
+
+                    {selectedMove.examples && selectedMove.examples.length > 0 && (
                       <>
                         <Button size="small" onClick={() => setExamplesOpen(v => !v)}
                           endIcon={<Box sx={{ display: 'flex', transition: 'transform 0.2s', transform: examplesOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}><ChevronIcon /></Box>}

@@ -15,18 +15,28 @@ export const GenerateMoveResponseSchema = z.object({
 
 export type GenerateMoveResponse = z.infer<typeof GenerateMoveResponseSchema>
 
-export async function generateMoves(req: GenerateMovesRequest): Promise<GenerateMoveResponse[]> {
+export const GenerateMovesResponseSchema = z.object({
+    moves: GenerateMoveResponseSchema.array().describe("A list of moves that are relevant to the current proof state and selections, along with the new proof states and associated reasoning traces, ranked in order of relevance with the most relevant move first.")
+})
+
+export type GenerateMovesResponse = z.infer<typeof GenerateMovesResponseSchema>
+
+export async function generateMoves(req: GenerateMovesRequest, signal?: AbortSignal): Promise<GenerateMoveResponse[]> {
     const response = await fetch("/api/generate-moves", {
         method: "POST",
         mode: "cors",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(req, null, 2)
+        body: JSON.stringify(req, null, 2),
+        ...(signal && { signal }),
     })
     if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
     }
+
+    console.log("Received response from /api/generate-moves, parsing JSON...", response)
     const data = await response.json()
-    return GenerateMoveResponseSchema.array().parse(data)
+    console.log("Received response:", data)
+    return GenerateMovesResponseSchema.parse(data._output).moves
 }

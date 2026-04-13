@@ -1,5 +1,5 @@
 import { moves } from "../prompts/moves.js"
-import { GenerateMoveResponseSchema, GenerateMovesRequest } from "../fetchers/generateMoves.js"
+import { GenerateMovesRequest, GenerateMovesResponseSchema } from "../fetchers/generateMoves.js"
 import { generateText, Output } from "ai"
 import { MODELS } from "./models.js"
 
@@ -76,9 +76,8 @@ export const generateMoves = async(req: GenerateMovesRequest) => {
         model: MODELS.generate_moves,
         system: GENERATE_MOVES_PROMPT,
         prompt: JSON.stringify(req, null, 2),
-        output: Output.array({
-            element: GenerateMoveResponseSchema,
-            description: "A list of moves that are relevant to the current proof state and selections, along with the new proof states and associated reasoning traces, ranked in order of relevance with the most relevant move first."
+        output: Output.object({
+            schema: GenerateMovesResponseSchema
         }),
         maxRetries:  3
     })

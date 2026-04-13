@@ -8,9 +8,10 @@ import {
 import { ProofStateSelection, ProofStateSelectionContext, toProofStateSelectionWithPolarity } from "../core/ProofStateSelectionContext"
 import { getCurrentProofState, ProofDiscoveryAction, ProofDiscoveryState } from "../core/ProofDiscoveryState"
 import { ProofDiscoveryMove } from "../core/ProofDiscoveryMove"
-import { ProofDiscoveryStateContext } from "../core/ProofDiscoveryStateContext"
+import { ProofDiscoveryStateContext, ProofStateIdContext } from "../core/ProofDiscoveryStateContext"
+import { ProofStateWithLibraryResult as ProofStateComponent } from "./ProofState"
 import { useMoveSet } from "./MoveSetContext"
-import { checkMoveValidity, FilterResponse } from "../fetchers/filter"
+import { generateMoves, GenerateMoveResponse } from "../fetchers/generateMoves"
 import {
   applyMove, G, L,
   ChevronIcon, PlayIcon, SpinnerBox,
@@ -27,26 +28,27 @@ export async function getApplicableMoves(
   selections: ProofStateSelection[],
   signal?: AbortSignal,
   movesToCheck: ProofDiscoveryMove[] = []
-): Promise<{ move: ProofDiscoveryMove, filterResponse: FilterResponse }[]> {
-  const results = await Promise.all(
-    movesToCheck.map(async (move) => {
-      try {
-        const filterResponse = await checkMoveValidity({ 
-          proofState: getCurrentProofState(proofDiscoveryState), 
-          selections: selections.map(toProofStateSelectionWithPolarity), 
-          name: move.name, 
-          triggerCriterion: move.trigger 
-        }, signal)
-        return filterResponse.meetsCondition ? { move, filterResponse } : null
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') throw error
-        console.error(`Error checking move validity for move ${move.name}:`, error)
-        return null
-      }
-    })
-  )
+): Promise<ApplicableMove[]> {
+  const currentProofState = getCurrentProofState(proofDiscoveryState)
+  const generatedMoves = await generateMoves({
+    proofState: currentProofState,
+    selections: selections.map(toProofStateSelectionWithPolarity)
+  }, signal)
 
-  return results.filter((result): result is { move: ProofDiscoveryMove, filterResponse: FilterResponse } => result !== null)
+  const moveMap = new Map(movesToCheck.map(move => [move.name, move]))
+
+  return generatedMoves.map((generated) => {
+    const move = moveMap.get(generated.name) ?? {
+      name: generated.name,
+      kind: "other",
+      classification: "mathematical",
+      runWithGuardrails: false,
+      trigger: "",
+      action: "Generated move",
+      examples: []
+    }
+    return { move, generated }
+  })
 }
 
 // ─── Inline SVG icons ────────────────────────────────────────────────────────
@@ -73,7 +75,7 @@ const RefreshIcon = () => (
 
 type MovePanelStatus = "idle" | "loading" | "loaded" | "error"
 type MoveCategory = "mathematical" | "logical"
-type ApplicableMove = { move: ProofDiscoveryMove, filterResponse: FilterResponse }
+type ApplicableMove = { move: ProofDiscoveryMove, generated: GenerateMoveResponse }
 
 // ─── Generate Suggestions Button ─────────────────────────────────────────────
 
@@ -110,6 +112,7 @@ function MovePanelContent({ onLoadingChange, onSuggestionModeChange }: { onLoadi
   const [applicableMoves, setApplicableMoves] = useState<ApplicableMove[]>([])
   const [errorMessage, setErrorMessage] = useState("")
   const [expandedReasoning, setExpandedReasoning] = useState<Set<number>>(new Set())
+  const [expandedPreview, setExpandedPreview] = useState<Set<number>>(new Set())
   const [applyingIndex, setApplyingIndex] = useState<number | null>(null)
   const [infoIndex, setInfoIndex] = useState<number | null>(null)
   const [expandedExamples, setExpandedExamples] = useState<Set<number>>(new Set())
@@ -135,6 +138,7 @@ function MovePanelContent({ onLoadingChange, onSuggestionModeChange }: { onLoadi
       setStatus("idle")
       setApplicableMoves([])
       setExpandedReasoning(new Set())
+      setExpandedPreview(new Set())
       setExpandedExamples(new Set())
       setInfoIndex(null)
       lastFetchedSelectionsRef.current = ""
@@ -181,6 +185,7 @@ function MovePanelContent({ onLoadingChange, onSuggestionModeChange }: { onLoadi
         setStatus("idle")
         setApplicableMoves([])
         setExpandedReasoning(new Set())
+        setExpandedPreview(new Set())
         setExpandedExamples(new Set())
         setInfoIndex(null)
       }
@@ -198,6 +203,7 @@ function MovePanelContent({ onLoadingChange, onSuggestionModeChange }: { onLoadi
     setStatus("loading")
     setErrorMessage("")
     setExpandedReasoning(new Set())
+    setExpandedPreview(new Set())
     setExpandedExamples(new Set())
     setInfoIndex(null)
     try {
@@ -218,14 +224,17 @@ function MovePanelContent({ onLoadingChange, onSuggestionModeChange }: { onLoadi
   const handleApply = async (am: ApplicableMove, idx: number) => {
     setApplyingIndex(idx)
     try {
-      const reasoning = await applyMove(
-        proofDiscoveryState,
-        selections,
-        am.move,
-        dispatchProofDiscoveryAction,
-        dispatchSelections
-      )
-      setLastMoveReasoning(reasoning ?? null)
+      dispatchProofDiscoveryAction({
+        action: "transition",
+        newProofState: am.generated.proofState,
+        move: {
+          kind: am.move.kind,
+          description: am.move.name,
+          reasoning: am.generated.reasoning
+        }
+      })
+      dispatchSelections({ type: 'CLEAR_ALL_SELECTIONS' })
+      setLastMoveReasoning(am.generated.reasoning)
       setStatus("idle")
       setApplicableMoves([])
       lastFetchedSelectionsRef.current = ""
@@ -239,6 +248,9 @@ function MovePanelContent({ onLoadingChange, onSuggestionModeChange }: { onLoadi
 
   const toggleReasoning = (idx: number) => {
     setExpandedReasoning(prev => { const n = new Set(prev); n.has(idx) ? n.delete(idx) : n.add(idx); return n })
+  }
+  const togglePreview = (idx: number) => {
+    setExpandedPreview(prev => { const n = new Set(prev); n.has(idx) ? n.delete(idx) : n.add(idx); return n })
   }
   const toggleExamples = (idx: number) => {
     setExpandedExamples(prev => { const n = new Set(prev); n.has(idx) ? n.delete(idx) : n.add(idx); return n })
@@ -317,17 +329,33 @@ function MovePanelContent({ onLoadingChange, onSuggestionModeChange }: { onLoadi
         )}
 
         <Box sx={{ borderTop: `1px solid ${C.border}` }}>
-          <Button size="small" onClick={() => toggleReasoning(idx)}
-            endIcon={<Box sx={{ display: 'flex', transition: 'transform 0.2s', transform: expandedReasoning.has(idx) ? 'rotate(180deg)' : 'rotate(0deg)' }}><ChevronIcon /></Box>}
-            sx={{ width: '100%', justifyContent: 'flex-start', color: '#78909C', fontSize: '0.73rem', fontWeight: 500, textTransform: 'none', px: 1.5, py: 0.5, borderRadius: 0, '&:hover': { background: C.bg, color: C.med } }}
-          >
-            Reasoning
-          </Button>
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+            <Button size="small" onClick={() => toggleReasoning(idx)}
+              endIcon={<Box sx={{ display: 'flex', transition: 'transform 0.2s', transform: expandedReasoning.has(idx) ? 'rotate(180deg)' : 'rotate(0deg)' }}><ChevronIcon /></Box>}
+              sx={{ flex: 1, justifyContent: 'flex-start', color: '#78909C', fontSize: '0.73rem', fontWeight: 500, textTransform: 'none', px: 1.5, py: 0.5, borderRadius: 0, '&:hover': { background: C.bg, color: C.med } }}
+            >
+              Reasoning
+            </Button>
+            <Button size="small" onClick={() => togglePreview(idx)}
+              endIcon={<Box sx={{ display: 'flex', transition: 'transform 0.2s', transform: expandedPreview.has(idx) ? 'rotate(180deg)' : 'rotate(0deg)' }}><ChevronIcon /></Box>}
+              sx={{ flex: 1, justifyContent: 'flex-start', color: '#78909C', fontSize: '0.73rem', fontWeight: 500, textTransform: 'none', px: 1.5, py: 0.5, borderRadius: 0, '&:hover': { background: C.bg, color: C.med } }}
+            >
+              Preview output
+            </Button>
+          </Box>
           {expandedReasoning.has(idx) && (
             <Box sx={{ px: 1.5, pb: 1.25, pt: 0 }}>
               <Typography sx={{ fontSize: '0.75rem', color: '#546E7A', lineHeight: 1.55, p: 1.25, whiteSpace: 'pre-wrap', background: isLogical ? '#F9FAFB' : '#F9FBF2', borderRadius: '6px', borderLeft: `3px solid ${C.bright}` }}>
-                {am.filterResponse.reasoning}
+                {am.generated.reasoning}
               </Typography>
+            </Box>
+          )}
+          {expandedPreview.has(idx) && (
+            <Box sx={{ px: 1.5, pb: 1.25, pt: 0 }}>
+              <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: C.dark, mb: 0.75 }}>Generated output state</Typography>
+              <Box sx={{ background: '#ffffff', border: `1px solid ${C.border}`, borderRadius: '12px', p: 1, overflow: 'auto' }}>
+                <ProofStateComponent proofState={am.generated.proofState} />
+              </Box>
             </Box>
           )}
         </Box>
