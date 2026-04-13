@@ -1,4 +1,7 @@
 import { moves } from "../prompts/moves.js"
+import { GenerateMoveResponseSchema, GenerateMovesRequest } from "../fetchers/generateMoves.js"
+import { generateText, Output } from "ai"
+import { MODELS } from "./models.js"
 
 const GENERATE_MOVES_PROMPT =
 `
@@ -65,3 +68,18 @@ Please make sure to rank the moves in order of mathematical relevance, with the 
 A move can be considered to make progress if it combines two matching terms to produce a new one, or reduces the 
 effective number of variables in the goal, and it's important to take into account factors such as these in deciding the relevance.
 `
+
+export const generateMoves = async(req: GenerateMovesRequest) => {
+    console.log('Generating moves for proof state', req.proofState, 'with selections', req.selections)
+
+    return await generateText({
+        model: MODELS.generate_moves,
+        system: GENERATE_MOVES_PROMPT,
+        prompt: JSON.stringify(req, null, 2),
+        output: Output.array({
+            element: GenerateMoveResponseSchema,
+            description: "A list of moves that are relevant to the current proof state and selections, along with the new proof states and associated reasoning traces, ranked in order of relevance with the most relevant move first."
+        }),
+        maxRetries:  3
+    })
+}

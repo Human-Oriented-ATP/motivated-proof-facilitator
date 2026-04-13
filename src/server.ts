@@ -7,6 +7,7 @@ import { evaluateFilterCondition } from './endpoints/filter.js'
 import { formalizeStatement } from './endpoints/formalize-statement.js'
 import { informalizeProofState } from './endpoints/informalize.js'
 import { suggestStatements } from './endpoints/suggest.js'
+import { generateMoves } from './endpoints/generateMoves.js'
 
 const app = express()
 
@@ -128,6 +129,29 @@ app.post("/api/suggest", async (req, res) => {
     const result = await suggestStatements(req.body)
     res.send(result)
     console.log("suggestions generated")
+  } catch (err) {
+    console.error(err)
+    res.send("FAILED: " + err)
+  }
+})
+
+app.post("/api/generate-moves", async (req, res) => {
+  const { proofState, selections } = req.body
+  if (!proofState) {
+    console.error("no proof state provided")
+    res.send("FAILED: no proof state provided")
+    return
+  }
+  if (!selections) {
+    console.error("no selections provided")
+    res.send("FAILED: no selections provided")
+    return
+  }
+  try {
+    console.log("generating moves...")
+    const result = await generateMoves({ proofState, selections })
+    res.send(result)
+    console.log("moves generated")
   } catch (err) {
     console.error(err)
     res.send("FAILED: " + err)

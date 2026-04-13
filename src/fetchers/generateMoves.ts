@@ -7,15 +7,15 @@ export interface GenerateMovesRequest {
     selections: ProofStateSelectionWithPolarity[]
 }
 
-export const MoveResponseSchema = z.object({
+export const GenerateMoveResponseSchema = z.object({
     name: z.string().describe("The name of the move."),
     proofState: ProofStateSchema.describe("The new proof state resulting from applying the move."),
     reasoning: z.string().describe("A brief and clear explanation of why the move is relevant and applicable and the decisions that went into producing the new proof state.")
 })
 
-export type MoveResponse = z.infer<typeof MoveResponseSchema>
+export type GenerateMoveResponse = z.infer<typeof GenerateMoveResponseSchema>
 
-export async function generateMoves(req: GenerateMovesRequest): Promise<MoveResponse[]> {
+export async function generateMoves(req: GenerateMovesRequest): Promise<GenerateMoveResponse[]> {
     const response = await fetch("/api/generate-moves", {
         method: "POST",
         mode: "cors",
@@ -28,5 +28,5 @@ export async function generateMoves(req: GenerateMovesRequest): Promise<MoveResp
         throw new Error(`HTTP error! status: ${response.status}`)
     }
     const data = await response.json()
-    return MoveResponseSchema.array().parse(data)
+    return GenerateMoveResponseSchema.array().parse(data)
 }

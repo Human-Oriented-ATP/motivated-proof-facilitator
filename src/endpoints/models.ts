@@ -4,5 +4,6 @@ export const MODELS = {
     "move": "openai/gpt-5.4",
     "filter": "openai/gpt-5.3-chat",
     "informalize": "inception/mercury-2",
+    "generate_moves": "openai/gpt-5.4",
     "suggest": "openai/gpt-5.4"
 }
