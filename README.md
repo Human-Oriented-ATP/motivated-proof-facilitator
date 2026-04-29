@@ -1,29 +1,10 @@
-# Motivated Proof Monorepo
+# A natural language point-and-click interface for motivated proofs
 
-npm-workspaces monorepo.
+A work-in-progress prototype of a natural-language-based point-and-click interface for generating proofs. For the broader context and motivation of this project, see the blog post https://gowers.wordpress.com/2025/09/22/creating-a-database-of-motivated-proofs/.
 
-## Packages
+# Contributors
 
-- `packages/motivated-proof-facilitator-old/` — the prior single-app codebase, preserved intact.
-- `packages/motivated-proof-assistant/` — new project (fresh Vite + React + TS scaffold).
-
-## Common commands
-
-Install everything from the root:
-
-```sh
-npm install
-```
-
-Run a workspace:
-
-```sh
-npm run dev:old
-npm run dev:assistant
-```
-
-Or directly:
-
-```sh
-npm run dev --workspace=motivated-proof-assistant
-```
+- Anand Rao Tadipatri
+- Thomas Thevenon
+- Leo Hentschker
+- Matthew Tucker-Simmons
