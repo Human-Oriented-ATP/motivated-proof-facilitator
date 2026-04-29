@@ -1,4 +1,7 @@
 {
+  "name": "motivated-proof-facilitator-old",
+  "private": true,
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

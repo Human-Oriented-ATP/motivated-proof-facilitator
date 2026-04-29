@@ -1,0 +1,14 @@
+{
+  "name": "motivated-proof-monorepo",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:old": "npm run dev --workspace=motivated-proof-facilitator-old",
+    "dev:assistant": "npm run dev --workspace=motivated-proof-assistant",
+    "build:old": "npm run build --workspace=motivated-proof-facilitator-old",
+    "build:assistant": "npm run build --workspace=motivated-proof-assistant"
+  }
+}
